@@ -30,7 +30,8 @@
             "On the way home": "Going home",
             "Charging": "Charging",
             "Mowing border": "Border",
-            "Unknown": "Unknown"
+            "Unknown": "Unknown",
+            "Unknown4": "Mode 4"
           }
         },
         "sunseeker_battery": {
@@ -114,7 +115,8 @@
             "On the way home": "Going home",
             "Charging": "Charging",
             "Mowing border": "Border",
-            "Unknown": "Unknown"
+            "Unknown": "Unknown",
+            "Unknown4": "Mode 4"
           }
         }
       },

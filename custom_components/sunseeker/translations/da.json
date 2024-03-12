@@ -30,7 +30,8 @@
 					"On the way home": "På vej hjem",
 					"Charging": "Oplader",
 					"Mowing border": "Klipper kant",
-					"Unknown": "Ukendt"
+					"Unknown": "Ukendt",
+					"Unknown4": "Mode 4"
 				}
 			},
 			"sunseeker_battery": {
@@ -114,7 +115,9 @@
 					"On the way home": "På vej hjem",
 					"Charging": "Oplader",
 					"Mowing border": "Klipper kant",
-					"Unknown": "Ukendt"
+					"Unknown": "Ukendt",
+					"Unknown4": "Mode 4"
+
 				}
 			}
 		},

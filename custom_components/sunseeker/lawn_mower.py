@@ -22,6 +22,7 @@ from .const import (
     SUNSEEKER_MOWING_BORDER,
     SUNSEEKER_STANDBY,
     SUNSEEKER_UNKNOWN,
+    SUNSEEKER_UNKNOWN_4,
 )
 from .entity import SunseekerEntity
 
@@ -101,9 +102,9 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
         elif ival == 3:
             val = SUNSEEKER_CHARGING
         elif ival == 4:
-            val = SUNSEEKER_MOWING_BORDER
+            val = SUNSEEKER_UNKNOWN_4
         elif ival == 7:
-            val = SUNSEEKER_UNKNOWN
+            val = SUNSEEKER_MOWING_BORDER
         else:
             val = SUNSEEKER_UNKNOWN
         return val
