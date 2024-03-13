@@ -207,7 +207,7 @@ class SunseekerRoboticmower:
                     "grant_type": "password",
                     "scope": "server",
                 },
-                timeout=5,
+                timeout=10,
             )
 
             response_data = response.json()
@@ -216,8 +216,6 @@ class SunseekerRoboticmower:
         except Exception as error:  # pylint: disable=broad-except
             _LOGGER.debug("Login failed")
             _LOGGER.debug(error)
-            if hasattr(error, "response"):
-                _LOGGER.debug(json.dumps(error.response.json()))
 
     def connect_mqtt(self):
         """Connect mgtt."""
@@ -368,8 +366,6 @@ class SunseekerRoboticmower:
 
         except Exception as error:  # pylint: disable=broad-except
             _LOGGER.debug(error)
-            if hasattr(error, "response"):
-                _LOGGER.debug(json.dumps(error.response.json()))
 
     def get_settings(self, snr):
         """Get settings."""
@@ -399,8 +395,6 @@ class SunseekerRoboticmower:
 
         except Exception as error:  # pylint: disable=broad-except
             _LOGGER.debug(error)
-            if hasattr(error, "response"):
-                _LOGGER.debug(json.dumps(error.response.json()))
 
     def update_devices(self, device_sn):
         """Update device."""
@@ -439,7 +433,7 @@ class SunseekerRoboticmower:
                 if response_data["code"] != 0:
                     _LOGGER.debug(response_data)
                     continue
-                elif self._dataupdated is not None:
+                if self._dataupdated is not None:
                     self._dataupdated(device.devicesn)
 
             except Exception as error:  # pylint: disable=broad-except
@@ -457,8 +451,6 @@ class SunseekerRoboticmower:
 
                 _LOGGER.debug(element["url"])
                 _LOGGER.debug(error)
-                if hasattr(error, "response"):
-                    _LOGGER.debug(json.dumps(error.response.json()))
 
     def refresh_token(self):
         """Refresh token."""
@@ -488,8 +480,6 @@ class SunseekerRoboticmower:
             _LOGGER.debug("Refresh successful")
         except Exception as error:  # pylint: disable=broad-except
             _LOGGER.debug(error)
-            if hasattr(error, "response"):
-                _LOGGER.debug(json.dumps(error.response.json()))
 
     def unload(self):
         """Unload."""
@@ -516,7 +506,7 @@ class SunseekerRoboticmower:
     def border(self, devicesn):
         """Border."""
         _LOGGER.debug("Border")
-        self.set_state_change("mode", 4, devicesn)
+        self.set_state_change("mode", 7, devicesn)
 
     def refresh(self, devicesn):
         """Refresh data."""
@@ -634,8 +624,6 @@ class SunseekerRoboticmower:
                 self.get_device(devicesn).error_text = ""
         except Exception as error:  # pylint: disable=broad-except
             _LOGGER.debug(error)
-            if hasattr(error, "response"):
-                _LOGGER.debug(json.dumps(error.response.json()))
 
     def set_zone_status(
         self,
@@ -692,8 +680,6 @@ class SunseekerRoboticmower:
                 self.get_device(devicesn).error_text = ""
         except Exception as error:  # pylint: disable=broad-except
             _LOGGER.debug(error)
-            if hasattr(error, "response"):
-                _LOGGER.debug(json.dumps(error.response.json()))
 
     def set_rain_status(self, state: bool, delaymin: int, devicesn):
         """Set rain status."""
@@ -729,24 +715,25 @@ class SunseekerRoboticmower:
 
         except Exception as error:  # pylint: disable=broad-except
             _LOGGER.debug(error)
-            if hasattr(error, "response"):
-                _LOGGER.debug(json.dumps(error.response.json()))
 
     def set_state_change(self, command, state, devicesn):
         """Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Border."""
         # device_id = self.DeviceSn  # self.devicedata["data"].get("id")
         try:
+            data = {
+                "appId": self.session["user_id"],
+                "deviceSn": devicesn,
+                "mode": state,
+            }
             response = requests.post(
-                url=f"http://server.sk-robot.com/api/mower/device/setWorkStatus/{devicesn}/"
-                f"{self.session['user_id']}?{command}={state}",
+                url="http://server.sk-robot.com/api/app_mower/device/setWorkStatus",
                 headers={
                     "Accept-Language": self.language,
                     "Authorization": "bearer " + self.session["access_token"],
-                    "Content-Type": "application/json",
-                    "Host": "server.sk-robot.com",
                     "Connection": "Keep-Alive",
                     "User-Agent": "okhttp/4.8.1",
                 },
+                json=data,
                 timeout=10,
             )
             response_data = response.json()
@@ -759,8 +746,6 @@ class SunseekerRoboticmower:
 
         except Exception as error:  # pylint: disable=broad-except
             _LOGGER.debug(error)
-            if hasattr(error, "response"):
-                _LOGGER.debug(json.dumps(error.response.json()))
 
         refresh_timeout = Timer(10, self.update_devices, [devicesn])
         refresh_timeout.start()

@@ -65,7 +65,7 @@ class SunseekerButton(SunseekerEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Handle the button press."""
-        if self._valuepair == "dock":
+        if self._valuepair == "home":
             await self.hass.async_add_executor_job(self._data_handler.dock, self._sn)
         elif self._valuepair == "start":
             await self.hass.async_add_executor_job(
