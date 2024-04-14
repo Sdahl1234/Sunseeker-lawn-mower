@@ -1,4 +1,5 @@
 """SunseekerPy."""
+
 import json
 import logging
 from threading import Timer
@@ -7,6 +8,8 @@ import uuid
 
 import paho.mqtt.client as mqtt
 import requests
+
+from .const import MAX_LOGIN_RETRIES, MAX_SET_CONFIG_RETRIES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +33,7 @@ class SunseekerDevice:
         self.rain_delay_set = 0
         self.rain_delay_left = 0
         self.cur_min = 0
-        self.deviceOnlineFlag = False
+        self.deviceOnlineFlag = ""
         self.zoneOpenFlag = False
         self.mul_en = False
         self.mul_auto = False
@@ -89,15 +92,37 @@ class SunseekerScheduleDay:
     def Update(self) -> None:
         """Update from settings."""
 
+    def IsEmpty(self) -> bool:
+        """Check if day is empty."""
+        if self.start == "00:00" and self.end == "00:00":
+            return True
+        return False
+
 
 class SunseekerSchedule:
     """Sunseeker schedule."""
+
+    SavedData: None
 
     def __init__(self) -> None:
         """Init."""
         self.days = []
         for x in range(1, 8):
             self.days.append(SunseekerScheduleDay(x))
+
+    def IsEmpty(self) -> bool:
+        """Check if week is empty."""
+        if (
+            self.GetDay(1).IsEmpty()
+            and self.GetDay(2).IsEmpty()
+            and self.GetDay(3).IsEmpty()
+            and self.GetDay(4).IsEmpty()
+            and self.GetDay(5).IsEmpty()
+            and self.GetDay(6).IsEmpty()
+            and self.GetDay(7).IsEmpty()
+        ):
+            return True
+        return False
 
     def GetDay(self, daynumber: int) -> SunseekerScheduleDay:
         """Get the day."""
@@ -150,6 +175,7 @@ class SunseekerRoboticmower:
         self.refresh_token_timeout = None
         self.robotList = []
         self._dataupdated = None
+        self.login_ok: bool = False
 
     def get_device(self, devicesn) -> SunseekerDevice:
         """Get the device object."""
@@ -167,55 +193,73 @@ class SunseekerRoboticmower:
             _LOGGER.debug("Please set username and password in the instance settings")
             return
 
-        self.login()
-        if self.session.get("access_token"):
-            self.get_device_list()
-            for device in self.devicelist["data"]:
-                device_sn = device["deviceSn"]
-                self.deviceArray.append(device_sn)
-                ad = SunseekerDevice(device_sn)
-                ad.DeviceModel = device["deviceModelName"]
-                ad.DeviceName = device["deviceName"]
-                ad.DeviceBluetooth = device["bluetoothMac"]
-                self.robotList.append(ad)
-                self.get_settings(device_sn)
-            for device_sn in self.deviceArray:
-                self.update_devices(device_sn)
-                self.get_device(device_sn).InitValues()
-            self.connect_mqtt()
+        if self.login():
+            self.login_ok = True
+            if self.session.get("access_token"):
+                self.get_device_list()
+                for device in self.devicelist["data"]:
+                    device_sn = device["deviceSn"]
+                    self.deviceArray.append(device_sn)
+                    ad = SunseekerDevice(device_sn)
+                    ad.DeviceModel = device["deviceModelName"]
+                    ad.DeviceName = device["deviceName"]
+                    ad.DeviceBluetooth = device["bluetoothMac"]
+                    self.robotList.append(ad)
+                    self.get_settings(device_sn)
+                for device_sn in self.deviceArray:
+                    self.update_devices(device_sn)
+                    self.get_device(device_sn).InitValues()
+                self.connect_mqtt()
 
-        self.refresh_token_interval = Timer(
-            (self.session.get("expires_in") or 3600) * 1000, self.refresh_token
-        )
-        self.refresh_token_interval.start()
-
-    def login(self):
-        """Login."""
-        try:
-            response = requests.post(
-                url="http://server.sk-robot.com/api/auth/oauth/token",
-                headers={
-                    "Accept-Language": self.language,
-                    "Authorization": "Basic YXBwOmFwcA==",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Connection": "Keep-Alive",
-                    "User-Agent": "okhttp/4.4.1",
-                },
-                data={
-                    "username": self.username,
-                    "password": self.password,
-                    "grant_type": "password",
-                    "scope": "server",
-                },
-                timeout=10,
+            self.refresh_token_interval = Timer(
+                (self.session.get("expires_in") or 3600) * 1000, self.refresh_token
             )
+            self.refresh_token_interval.start()
 
-            response_data = response.json()
-            _LOGGER.debug(json.dumps(response_data))
-            self.session = response_data
-        except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.debug("Login failed")
-            _LOGGER.debug(error)
+    def login(self) -> bool:
+        """Login."""
+        login_attempt = 0
+        while login_attempt < MAX_LOGIN_RETRIES:
+            if login_attempt > 0:
+                time.sleep(1)
+            login_attempt = login_attempt + 1
+            try:
+                response = requests.post(
+                    url="http://server.sk-robot.com/api/auth/oauth/token",
+                    headers={
+                        "Accept-Language": self.language,
+                        "Authorization": "Basic YXBwOmFwcA==",
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "Connection": "Keep-Alive",
+                        "User-Agent": "okhttp/4.8.1",
+                    },
+                    data={
+                        "username": self.username,
+                        "password": self.password,
+                        "grant_type": "password",
+                        "scope": "server",
+                    },
+                    timeout=10,
+                )
+
+                response_data = response.json()
+                _LOGGER.debug(json.dumps(response_data))
+                self.session = response_data
+                login_attempt = MAX_LOGIN_RETRIES
+                return True
+            except requests.exceptions.HTTPError as errh:
+                _LOGGER.debug(f"Login attempt {login_attempt}: Http Error:  {errh}")  # noqa: G004
+            except requests.exceptions.ConnectionError as errc:
+                _LOGGER.debug(
+                    f"Login attempt {login_attempt}: Error Connecting: {errc}"  # noqa: G004
+                )
+            except requests.exceptions.Timeout as errt:
+                _LOGGER.debug(f"Login attempt {login_attempt}: Timeout Error: {errt}")  # noqa: G004
+            except requests.exceptions.RequestException as err:
+                _LOGGER.debug(f"Login attempt {login_attempt}: Error: {err}")  # noqa: G004
+            except Exception as error:  # pylint: disable=broad-except
+                _LOGGER.debug(f"Login attempt {login_attempt}: failed {error}")  # noqa: G004
+        return False
 
     def connect_mqtt(self):
         """Connect mgtt."""
@@ -258,6 +302,7 @@ class SunseekerRoboticmower:
         """On mqtt message."""
         _LOGGER.debug("MQTT message: " + message.topic + " " + message.payload.decode())  # noqa: G003
         try:
+            schedule: bool = False
             data = json.loads(message.payload.decode())
             if "deviceSn" in data:
                 devicesn = data.get("deviceSn")
@@ -312,20 +357,27 @@ class SunseekerRoboticmower:
                     device.mul_zon4 = data.get("mul_zon4")
                 if "Mon" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Mon"), 1)
+                    schedule = True
                 if "Tue" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Tue"), 2)
+                    schedule = True
                 if "Wed" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Wed"), 3)
+                    schedule = True
                 if "Thu" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Thu"), 4)
+                    schedule = True
                 if "Fri" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Fri"), 5)
+                    schedule = True
                 if "Sat" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Sat"), 6)
+                    schedule = True
                 if "Sun" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Sun"), 7)
+                    schedule = True
                 if self._dataupdated is not None:
-                    self._dataupdated(device.devicesn)
+                    self._dataupdated(device.devicesn, schedule)
         except Exception as error:  # pylint: disable=broad-except
             _LOGGER.debug("MQTT message error: " + str(error))  # noqa: G003
             _LOGGER.debug("MQTT message: " + message.payload.decode())  # noqa: G003
@@ -340,80 +392,64 @@ class SunseekerRoboticmower:
 
     def get_device_list(self):
         """Get device."""
-        try:
-            response = requests.get(
-                url="http://server.sk-robot.com/api/mower/device-user/list",
-                headers={
-                    "Content-Type": "application/json",
-                    "Accept-Language": self.language,
-                    "Authorization": "bearer " + self.session["access_token"],
-                    "Host": "server.sk-robot.com",
-                    "Connection": "Keep-Alive",
-                    "User-Agent": "okhttp/4.4.1",
-                },
-                timeout=10,
-            )
-            response_data = response.json()
-            self.devicelist = response_data
-            _LOGGER.debug(json.dumps(response_data))
+        attempt = 0
+        while attempt < MAX_LOGIN_RETRIES:
+            if attempt > 0:
+                time.sleep(1)
+            attempt = attempt + 1
 
-            if response_data["code"] != 0:
-                _LOGGER.debug("Error getting device list")
+            try:
+                response = requests.get(
+                    url="http://server.sk-robot.com/api/mower/device-user/list",
+                    headers={
+                        "Content-Type": "application/json",
+                        "Accept-Language": self.language,
+                        "Authorization": "bearer " + self.session["access_token"],
+                        "Host": "server.sk-robot.com",
+                        "Connection": "Keep-Alive",
+                        "User-Agent": "okhttp/4.4.1",
+                    },
+                    timeout=10,
+                )
+                response_data = response.json()
+                self.devicelist = response_data
                 _LOGGER.debug(json.dumps(response_data))
-                return
-            lg = f"Found {len(response_data['data'])} devices"
-            _LOGGER.info(lg)
 
-        except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.debug(error)
+                if response_data["code"] != 0:
+                    _LOGGER.debug("Error getting device list")
+                    _LOGGER.debug(json.dumps(response_data))
+                    return
+                lg = f"Found {len(response_data['data'])} devices"
+                _LOGGER.info(lg)
+                return
+
+            except requests.exceptions.HTTPError as errh:
+                _LOGGER.debug(f"Get device list attempt {attempt}: Http Error:  {errh}")  # noqa: G004
+            except requests.exceptions.ConnectionError as errc:
+                _LOGGER.debug(
+                    f"Get device list attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
+                )
+            except requests.exceptions.Timeout as errt:
+                _LOGGER.debug(
+                    f"Get device list attempt {attempt}: Timeout Error: {errt}"  # noqa: G004
+                )
+            except requests.exceptions.RequestException as err:
+                _LOGGER.debug(f"Get device list attempt {attempt}: Error: {err}")  # noqa: G004
+            except Exception as error:  # pylint: disable=broad-except
+                _LOGGER.debug(f"Get device list attempt {attempt}: failed {error}")  # noqa: G004
 
     def get_settings(self, snr):
         """Get settings."""
-        try:
-            device = self.get_device(snr)
-            response = requests.get(
-                url=f"http://server.sk-robot.com/api/mower/device-setting/{snr}",
-                headers={
-                    "Accept-Language": self.language,
-                    "Authorization": "bearer " + self.session["access_token"],
-                    "Host": "server.sk-robot.com",
-                    "Connection": "Keep-Alive",
-                    "User-Agent": "okhttp/4.4.1",
-                },
-                timeout=10,
-            )
-            response_data = response.json()
-            device.settings = response_data
-            _LOGGER.debug(json.dumps(response_data))
-
-            if response_data["code"] != 0:
-                _LOGGER.debug(f"Error getting device settings for {snr}")  # noqa: G004
-                _LOGGER.debug(json.dumps(response_data))
-                return
-            elif self._dataupdated is not None:
-                self._dataupdated(device.devicesn)
-
-        except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.debug(error)
-
-    def update_devices(self, device_sn):
-        """Update device."""
-        status_array = [
-            {
-                "path": "status",
-                "url": "http://server.sk-robot.com/api/mower/device/getBysn?sn=$id",
-                "desc": "Status 1x update per hour",
-            },
-        ]
-
-        device = self.get_device(device_sn)
-        for element in status_array:
-            url = element["url"].replace("$id", device_sn)
+        attempt = 0
+        while attempt < MAX_LOGIN_RETRIES:
+            if attempt > 0:
+                time.sleep(1)
+            attempt = attempt + 1
 
             try:
-                response = requests.request(
-                    method=element.get("method", "get"),
-                    url=url,
+                device = self.get_device(snr)
+                response = requests.get(
+                    url=f"http://server.sk-robot.com/api/mower/device-setting/{snr}",
                     headers={
                         "Accept-Language": self.language,
                         "Authorization": "bearer " + self.session["access_token"],
@@ -424,33 +460,91 @@ class SunseekerRoboticmower:
                     timeout=10,
                 )
                 response_data = response.json()
-                device.devicedata = response_data
+                device.settings = response_data
                 _LOGGER.debug(json.dumps(response_data))
 
-                if not response_data:
-                    continue
-
                 if response_data["code"] != 0:
-                    _LOGGER.debug(response_data)
-                    continue
+                    _LOGGER.debug(f"Error getting device settings for {snr}")  # noqa: G004
+                    _LOGGER.debug(json.dumps(response_data))
+                    return
                 if self._dataupdated is not None:
                     self._dataupdated(device.devicesn)
-
+                return
+            except requests.exceptions.HTTPError as errh:
+                _LOGGER.debug(f"Get settings attempt {attempt}: Http Error:  {errh}")  # noqa: G004
+            except requests.exceptions.ConnectionError as errc:
+                _LOGGER.debug(
+                    f"Get settings attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
+                )
+            except requests.exceptions.Timeout as errt:
+                _LOGGER.debug(f"Get settings attempt {attempt}: Timeout Error: {errt}")  # noqa: G004
+            except requests.exceptions.RequestException as err:
+                _LOGGER.debug(f"Get settings attempt {attempt}: Error: {err}")  # noqa: G004
             except Exception as error:  # pylint: disable=broad-except
-                if hasattr(error, "response"):
-                    if error.response.status == 401:
-                        _LOGGER.debug(json.dumps(error.response.json()))
-                        _LOGGER.debug(
-                            "{element['path']} receive 401 error. Refresh Token in 60 seconds"
-                        )
-                        if self.refresh_token_timeout:
-                            self.refresh_token_timeout.cancel()
-                        self.refresh_token_timeout = Timer(60, self.refresh_token)
-                        self.refresh_token_timeout.start()
-                        return
+                _LOGGER.debug(f"Get settings attempt {attempt}: failed {error}")  # noqa: G004
 
-                _LOGGER.debug(element["url"])
-                _LOGGER.debug(error)
+    def update_devices(self, device_sn):
+        """Update device."""
+        device = self.get_device(device_sn)
+        attempt = 0
+        while attempt < MAX_LOGIN_RETRIES:
+            if attempt > 0:
+                time.sleep(1)
+            attempt = attempt + 1
+
+            status_array = [
+                {
+                    "path": "status",
+                    "url": "http://server.sk-robot.com/api/mower/device/getBysn?sn=$id",
+                    "desc": "Status 1x update per hour",
+                },
+            ]
+
+            for element in status_array:
+                url = element["url"].replace("$id", device_sn)
+
+                try:
+                    response = requests.request(
+                        method=element.get("method", "get"),
+                        url=url,
+                        headers={
+                            "Accept-Language": self.language,
+                            "Authorization": "bearer " + self.session["access_token"],
+                            "Host": "server.sk-robot.com",
+                            "Connection": "Keep-Alive",
+                            "User-Agent": "okhttp/4.4.1",
+                        },
+                        timeout=10,
+                    )
+                    response_data = response.json()
+                    device.devicedata = response_data
+                    _LOGGER.debug(json.dumps(response_data))
+
+                    if not response_data:
+                        continue
+
+                    if response_data["code"] != 0:
+                        _LOGGER.debug(response_data)
+                        continue
+                    if self._dataupdated is not None:
+                        self._dataupdated(device.devicesn)
+                    return
+
+                except Exception as error:  # pylint: disable=broad-except
+                    if hasattr(error, "response"):
+                        if error.response.status == 401:
+                            _LOGGER.debug(json.dumps(error.response.json()))
+                            _LOGGER.debug(
+                                "{element['path']} receive 401 error. Refresh Token in 60 seconds"
+                            )
+                            if self.refresh_token_timeout:
+                                self.refresh_token_timeout.cancel()
+                            self.refresh_token_timeout = Timer(60, self.refresh_token)
+                            self.refresh_token_timeout.start()
+                            return
+
+                    _LOGGER.debug(element["url"])
+                    _LOGGER.debug(error)
 
     def refresh_token(self):
         """Refresh token."""
@@ -478,8 +572,17 @@ class SunseekerRoboticmower:
             _LOGGER.debug(json.dumps(response_data))
             self.session = response_data
             _LOGGER.debug("Refresh successful")
+
+        except requests.exceptions.HTTPError as errh:
+            _LOGGER.debug(f"refresh_token Http Error:  {errh}")  # noqa: G004
+        except requests.exceptions.ConnectionError as errc:
+            _LOGGER.debug(f"refresh_token Error Connecting: {errc}")  # noqa: G004
+        except requests.exceptions.Timeout as errt:
+            _LOGGER.debug(f"refresh_token Timeout Error: {errt}")  # noqa: G004
+        except requests.exceptions.RequestException as err:
+            _LOGGER.debug(f"refresh_token Error: {err}")  # noqa: G004
         except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.debug(error)
+            _LOGGER.debug(f"refresh_token failed {error}")  # noqa: G004
 
     def unload(self):
         """Unload."""
@@ -506,7 +609,7 @@ class SunseekerRoboticmower:
     def border(self, devicesn):
         """Border."""
         _LOGGER.debug("Border")
-        self.set_state_change("mode", 7, devicesn)
+        self.set_state_change("mode", 4, devicesn)
 
     def refresh(self, devicesn):
         """Refresh data."""
@@ -515,7 +618,7 @@ class SunseekerRoboticmower:
 
     def set_schedule(
         self,
-        ScheduleList,  # []
+        ScheduleList,  #: [],
         devicesn,
     ):
         """Set schedule data."""
@@ -550,80 +653,109 @@ class SunseekerRoboticmower:
                 end7 = day.end
                 trim7 = day.trim
 
-        try:
-            data = {
-                "appId": self.session["user_id"],
-                "autoFlag": False,
-                "deviceScheduleBOS": [
-                    {
-                        "dayOfWeek": 1,
-                        "endAt": end1 + ":00",
-                        "startAt": start1 + ":00",
-                        "trimFlag": trim1,
-                    },
-                    {
-                        "dayOfWeek": 2,
-                        "endAt": end2 + ":00",
-                        "startAt": start2 + ":00",
-                        "trimFlag": trim2,
-                    },
-                    {
-                        "dayOfWeek": 3,
-                        "endAt": end3 + ":00",
-                        "startAt": start3 + ":00",
-                        "trimFlag": trim3,
-                    },
-                    {
-                        "dayOfWeek": 4,
-                        "endAt": end4 + ":00",
-                        "startAt": start4 + ":00",
-                        "trimFlag": trim4,
-                    },
-                    {
-                        "dayOfWeek": 5,
-                        "endAt": end5 + ":00",
-                        "startAt": start5 + ":00",
-                        "trimFlag": trim5,
-                    },
-                    {
-                        "dayOfWeek": 6,
-                        "endAt": end6 + ":00",
-                        "startAt": start6 + ":00",
-                        "trimFlag": trim6,
-                    },
-                    {
-                        "dayOfWeek": 7,
-                        "endAt": end7 + ":00",
-                        "startAt": start7 + ":00",
-                        "trimFlag": trim7,
-                    },
-                ],
-                "deviceSn": devicesn,
-            }
-            _LOGGER.debug(data)
-            response = requests.post(
-                url="http://server.sk-robot.com/api/app_mower/device-schedule/setScheduling",
-                headers={
-                    "Accept-Language": self.language,
-                    "Authorization": "bearer " + self.session["access_token"],
-                    "Content-Type": "application/json; charset=UTF-8",
-                    "Host": "server.sk-robot.com",
-                    "Connection": "Keep-Alive",
-                    "User-Agent": "okhttp/4.8.1",
-                    "Accept-Encoding": "gzip",
+        data = {
+            "appId": self.session["user_id"],
+            "autoFlag": False,
+            "deviceScheduleBOS": [
+                {
+                    "dayOfWeek": 1,
+                    "endAt": end1 + ":00",
+                    "startAt": start1 + ":00",
+                    "trimFlag": trim1,
                 },
-                json=data,
-                timeout=10,
-            )
-            response_data = response.json()
-            _LOGGER.debug(json.dumps(response_data))
-            if response_data.get("ok") is False:
-                self.get_device(devicesn).error_text = response_data.get("msg")
-                _LOGGER.debug(response_data.get("msg"))
-            else:
-                self.get_device(devicesn).error_text = ""
-        except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.debug(error)
+                {
+                    "dayOfWeek": 2,
+                    "endAt": end2 + ":00",
+                    "startAt": start2 + ":00",
+                    "trimFlag": trim2,
+                },
+                {
+                    "dayOfWeek": 3,
+                    "endAt": end3 + ":00",
+                    "startAt": start3 + ":00",
+                    "trimFlag": trim3,
+                },
+                {
+                    "dayOfWeek": 4,
+                    "endAt": end4 + ":00",
+                    "startAt": start4 + ":00",
+                    "trimFlag": trim4,
+                },
+                {
+                    "dayOfWeek": 5,
+                    "endAt": end5 + ":00",
+                    "startAt": start5 + ":00",
+                    "trimFlag": trim5,
+                },
+                {
+                    "dayOfWeek": 6,
+                    "endAt": end6 + ":00",
+                    "startAt": start6 + ":00",
+                    "trimFlag": trim6,
+                },
+                {
+                    "dayOfWeek": 7,
+                    "endAt": end7 + ":00",
+                    "startAt": start7 + ":00",
+                    "trimFlag": trim7,
+                },
+            ],
+            "deviceSn": devicesn,
+        }
+
+        attempt = 0
+        while attempt < MAX_SET_CONFIG_RETRIES:
+            if attempt > 0:
+                time.sleep(1)
+            attempt = attempt + 1
+            try:
+                _LOGGER.debug(data)
+                response = requests.post(
+                    url="http://server.sk-robot.com/api/app_mower/device-schedule/setScheduling",
+                    headers={
+                        "Accept-Language": self.language,
+                        "Authorization": "bearer " + self.session["access_token"],
+                        "Content-Type": "application/json; charset=UTF-8",
+                        "Host": "server.sk-robot.com",
+                        "Connection": "Keep-Alive",
+                        "User-Agent": "okhttp/4.8.1",
+                        "Accept-Encoding": "gzip",
+                    },
+                    json=data,
+                    timeout=10,
+                )
+                response_data = response.json()
+                _LOGGER.debug(json.dumps(response_data))
+                if response_data.get("ok") is False:
+                    self.get_device(devicesn).error_text = response_data.get("msg")
+                    self._dataupdated(devicesn)
+                    _LOGGER.debug(response_data.get("msg"))
+                else:
+                    self.get_device(devicesn).error_text = ""
+                return
+
+            except requests.exceptions.HTTPError as errh:
+                self.get_device(devicesn).error_text = errh
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set schedule attempt {attempt}: Http Error:  {errh}")  # noqa: G004
+            except requests.exceptions.ConnectionError as errc:
+                self.get_device(devicesn).error_text = errc
+                self._dataupdated(devicesn)
+                _LOGGER.debug(
+                    f"Set schedule attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
+                )
+            except requests.exceptions.Timeout as errt:
+                self.get_device(devicesn).error_text = errt
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set schedule attempt {attempt}: Timeout Error: {errt}")  # noqa: G004
+            except requests.exceptions.RequestException as err:
+                self.get_device(devicesn).error_text = err
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set schedule attempt {attempt}: Error: {err}")  # noqa: G004
+            except Exception as error:  # pylint: disable=broad-except
+                self.get_device(devicesn).error_text = error
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set_schedule attempt {attempt}: failed {error}")  # noqa: G004
 
     def set_zone_status(
         self,
@@ -636,116 +768,207 @@ class SunseekerRoboticmower:
         devicesn,
     ):
         """Set zone status."""
-        try:
-            data = {
-                "appId": self.session["user_id"],
-                "deviceSn": devicesn,
-                "meterFirst": 0,
-                "meterFour": 0,
-                "meterSecond": 0,
-                "meterThird": 0,
-                "proFirst": 25,
-                "proFour": 25,
-                "proSecond": 25,
-                "proThird": 25,
-                "zoneAutomaticFlag": zoneauto,
-                "zoneExFlag": 0,
-                "zoneFirstPercentage": zone1,
-                "zoneFourthPercentage": zone4,
-                "zoneOpenFlag": zone_enable,
-                "zoneSecondPercentage": zone2,
-                "zoneThirdPercentage": zone3,
-            }
-            _LOGGER.debug(data)
-            response = requests.post(
-                url="http://server.sk-robot.com/api/app_mower/device/setZones",
-                headers={
-                    "Accept-Language": self.language,
-                    "Authorization": "bearer " + self.session["access_token"],
-                    "Content-Type": "application/json; charset=UTF-8",
-                    "Host": "server.sk-robot.com",
-                    "Connection": "Keep-Alive",
-                    "User-Agent": "okhttp/4.8.1",
-                    "Accept-Encoding": "gzip",
-                },
-                json=data,
-                timeout=10,
-            )
-            response_data = response.json()
-            _LOGGER.debug(json.dumps(response_data))
-            if response_data.get("ok") is False:
-                self.get_device(devicesn).error_text = response_data.get("msg")
-                _LOGGER.debug(response_data.get("msg"))
-            else:
-                self.get_device(devicesn).error_text = ""
-        except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.debug(error)
+        attempt = 0
+        while attempt < MAX_SET_CONFIG_RETRIES:
+            if attempt > 0:
+                time.sleep(1)
+            attempt = attempt + 1
+            try:
+                data = {
+                    "appId": self.session["user_id"],
+                    "deviceSn": devicesn,
+                    "meterFirst": 0,
+                    "meterFour": 0,
+                    "meterSecond": 0,
+                    "meterThird": 0,
+                    "proFirst": 25,
+                    "proFour": 25,
+                    "proSecond": 25,
+                    "proThird": 25,
+                    "zoneAutomaticFlag": zoneauto,
+                    "zoneExFlag": 0,
+                    "zoneFirstPercentage": zone1,
+                    "zoneFourthPercentage": zone4,
+                    "zoneOpenFlag": zone_enable,
+                    "zoneSecondPercentage": zone2,
+                    "zoneThirdPercentage": zone3,
+                }
+                _LOGGER.debug(data)
+                response = requests.post(
+                    url="http://server.sk-robot.com/api/app_mower/device/setZones",
+                    headers={
+                        "Accept-Language": self.language,
+                        "Authorization": "bearer " + self.session["access_token"],
+                        "Content-Type": "application/json; charset=UTF-8",
+                        "Host": "server.sk-robot.com",
+                        "Connection": "Keep-Alive",
+                        "User-Agent": "okhttp/4.8.1",
+                        "Accept-Encoding": "gzip",
+                    },
+                    json=data,
+                    timeout=10,
+                )
+                response_data = response.json()
+                _LOGGER.debug(json.dumps(response_data))
+                if response_data.get("ok") is False:
+                    self.get_device(devicesn).error_text = response_data.get("msg")
+                    self._dataupdated(devicesn)
+                    _LOGGER.debug(response_data.get("msg"))
+                else:
+                    self.get_device(devicesn).error_text = ""
+                return
+
+            except requests.exceptions.HTTPError as errh:
+                self.get_device(devicesn).error_text = errh
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set zone status attempt {attempt}: Http Error:  {errh}")  # noqa: G004
+            except requests.exceptions.ConnectionError as errc:
+                self.get_device(devicesn).error_text = errc
+                self._dataupdated(devicesn)
+                _LOGGER.debug(
+                    f"Set zone status attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
+                )
+            except requests.exceptions.Timeout as errt:
+                self.get_device(devicesn).error_text = errt
+                self._dataupdated(devicesn)
+                _LOGGER.debug(
+                    f"Set zone status attempt {attempt}: Timeout Error: {errt}"  # noqa: G004
+                )
+            except requests.exceptions.RequestException as err:
+                self.get_device(devicesn).error_text = err
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set zone status attempt {attempt}: Error: {err}")  # noqa: G004
+            except Exception as error:  # pylint: disable=broad-except
+                self.get_device(devicesn).error_text = error
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set zone status attempt {attempt}: failed {error}")  # noqa: G004
 
     def set_rain_status(self, state: bool, delaymin: int, devicesn):
         """Set rain status."""
-        try:
-            #
-            data = {
-                "appId": self.session["user_id"],
-                "deviceSn": devicesn,
-                "rainDelayDuration": delaymin,
-                "rainFlag": state,
-            }
-            _LOGGER.debug(data)
-            response = requests.post(
-                url="http://server.sk-robot.com/api/app_mower/device/setRain",
-                headers={
-                    "Accept-Language": self.language,
-                    "Authorization": "bearer " + self.session["access_token"],
-                    "Content-Type": "application/json",
-                    "Host": "server.sk-robot.com",
-                    "Connection": "Keep-Alive",
-                    "User-Agent": "okhttp/4.8.1",
-                },
-                json=data,
-                timeout=10,
-            )
-            response_data = response.json()
-            _LOGGER.debug(json.dumps(response_data))
-            if response_data.get("ok") is False:
-                self.get_device(devicesn).error_text = response_data.get("msg")
-                _LOGGER.debug(response_data.get("msg"))
-            else:
-                self.get_device(devicesn).error_text = ""
+        attempt = 0
+        while attempt < MAX_SET_CONFIG_RETRIES:
+            if attempt > 0:
+                time.sleep(1)
+            attempt = attempt + 1
+            try:
+                data = {
+                    "appId": self.session["user_id"],
+                    "deviceSn": devicesn,
+                    "rainDelayDuration": delaymin,
+                    "rainFlag": state,
+                }
+                _LOGGER.debug(data)
+                response = requests.post(
+                    url="http://server.sk-robot.com/api/app_mower/device/setRain",
+                    headers={
+                        "Accept-Language": self.language,
+                        "Authorization": "bearer " + self.session["access_token"],
+                        "Content-Type": "application/json",
+                        "Host": "server.sk-robot.com",
+                        "Connection": "Keep-Alive",
+                        "User-Agent": "okhttp/4.8.1",
+                    },
+                    json=data,
+                    timeout=10,
+                )
+                response_data = response.json()
+                _LOGGER.debug(json.dumps(response_data))
+                if response_data.get("ok") is False:
+                    self.get_device(devicesn).error_text = response_data.get("msg")
+                    self._dataupdated(devicesn)
+                    _LOGGER.debug(response_data.get("msg"))
+                else:
+                    self.get_device(devicesn).error_text = ""
+                return
 
-        except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.debug(error)
+            except requests.exceptions.HTTPError as errh:
+                self.get_device(devicesn).error_text = errh
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set rain status attempt {attempt}: Http Error:  {errh}")  # noqa: G004
+            except requests.exceptions.ConnectionError as errc:
+                self.get_device(devicesn).error_text = errc
+                self._dataupdated(devicesn)
+                _LOGGER.debug(
+                    f"Set rain status attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
+                )
+            except requests.exceptions.Timeout as errt:
+                self.get_device(devicesn).error_text = errt
+                self._dataupdated(devicesn)
+                _LOGGER.debug(
+                    f"Set rain status attempt {attempt}: Timeout Error: {errt}"  # noqa: G004
+                )
+            except requests.exceptions.RequestException as err:
+                self.get_device(devicesn).error_text = err
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set rain status attempt {attempt}: Error: {err}")  # noqa: G004
+            except Exception as error:  # pylint: disable=broad-except
+                self.get_device(devicesn).error_text = error
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set rain status attempt {attempt}: failed {error}")  # noqa: G004
 
     def set_state_change(self, command, state, devicesn):
         """Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Border."""
         # device_id = self.DeviceSn  # self.devicedata["data"].get("id")
-        try:
-            data = {
-                "appId": self.session["user_id"],
-                "deviceSn": devicesn,
-                "mode": state,
-            }
-            response = requests.post(
-                url="http://server.sk-robot.com/api/app_mower/device/setWorkStatus",
-                headers={
-                    "Accept-Language": self.language,
-                    "Authorization": "bearer " + self.session["access_token"],
-                    "Connection": "Keep-Alive",
-                    "User-Agent": "okhttp/4.8.1",
-                },
-                json=data,
-                timeout=10,
-            )
-            response_data = response.json()
-            _LOGGER.debug(json.dumps(response_data))
-            if response_data.get("ok") is False:
-                self.get_device(devicesn).error_text = response_data.get("msg")
-                _LOGGER.debug(response_data.get("msg"))
-            else:
-                self.get_device(devicesn).error_text = ""
+        attempt = 0
+        while attempt < MAX_SET_CONFIG_RETRIES:
+            if attempt > 0:
+                time.sleep(1)
+            attempt = attempt + 1
+            try:
+                data = {
+                    "appId": self.session["user_id"],
+                    "deviceSn": devicesn,
+                    "mode": state,
+                }
+                response = requests.post(
+                    url="http://server.sk-robot.com/api/app_mower/device/setWorkStatus",
+                    headers={
+                        "Accept-Language": self.language,
+                        "Authorization": "bearer " + self.session["access_token"],
+                        "Content-Type": "application/json",
+                        "Host": "server.sk-robot.com",
+                        "Connection": "Keep-Alive",
+                        "User-Agent": "okhttp/4.8.1",
+                    },
+                    json=data,
+                    timeout=10,
+                )
+                response_data = response.json()
+                _LOGGER.debug(json.dumps(response_data))
+                if response_data.get("ok") is False:
+                    self.get_device(devicesn).error_text = response_data.get("msg")
+                    self._dataupdated(devicesn)
+                    _LOGGER.debug(response_data.get("msg"))
+                else:
+                    self.get_device(devicesn).error_text = ""
 
-        except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.debug(error)
+                refresh_timeout = Timer(10, self.update_devices, [devicesn])
+                refresh_timeout.start()
+                return
 
-        refresh_timeout = Timer(10, self.update_devices, [devicesn])
-        refresh_timeout.start()
+            except requests.exceptions.HTTPError as errh:
+                self.get_device(devicesn).error_text = errh
+                self._dataupdated(devicesn)
+                _LOGGER.debug(
+                    f"Set state change attempt {attempt}: Http Error:  {errh}"  # noqa: G004
+                )
+            except requests.exceptions.ConnectionError as errc:
+                self.get_device(devicesn).error_text = errc
+                self._dataupdated(devicesn)
+                _LOGGER.debug(
+                    f"Set state change attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
+                )
+            except requests.exceptions.Timeout as errt:
+                self.get_device(devicesn).error_text = errt
+                self._dataupdated(devicesn)
+                _LOGGER.debug(
+                    f"Set state change attempt {attempt}: Timeout Error: {errt}"  # noqa: G004
+                )
+            except requests.exceptions.RequestException as err:
+                self.get_device(devicesn).error_text = err
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set state change attempt {attempt}: Error: {err}")  # noqa: G004
+            except Exception as error:  # pylint: disable=broad-except
+                self.get_device(devicesn).error_text = error
+                self._dataupdated(devicesn)
+                _LOGGER.debug(f"Set state change attempt {attempt}: failed {error}")  # noqa: G004

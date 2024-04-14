@@ -1,8 +1,11 @@
 """Sunseeker mower integration."""
-import asyncio
-import logging
 
-from homeassistant.config_entries import ConfigEntry
+import asyncio
+import json
+import logging
+import os
+
+from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.const import CONF_EMAIL, CONF_MODEL, CONF_PASSWORD, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -47,6 +50,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     data_handler = SunseekerRoboticmower(brand, email, password, language)
     await hass.async_add_executor_job(data_handler.on_load)
+    if not data_handler.login_ok:
+        _LOGGER.error("Login error")
+        raise ConfigEntryNotReady("Login failed")
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DH: data_handler}
 
     # robot = [1, 2]
@@ -86,6 +92,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
     config_entry: ConfigEntry
 
+    jdata: None
+    data_loaded: bool = False
+    data_default = {
+        "Monday": "00:00 - 00:00",
+        "Tuesday": "00:00 - 00:00",
+        "Wednesday": "00:00 - 00:00",
+        "Thursday": "00:00 - 00:00",
+        "Friday": "00:00 - 00:00",
+        "Saturday": "00:00 - 00:00",
+        "Sunday": "00:00 - 00:00",
+    }
+
     def __init__(
         self, hass: HomeAssistant, data_handler: SunseekerRoboticmower, devicesn, brand
     ) -> None:
@@ -103,12 +121,100 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.data_handler = data_handler
         self._devicesn = devicesn
         self.data_handler._dataupdated = self.dataupdated
+        self.filepath = os.path.join(
+            self.hass.config.config_dir,
+            "Schedule-{}.json".format(self._devicesn.replace(" ", "_")),
+        )
+        _LOGGER.info(self.filepath)
+        self.jdata = self.data_default
+        self.hass.add_job(self.set_schedule_data)
+        self.hass.add_job(self.file_exits)
+        self.hass.add_job(self.load_data)
 
-    def dataupdated(self, devicesn: str):
+    async def set_schedule_data(self):
+        """Set default."""
+        self.jdata["Monday"] = await self.GetSchedule(1)
+        self.jdata["Tuesday"] = await self.GetSchedule(2)
+        self.jdata["Wednesday"] = await self.GetSchedule(3)
+        self.jdata["Thursday"] = await self.GetSchedule(4)
+        self.jdata["Friday"] = await self.GetSchedule(5)
+        self.jdata["Saturday"] = await self.GetSchedule(6)
+        self.jdata["Sunday"] = await self.GetSchedule(7)
+
+    async def GetSchedule(self, daynumber: int) -> str:
+        """Get schedule."""
+        b_trim = (
+            self.data_handler.get_device(self._devicesn).Schedule.GetDay(daynumber).trim
+        )
+        if b_trim:
+            s_trim = " Trim"
+        else:
+            s_trim = ""
+        retval = {
+            self.data_handler.get_device(self._devicesn)
+            .Schedule.GetDay(daynumber)
+            .start
+            + " - "
+            + self.data_handler.get_device(self._devicesn)
+            .Schedule.GetDay(daynumber)
+            .end
+            + s_trim
+        }
+        return str(retval).replace("{", "").replace("}", "").replace("'", "")
+
+    async def file_exits(self):
+        """Do file exists."""
+        try:
+            f = open(self.filepath, encoding="utf-8")
+            f.close()
+        except FileNotFoundError:
+            # save a new file
+            await self.save_data(False)
+
+    async def save_data(self, append: bool):
+        """Save data."""
+        try:
+            if append:
+                cfile = open(self.filepath, "w", encoding="utf-8")
+            else:
+                cfile = open(self.filepath, "a", encoding="utf-8")
+            ocrdata = json.dumps(self.jdata)
+            self.data_handler.get_device(self._devicesn).Schedule.SavedData = self.jdata
+            cfile.write(ocrdata)
+            cfile.close()
+        except Exception as ex:  # pylint: disable=broad-except
+            _LOGGER.debug(f"Save data failed: {ex}")  # noqa: G004
+
+    async def load_data(self):
+        """Load data."""
+        try:
+            cfile = open(self.filepath, encoding="utf-8")
+            ocrdata = cfile.read()
+            cfile.close()
+            _LOGGER.debug(f"ocrdata: {ocrdata}")  # noqa: G004
+            _LOGGER.debug(f"jsonload: {json.loads(ocrdata)}")  # noqa: G004
+
+            self.jdata = json.loads(ocrdata)
+            self.data_handler.get_device(self._devicesn).Schedule.SavedData = self.jdata
+            self.data_loaded = True
+        except Exception as ex:  # pylint: disable=broad-except
+            _LOGGER.debug(f"load data failed: {ex}")  # noqa: G004
+
+    async def save_schedule_data(self):
+        """Update schedule data on disk."""
+        await self.set_schedule_data()
+        await self.save_data(True)
+
+    def dataupdated(self, devicesn: str, schedule: bool):
         """Func Callback when data is updated."""
         _LOGGER.debug(f"callback - Sunseeker {self._devicesn} data updated")  # noqa: G004
         if self._devicesn == devicesn:
             self.hass.add_job(self.async_set_updated_data, None)
+        if (
+            schedule
+            and not self.data_handler.get_device(self._devicesn).Schedule.IsEmpty()
+        ):
+            self.hass.add_job(self.save_schedule_data)
 
     @property
     def dsn(self):

@@ -149,6 +149,9 @@
 			},
 			"sunseeker_multi_zone_auto": {
 				"name": "Multizone auto"
+			},
+			"schedule_active": {
+				"name": "Tidsstyrring"
 			}
 		},
 		"number": {

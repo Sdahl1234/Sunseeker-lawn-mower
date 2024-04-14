@@ -1,4 +1,5 @@
 """Adds config flow for Sunseeker mower integration."""
+
 import voluptuous as vol
 
 from homeassistant import config_entries, core, exceptions
@@ -10,7 +11,16 @@ from .const import DOMAIN
 
 # _LOGGER = logging.getLogger(__name__)
 
-brands = ["Adano", "Brucke", "Meec tools", "Orbex", "Scheppach", "Sunseeker", "Texas"]
+brands = [
+    "Adano",
+    "Brucke",
+    "Meec tools",
+    "Orbex",
+    "Scheppach",
+    "Sunseeker",
+    "Texas",
+    "Grouw",
+]
 DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_MODEL, default=False): selector.SelectSelector(

@@ -148,6 +148,9 @@
         },
         "sunseeker_multi_zone_auto": {
           "name": "Multizone auto"
+        },
+        "schedule_active": {
+          "name": "Schedule"
         }
       },
       "number": {
