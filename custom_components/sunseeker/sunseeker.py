@@ -41,6 +41,10 @@ class SunseekerDevice:
         self.mul_zon2 = 0
         self.mul_zon3 = 0
         self.mul_zon4 = 0
+        self.mulpro_zon1 = 0
+        self.mulpro_zon2 = 0
+        self.mulpro_zon3 = 0
+        self.mulpro_zon4 = 0
         self.forceupdate = False
         self.error_text = ""
 
@@ -75,6 +79,10 @@ class SunseekerDevice:
         self.mul_zon2 = self.settings["data"].get("zoneSecondPercentage")
         self.mul_zon3 = self.settings["data"].get("zoneThirdPercentage")
         self.mul_zon4 = self.settings["data"].get("zoneFourthPercentage")
+        self.mulpro_zon1 = self.settings["data"].get("proFirst")
+        self.mulpro_zon2 = self.settings["data"].get("proSecond")
+        self.mulpro_zon3 = self.settings["data"].get("proThird")
+        self.mulpro_zon4 = self.settings["data"].get("proFour")
         self.updateschedule()
 
 
@@ -355,6 +363,14 @@ class SunseekerRoboticmower:
                     device.mul_zon3 = data.get("mul_zon3")
                 if "mul_zon4" in data:
                     device.mul_zon4 = data.get("mul_zon4")
+                if "mul_pro1" in data:
+                    device.mulpro1 = data.get("mul_pro1")
+                if "mul_pro2" in data:
+                    device.mulpro2 = data.get("mul_pro2")
+                if "mul_pro3" in data:
+                    device.mulpro3 = data.get("mul_pro3")
+                if "mul_pro4" in data:
+                    device.mulpro4 = data.get("mul_pro4")
                 if "Mon" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Mon"), 1)
                     schedule = True
@@ -765,6 +781,10 @@ class SunseekerRoboticmower:
         zone2: int,
         zone3: int,
         zone4: int,
+        mul1: int,
+        mul2: int,
+        mul3: int,
+        mul4: int,
         devicesn,
     ):
         """Set zone status."""
@@ -781,10 +801,10 @@ class SunseekerRoboticmower:
                     "meterFour": 0,
                     "meterSecond": 0,
                     "meterThird": 0,
-                    "proFirst": 25,
-                    "proFour": 25,
-                    "proSecond": 25,
-                    "proThird": 25,
+                    "proFirst": mul1,
+                    "proFour": mul2,
+                    "proSecond": mul3,
+                    "proThird": mul4,
                     "zoneAutomaticFlag": zoneauto,
                     "zoneExFlag": 0,
                     "zoneFirstPercentage": zone1,

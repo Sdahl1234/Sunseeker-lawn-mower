@@ -169,6 +169,18 @@
 			},
 			"sunseeker_zone4": {
 				"name": "Zone 4 start"
+			},
+			"sunseeker_mulpro1": {
+				"name": "Zone 1 prioritet"
+			},
+			"sunseeker_mulpro2": {
+				"name": "Zone 2 prioritet"
+			},
+			"sunseeker_mulpro3": {
+				"name": "Zone 3 prioritet"
+			},
+			"sunseeker_mulpro4": {
+				"name": "Zone 4 prioritet"
 			}
 		},
 		"text": {

@@ -8,5 +8,5 @@
   "integration_type": "device",
   "iot_class": "cloud_push",
   "config_flow": true,
-  "version": "1.0.9"
+  "version": "1.0.10"
 }
