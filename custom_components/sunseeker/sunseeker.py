@@ -364,13 +364,13 @@ class SunseekerRoboticmower:
                 if "mul_zon4" in data:
                     device.mul_zon4 = data.get("mul_zon4")
                 if "mul_pro1" in data:
-                    device.mulpro1 = data.get("mul_pro1")
+                    device.mulpro_zon1 = data.get("mul_pro1")
                 if "mul_pro2" in data:
-                    device.mulpro2 = data.get("mul_pro2")
+                    device.mulpro_zon2 = data.get("mul_pro2")
                 if "mul_pro3" in data:
-                    device.mulpro3 = data.get("mul_pro3")
+                    device.mulpro_zon3 = data.get("mul_pro3")
                 if "mul_pro4" in data:
-                    device.mulpro4 = data.get("mul_pro4")
+                    device.mulpro_zon4 = data.get("mul_pro4")
                 if "Mon" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Mon"), 1)
                     schedule = True
