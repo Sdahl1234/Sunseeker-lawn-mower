@@ -484,7 +484,7 @@ class SunseekerRoboticmower:
                     _LOGGER.debug(json.dumps(response_data))
                     return
                 if self._dataupdated is not None:
-                    self._dataupdated(device.devicesn)
+                    self._dataupdated(device.devicesn, False)
                 return
             except requests.exceptions.HTTPError as errh:
                 _LOGGER.debug(f"Get settings attempt {attempt}: Http Error:  {errh}")  # noqa: G004
@@ -543,7 +543,7 @@ class SunseekerRoboticmower:
                         _LOGGER.debug(response_data)
                         continue
                     if self._dataupdated is not None:
-                        self._dataupdated(device.devicesn)
+                        self._dataupdated(device.devicesn, False)
                     return
 
                 except Exception as error:  # pylint: disable=broad-except
@@ -744,7 +744,7 @@ class SunseekerRoboticmower:
                 _LOGGER.debug(json.dumps(response_data))
                 if response_data.get("ok") is False:
                     self.get_device(devicesn).error_text = response_data.get("msg")
-                    self._dataupdated(devicesn)
+                    self._dataupdated(devicesn, False)
                     _LOGGER.debug(response_data.get("msg"))
                 else:
                     self.get_device(devicesn).error_text = ""
@@ -752,25 +752,25 @@ class SunseekerRoboticmower:
 
             except requests.exceptions.HTTPError as errh:
                 self.get_device(devicesn).error_text = errh
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set schedule attempt {attempt}: Http Error:  {errh}")  # noqa: G004
             except requests.exceptions.ConnectionError as errc:
                 self.get_device(devicesn).error_text = errc
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(
                     f"Set schedule attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
                 )
             except requests.exceptions.Timeout as errt:
                 self.get_device(devicesn).error_text = errt
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set schedule attempt {attempt}: Timeout Error: {errt}")  # noqa: G004
             except requests.exceptions.RequestException as err:
                 self.get_device(devicesn).error_text = err
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set schedule attempt {attempt}: Error: {err}")  # noqa: G004
             except Exception as error:  # pylint: disable=broad-except
                 self.get_device(devicesn).error_text = error
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set_schedule attempt {attempt}: failed {error}")  # noqa: G004
 
     def set_zone_status(
@@ -832,7 +832,7 @@ class SunseekerRoboticmower:
                 _LOGGER.debug(json.dumps(response_data))
                 if response_data.get("ok") is False:
                     self.get_device(devicesn).error_text = response_data.get("msg")
-                    self._dataupdated(devicesn)
+                    self._dataupdated(devicesn, False)
                     _LOGGER.debug(response_data.get("msg"))
                 else:
                     self.get_device(devicesn).error_text = ""
@@ -840,27 +840,27 @@ class SunseekerRoboticmower:
 
             except requests.exceptions.HTTPError as errh:
                 self.get_device(devicesn).error_text = errh
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set zone status attempt {attempt}: Http Error:  {errh}")  # noqa: G004
             except requests.exceptions.ConnectionError as errc:
                 self.get_device(devicesn).error_text = errc
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(
                     f"Set zone status attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
                 )
             except requests.exceptions.Timeout as errt:
                 self.get_device(devicesn).error_text = errt
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(
                     f"Set zone status attempt {attempt}: Timeout Error: {errt}"  # noqa: G004
                 )
             except requests.exceptions.RequestException as err:
                 self.get_device(devicesn).error_text = err
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set zone status attempt {attempt}: Error: {err}")  # noqa: G004
             except Exception as error:  # pylint: disable=broad-except
                 self.get_device(devicesn).error_text = error
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set zone status attempt {attempt}: failed {error}")  # noqa: G004
 
     def set_rain_status(self, state: bool, delaymin: int, devicesn):
@@ -895,7 +895,7 @@ class SunseekerRoboticmower:
                 _LOGGER.debug(json.dumps(response_data))
                 if response_data.get("ok") is False:
                     self.get_device(devicesn).error_text = response_data.get("msg")
-                    self._dataupdated(devicesn)
+                    self._dataupdated(devicesn, False)
                     _LOGGER.debug(response_data.get("msg"))
                 else:
                     self.get_device(devicesn).error_text = ""
@@ -903,27 +903,27 @@ class SunseekerRoboticmower:
 
             except requests.exceptions.HTTPError as errh:
                 self.get_device(devicesn).error_text = errh
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set rain status attempt {attempt}: Http Error:  {errh}")  # noqa: G004
             except requests.exceptions.ConnectionError as errc:
                 self.get_device(devicesn).error_text = errc
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(
                     f"Set rain status attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
                 )
             except requests.exceptions.Timeout as errt:
                 self.get_device(devicesn).error_text = errt
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(
                     f"Set rain status attempt {attempt}: Timeout Error: {errt}"  # noqa: G004
                 )
             except requests.exceptions.RequestException as err:
                 self.get_device(devicesn).error_text = err
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set rain status attempt {attempt}: Error: {err}")  # noqa: G004
             except Exception as error:  # pylint: disable=broad-except
                 self.get_device(devicesn).error_text = error
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set rain status attempt {attempt}: failed {error}")  # noqa: G004
 
     def set_state_change(self, command, state, devicesn):
@@ -957,7 +957,7 @@ class SunseekerRoboticmower:
                 _LOGGER.debug(json.dumps(response_data))
                 if response_data.get("ok") is False:
                     self.get_device(devicesn).error_text = response_data.get("msg")
-                    self._dataupdated(devicesn)
+                    self._dataupdated(devicesn, False)
                     _LOGGER.debug(response_data.get("msg"))
                 else:
                     self.get_device(devicesn).error_text = ""
@@ -968,27 +968,27 @@ class SunseekerRoboticmower:
 
             except requests.exceptions.HTTPError as errh:
                 self.get_device(devicesn).error_text = errh
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(
                     f"Set state change attempt {attempt}: Http Error:  {errh}"  # noqa: G004
                 )
             except requests.exceptions.ConnectionError as errc:
                 self.get_device(devicesn).error_text = errc
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(
                     f"Set state change attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
                 )
             except requests.exceptions.Timeout as errt:
                 self.get_device(devicesn).error_text = errt
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(
                     f"Set state change attempt {attempt}: Timeout Error: {errt}"  # noqa: G004
                 )
             except requests.exceptions.RequestException as err:
                 self.get_device(devicesn).error_text = err
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set state change attempt {attempt}: Error: {err}")  # noqa: G004
             except Exception as error:  # pylint: disable=broad-except
                 self.get_device(devicesn).error_text = error
-                self._dataupdated(devicesn)
+                self._dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set state change attempt {attempt}: failed {error}")  # noqa: G004
