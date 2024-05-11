@@ -120,7 +120,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.always_update = True
         self.data_handler = data_handler
         self._devicesn = devicesn
-        self.data_handler._dataupdated = self.dataupdated
+        self.data_handler.get_device(devicesn)._dataupdated = self.dataupdated
         self.filepath = os.path.join(
             self.hass.config.config_dir,
             "Schedule-{}.json".format(self._devicesn.replace(" ", "_")),
