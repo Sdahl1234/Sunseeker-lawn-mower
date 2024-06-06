@@ -119,11 +119,11 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.brand = brand
         self.always_update = True
         self.data_handler = data_handler
-        self._devicesn = devicesn
-        self.data_handler.get_device(devicesn)._dataupdated = self.dataupdated
+        self.devicesn = devicesn
+        self.data_handler.get_device(devicesn).dataupdated = self.dataupdated
         self.filepath = os.path.join(
             self.hass.config.config_dir,
-            "Schedule-{}.json".format(self._devicesn.replace(" ", "_")),
+            "Schedule-{}.json".format(self.devicesn.replace(" ", "_")),
         )
         _LOGGER.info(self.filepath)
         self.jdata = self.data_default
@@ -144,20 +144,16 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
     async def GetSchedule(self, daynumber: int) -> str:
         """Get schedule."""
         b_trim = (
-            self.data_handler.get_device(self._devicesn).Schedule.GetDay(daynumber).trim
+            self.data_handler.get_device(self.devicesn).Schedule.GetDay(daynumber).trim
         )
         if b_trim:
             s_trim = " Trim"
         else:
             s_trim = ""
         retval = {
-            self.data_handler.get_device(self._devicesn)
-            .Schedule.GetDay(daynumber)
-            .start
+            self.data_handler.get_device(self.devicesn).Schedule.GetDay(daynumber).start
             + " - "
-            + self.data_handler.get_device(self._devicesn)
-            .Schedule.GetDay(daynumber)
-            .end
+            + self.data_handler.get_device(self.devicesn).Schedule.GetDay(daynumber).end
             + s_trim
         }
         return str(retval).replace("{", "").replace("}", "").replace("'", "")
@@ -165,7 +161,9 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
     async def file_exits(self):
         """Do file exists."""
         try:
-            f = open(self.filepath, encoding="utf-8")
+            f = await self.hass.async_add_executor_job(
+                open, self.filepath, "r", -1, "utf-8"
+            )
             f.close()
         except FileNotFoundError:
             # save a new file
@@ -175,29 +173,35 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         """Save data."""
         try:
             if append:
-                cfile = open(self.filepath, "w", encoding="utf-8")
+                cfile = await self.hass.async_add_executor_job(
+                    open, self.filepath, "w", -1, "utf-8"
+                )
             else:
-                cfile = open(self.filepath, "a", encoding="utf-8")
+                cfile = await self.hass.async_add_executor_job(
+                    open, self.filepath, "a", -1, "utf-8"
+                )
             ocrdata = json.dumps(self.jdata)
-            self.data_handler.get_device(self._devicesn).Schedule.SavedData = self.jdata
+            self.data_handler.get_device(self.devicesn).Schedule.SavedData = self.jdata
             cfile.write(ocrdata)
             cfile.close()
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Save data failed: {ex}")  # noqa: G004
 
     async def load_data(self):
         """Load data."""
         try:
-            cfile = open(self.filepath, encoding="utf-8")
+            cfile = await self.hass.async_add_executor_job(
+                open, self.filepath, "r", -1, "utf-8"
+            )
             ocrdata = cfile.read()
             cfile.close()
             _LOGGER.debug(f"ocrdata: {ocrdata}")  # noqa: G004
             _LOGGER.debug(f"jsonload: {json.loads(ocrdata)}")  # noqa: G004
 
             self.jdata = json.loads(ocrdata)
-            self.data_handler.get_device(self._devicesn).Schedule.SavedData = self.jdata
+            self.data_handler.get_device(self.devicesn).Schedule.SavedData = self.jdata
             self.data_loaded = True
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"load data failed: {ex}")  # noqa: G004
 
     async def save_schedule_data(self):
@@ -207,19 +211,19 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
 
     def dataupdated(self, devicesn: str, schedule: bool):
         """Func Callback when data is updated."""
-        _LOGGER.debug(f"callback - Sunseeker {self._devicesn} data updated")  # noqa: G004
-        if self._devicesn == devicesn:
+        _LOGGER.debug(f"callback - Sunseeker {self.devicesn} data updated")  # noqa: G004
+        if self.devicesn == devicesn:
             self.hass.add_job(self.async_set_updated_data, None)
         if (
             schedule
-            and not self.data_handler.get_device(self._devicesn).Schedule.IsEmpty()
+            and not self.data_handler.get_device(self.devicesn).Schedule.IsEmpty()
         ):
             self.hass.add_job(self.save_schedule_data)
 
     @property
     def dsn(self):
         """DeviceSerialNumber."""
-        return self._devicesn
+        return self.devicesn
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -228,14 +232,14 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             identifiers={
                 (DOMAIN, self.unique_id),
             },
-            model=self.data_handler.get_device(self._devicesn).DeviceModel,
+            model=self.data_handler.get_device(self.devicesn).DeviceModel,
             manufacturer=self.brand,
-            serial_number=self._devicesn,
-            name=self.data_handler.get_device(self._devicesn).DeviceName,
-            sw_version=self.data_handler.get_device(self._devicesn)
+            serial_number=self.devicesn,
+            name=self.data_handler.get_device(self.devicesn).DeviceName,
+            sw_version=self.data_handler.get_device(self.devicesn)
             .devicedata["data"]
             .get("bbSv"),
-            hw_version=self.data_handler.get_device(self._devicesn)
+            hw_version=self.data_handler.get_device(self.devicesn)
             .devicedata["data"]
             .get("bbHv"),
         )
@@ -243,15 +247,15 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
     @property
     def unique_id(self) -> str:
         """Return the system descriptor."""
-        return f"{DOMAIN}-{self._devicesn}"
+        return f"{DOMAIN}-{self.devicesn}"
 
     def update_device(self):
         """Update device."""
-        self.data_handler.update_devices(self._devicesn)
+        self.data_handler.update_devices(self.devicesn)
 
     async def _async_update_data(self):
         try:
             await self.hass.async_add_executor_job(self.data_handler.update)
-            return self.data_handler
-        except Exception as ex:  # pylint: disable=broad-except
+            return self.data_handler  # noqa: TRY300
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"update failed: {ex}")  # noqa: G004

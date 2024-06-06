@@ -61,7 +61,7 @@ class SunseekerButton(SunseekerEntity, ButtonEntity):
         self._attr_has_entity_name = True
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
-        self._sn = self.coordinator._devicesn
+        self._sn = self.coordinator.devicesn
 
     async def async_press(self) -> None:
         """Handle the button press."""

@@ -1,4 +1,5 @@
 """Device tracker Sunseeker robotic mower."""
+
 from __future__ import annotations
 
 import logging
@@ -41,20 +42,20 @@ class SunseekerDeviceTracker(SunseekerEntity, TrackerEntity):
         self._attr_has_entity_name = True
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
-        self._sn = self.coordinator._devicesn
+        self._sn = self.coordinator.devicesn
         self._icon = "mdi:map-marker-radius"
 
     @property
     def latitude(self) -> float | None:
         """Return latitude value of the device."""
         val = self._data_handler.get_device(self._sn).devicedata["data"].get("lat")
-        return val
+        return val  # noqa: RET504
 
     @property
     def longitude(self) -> float | None:
         """Return longitude value of the device."""
         val = self._data_handler.get_device(self._sn).devicedata["data"].get("lng")
-        return val
+        return val  # noqa: RET504
 
     @property
     def source_type(self) -> Literal["gps"]:

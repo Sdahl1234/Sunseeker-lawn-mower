@@ -65,7 +65,7 @@ class SunseekerRainSwitch(SunseekerEntity, SwitchEntity):
         self._attr_has_entity_name = True
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
-        self._sn = self.coordinator._devicesn
+        self._sn = self.coordinator.devicesn
         self.icon = "mdi:weather-pouring"
 
     async def async_turn_on(self, **kwargs):
@@ -122,7 +122,7 @@ class SunseekerMultiZoneSwitch(SunseekerEntity, SwitchEntity):
         self._attr_has_entity_name = True
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
-        self._sn = self.coordinator._devicesn
+        self._sn = self.coordinator.devicesn
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
@@ -190,7 +190,7 @@ class SunseekerMultiZoneAutoSwitch(SunseekerEntity, SwitchEntity):
         self._attr_has_entity_name = True
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
-        self._sn = self.coordinator._devicesn
+        self._sn = self.coordinator.devicesn
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
@@ -258,7 +258,7 @@ class SunseekerScheduleSwitch(SunseekerEntity, SwitchEntity):
         self._attr_has_entity_name = True
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
-        self._sn = self.coordinator._devicesn
+        self._sn = self.coordinator.devicesn
         self.icon = "mdi:calendar"
 
     async def async_set_schedule_value(self, daynumber: int, value: str) -> None:

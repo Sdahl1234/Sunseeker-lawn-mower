@@ -114,7 +114,7 @@ class SunseekerBinarySensor(SunseekerEntity, BinarySensorEntity):
         self._attr_has_entity_name = True
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
-        self._sn = self.coordinator._devicesn
+        self._sn = self.coordinator.devicesn
 
     # This property is important to let HA know if this entity is online or not.
     # If an entity is offline (return False), the UI will reflect this.
