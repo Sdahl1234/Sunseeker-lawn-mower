@@ -1,0 +1,209 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Käyttäjätili on jo määritelty"
+        },
+        "error": {
+            "connection_error": "Yhteys epäonnistui"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "model": "Merkki",
+                    "name": "Nimi",
+                    "email": "Sähköposti",
+                    "password": "Salasana"
+                }
+            }
+        }
+    },
+    "entity": {
+      "sensor": {
+        "sunseeker_state_error": {
+          "name": "Virhetila"
+        },
+        "sunseeker_mower_state": {
+          "name": "Robotin tila",
+          "state": {
+            "Standby": "Valmiustila",
+            "Mowing": "Leikkaa",
+            "On the way home": "Palaa kotiin",
+            "Charging": "Lataa",
+            "Mowing border": "Reunaleikkaus",
+            "Unknown": "Tuntematon",
+            "Unknown4": "Mode 4"
+          }
+        },
+        "sunseeker_battery": {
+          "name": "Akku"
+        },
+        "sunseeker_rain_delay_set": {
+          "name": "Sadeviive"
+        },
+        "sunseeker_sensor_counter": {
+          "name": "Sadetunnistimen laskuri"
+        },
+        "sunseeker_mowing_time": {
+          "name": "Leikkausaika"
+        },
+        "sunseeker_error": {
+          "name": "Virhekoodi"
+        },
+        "sunseeker_error_text": {
+          "name": "Virhe"
+        },
+        "sunseeker_wifi_level": {
+          "name": "Wifi voimakkuus"
+        },
+          "sunseeker_rain_status": {
+            "name": "Sadetunnistin",
+            "state": {
+              "Dry": "Kuivaa",
+              "Dry countdown": "Kuivumiseen aikaa",
+              "Wet": "Märkää",
+              "Unknown": "Tuntematon"
+          }
+        },
+        "sunseekerzone1": {
+          "name": "Alue 1 aloitus"
+        },
+        "sunseekerzone2": {
+          "name": "Alue 2 aloitus"
+        },
+        "sunseekerzone3": {
+          "name": "Alue 3 aloitus"
+        },
+        "sunseekerzone4": {
+          "name": "Alue 4 aloitus"
+        }
+      },
+      "binary_sensor": {
+        "sunseeker_dock": {
+          "name": "Telakka",
+          "state": {
+            "Away": "Poissa",
+            "Home": "Kotona",
+            "Unknown": "Tuntematon"
+          }
+        },
+        "sunseeker_rain_sensor_active": {
+          "name": "Sadetunnistin päällä"
+        },
+        "sunseeker_multizone": {
+          "name": "Monialueleikkaus"
+        },
+        "sunseeker_multizoneauto": {
+          "name": "Monialueleikkaus autom."
+        },
+        "sunseeker_schedule": {
+          "name": "Ajastus"
+        },
+        "sunseeker_online": {
+          "name": "Yhteys",
+          "state": {
+            "Connected": "Yhdistetty",
+            "Disconnected": "Yhteys katkennut",
+            "Unknown": "Tuntematon"
+          }
+        }
+      },
+      "lawn_mower": {
+        "sunseeker_lawnmower": {
+          "state": {
+            "Standby": "Valmiustila",
+            "Mowing": "Leikkaa",
+            "On the way home": "Palaa kotiin",
+            "Charging": "Lataa",
+            "Mowing border": "Reunaleikkaus",
+            "Unknown": "Tuntematon",
+            "Unknown4": "Mode 4"
+          }
+        }
+      },
+      "button": {
+        "sunseeker_start": {
+          "name": "Leikkaa"
+        },
+        "sunseeker_pause": {
+          "name": "Pysäytä"
+        },
+        "sunseeker_border": {
+          "name": "Rajaleikkaus"
+        },
+        "sunseeker_home": {
+          "name": "Palaa kotiin"
+        }
+      },
+      "device_tracker": {
+        "sunseeker_tracker": {
+          "name": "Robotin sijainti"
+        }
+      },
+      "switch": {
+        "sunseeker_rain_sensor": {
+          "name": "Sadetunnistin"
+        },
+        "sunseeker_multi_zone": {
+          "name": "Monialueleikkaus"
+        },
+        "sunseeker_multi_zone_auto": {
+          "name": "Monialueleikkaus autom."
+        },
+        "schedule_active": {
+          "name": "Ajastus"
+        }
+      },
+      "number": {
+        "sunseeker_rain_delay": {
+          "name": "Sadeviive"
+        },
+        "sunseeker_zone1": {
+          "name": "Alue 1 aloitus"
+        },
+        "sunseeker_zone2": {
+          "name": "Alue 2 aloitus"
+        },
+        "sunseeker_zone3": {
+          "name": "Alue 3 aloitus"
+        },
+        "sunseeker_zone4": {
+          "name": "Alue 4 aloitus"
+        },
+        "sunseeker_mulpro1": {
+          "name": "Alue 1 prioriteetti"
+        },
+        "sunseeker_mulpro2": {
+          "name": "Alue 2 prioriteetti"
+        },
+        "sunseeker_mulpro3": {
+          "name": "Alue 3 prioriteetti"
+        },
+        "sunseeker_mulpro4": {
+          "name": "Alue 4 prioriteetti"
+        }
+      },
+      "text": {
+        "sunseeker_schedule_text_1": {
+          "name": "Ajastus maanantaina"
+        },
+        "sunseeker_schedule_text_2": {
+          "name": "Ajastus tiistaina"
+        },
+        "sunseeker_schedule_text_3": {
+          "name": "Ajastus keskiviikkona"
+        },
+        "sunseeker_schedule_text_4": {
+          "name": "Ajastus torstaina"
+        },
+        "sunseeker_schedule_text_5": {
+          "name": "Ajastus perjantaina"
+        },
+        "sunseeker_schedule_text_6": {
+          "name": "Ajastus lauantaina"
+        },
+        "sunseeker_schedule_text_7": {
+          "name": "Ajastus sunnuntaina"
+        }
+      }
+    }
+  }
