@@ -38,10 +38,10 @@
           "name": "Akku"
         },
         "sunseeker_rain_delay_set": {
-          "name": "Sadeviive"
+          "name": "Sadetunnistin viive"
         },
         "sunseeker_sensor_counter": {
-          "name": "Sadetunnistimen laskuri"
+          "name": "Sadetunnistin jäljellä"
         },
         "sunseeker_mowing_time": {
           "name": "Leikkausaika"
@@ -59,7 +59,7 @@
             "name": "Sadetunnistin",
             "state": {
               "Dry": "Kuivaa",
-              "Dry countdown": "Kuivumiseen aikaa",
+              "Dry countdown": "Odottaa kuivumista",
               "Wet": "Märkää",
               "Unknown": "Tuntematon"
           }
@@ -155,7 +155,7 @@
       },
       "number": {
         "sunseeker_rain_delay": {
-          "name": "Sadeviive"
+          "name": "Sadetunnistin viive"
         },
         "sunseeker_zone1": {
           "name": "Alue 1 aloitus"
