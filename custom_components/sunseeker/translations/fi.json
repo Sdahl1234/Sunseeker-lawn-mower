@@ -27,7 +27,7 @@
           "state": {
             "Standby": "Valmiustila",
             "Mowing": "Leikkaa",
-            "On the way home": "Palaa kotiin",
+            "On the way home": "Palaamassa kotiin",
             "Charging": "Lataa",
             "Mowing border": "Reunaleikkaus",
             "Unknown": "Tuntematon",
@@ -128,7 +128,7 @@
           "name": "Pysäytä"
         },
         "sunseeker_border": {
-          "name": "Rajaleikkaus"
+          "name": "Reunaleikkaus"
         },
         "sunseeker_home": {
           "name": "Palaa kotiin"
