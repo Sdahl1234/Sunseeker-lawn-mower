@@ -63,7 +63,7 @@ Standby, Mowing, Going home, Charging, Border, Error
 **Zone 4** - percentage of the start of zone 4
 
 ## Text
-*Format of the text fields: Start and end time format HH:MM. Add Trim to mowe the border. ex. "06:15 - 17:00 Trim" or "06:15 - 17:00"*
+*Format of the text fields: Start and end time format HH:MM. Add Trim to mowe the border. ex. "06:15 - 17:00 Trim", "06:15 - 17:00", "08:00 - 24:00" or whole day "00:00 - 24:00"*
 
 **Schedule Monday** - Text field to update the moday schedule. 
 
