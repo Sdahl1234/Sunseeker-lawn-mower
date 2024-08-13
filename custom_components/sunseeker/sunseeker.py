@@ -72,6 +72,7 @@ class SunseekerDevice:
         self.rain_en = self.devicedata["data"].get("rainFlag")
         self.rain_delay_set = int(self.devicedata["data"].get("rainDelayDuration"))
         self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
+        self.rain_status = int(self.devicedata["data"].get("rainStatusCode"))
         if self.devicedata["data"].get("onlineFlag"):
             self.deviceOnlineFlag = '{"online":"1"}'
         self.zoneOpenFlag = self.settings["data"].get("zoneOpenFlag")
@@ -160,7 +161,10 @@ class SunseekerSchedule:
             if Start is not None:
                 asc.start = time.strftime("%H:%M", time.gmtime(int(Start) * 60))[0:5]
             if End is not None:
-                asc.end = time.strftime("%H:%M", time.gmtime(int(End) * 60))[0:5]
+                if int(End) == 1440:
+                    asc.end = "24:00"
+                else:
+                    asc.end = time.strftime("%H:%M", time.gmtime(int(End) * 60))[0:5]
             if Trimming is not None:
                 asc.trim = Trimming
 
