@@ -52,7 +52,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     async_add_entities(
         [
             SunseekerScheduleText(
-                coordinator, "Schedule Friday", 5, "sunseeker_schedule_text_5"
+                coordinator, "Schedule Fridays", 5, "sunseeker_schedule_text_5"
             )
             for coordinator in robot_coordinators(hass, entry)
         ]
