@@ -72,7 +72,10 @@ class SunseekerDevice:
         self.rain_en = self.devicedata["data"].get("rainFlag")
         self.rain_delay_set = int(self.devicedata["data"].get("rainDelayDuration"))
         self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
-        self.rain_status = int(self.devicedata["data"].get("rainStatusCode"))
+        if self.devicedata["data"].get("rainStatusCode") == None:  # noqa: E711
+            self.rain_status = 0
+        else:
+            self.rain_status = int(self.devicedata["data"].get("rainStatusCode"))
         if self.devicedata["data"].get("onlineFlag"):
             self.deviceOnlineFlag = '{"online":"1"}'
         self.zoneOpenFlag = self.settings["data"].get("zoneOpenFlag")
