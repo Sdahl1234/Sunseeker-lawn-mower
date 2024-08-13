@@ -3,6 +3,7 @@ Home assistant integration from lawnmower using the robotic-mower connect APP.
 
 ## Tested models
   - Adano RM6
+  - Brücke RM501
 
 ## Install
 #### Manually
@@ -19,7 +20,7 @@ Search for *Sunseeker robotic mower* and add it.
 You must now choose a barnd and a name for the device. Email and password for the robotic-mower connect APP.
 
 ## Translation
-English and danish
+English, Danish and Finnish
 
 # Entities
 ## lawn mower
