@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DH, DOMAIN, ROBOTS
+from .const import DATAHANDLER, DH, DOMAIN, ROBOTS
 from .sunseeker import SunseekerRoboticmower
 
 PLATFORMS = [
@@ -67,6 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
 
     hass.data[DOMAIN][entry.entry_id][ROBOTS] = robots
+    hass.data[DOMAIN][entry.entry_id][DATAHANDLER] = data_handler
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -84,8 +85,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
+        dh: SunseekerRoboticmower
+        dh = hass.data[DOMAIN][entry.entry_id][DATAHANDLER]
+        dh.unload()
         hass.data[DOMAIN].pop(entry.entry_id)
-
     return unload_ok
 
 
@@ -121,7 +124,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.data_handler = data_handler
         self.devicesn = devicesn
         self.data_handler.get_device(devicesn).dataupdated = self.dataupdated
-        self.filepath = os.path.join(
+        self.filepath = os.path.join(  # noqa: PTH118
             self.hass.config.config_dir,
             "Schedule-{}.json".format(self.devicesn.replace(" ", "_")),
         )

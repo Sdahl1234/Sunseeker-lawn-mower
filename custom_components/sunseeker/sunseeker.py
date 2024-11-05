@@ -143,6 +143,7 @@ class SunseekerSchedule:
         for day in self.days:
             if day.day == daynumber:
                 return day
+        return None
 
     def UpdateFromMqtt(self, data, daynumber: int) -> None:
         """From mqtt."""
@@ -200,6 +201,7 @@ class SunseekerRoboticmower:
         for device in self.robotList:
             if device.devicesn == devicesn:
                 return device
+        return None
 
     def update(self):
         """Force HA to update sensors."""
@@ -615,6 +617,8 @@ class SunseekerRoboticmower:
             self.refresh_token_timeout.cancel()
         if self.refresh_token_interval:
             self.refresh_token_interval.cancel()
+        if self.mqtt_client.is_connected():
+            self.mqtt_client.disconnect()
 
     def start_mowing(self, devicesn):
         """Start Mowing."""

@@ -3,6 +3,7 @@
 SERIAL_NO = "serial_no"
 DOMAIN = "sunseeker"
 ROBOTS = "robots"
+DATAHANDLER = "DATAHANDLER"
 DH = "dh"
 
 SUNSEEKER_STANDBY = "Standby"
