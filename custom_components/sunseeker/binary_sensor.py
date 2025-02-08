@@ -139,6 +139,7 @@ class SunseekerBinarySensor(SunseekerEntity, BinarySensorEntity):
                 self._data_handler.get_device(self._sn).deviceOnlineFlag
                 == '{"online":"1"}'
             )
+        return False
 
     @property
     def icon(self):

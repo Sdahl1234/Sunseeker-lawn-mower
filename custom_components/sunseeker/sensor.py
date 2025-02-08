@@ -388,7 +388,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
         return val
 
     @property
-    def extra_state_attributes(self):  # noqa: C901
+    def extra_state_attributes(self):
         """Attributes to schedule."""
         attributes = {}
         if self._valuepair == "Schedule":

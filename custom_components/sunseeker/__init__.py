@@ -58,7 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # robot = [1, 2]
     robot = data_handler.deviceArray
     robots = [
-        SunseekerDataCoordinator(hass, data_handler, devicesn, brand)
+        SunseekerDataCoordinator(hass, entry, data_handler, devicesn, brand)
         for devicesn in robot
     ]
 
@@ -92,8 +92,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
+type SunSeekerConfigEntry = ConfigEntry[SunseekerDataCoordinator]
+
+
 class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
-    config_entry: ConfigEntry
+    config_entry: SunSeekerConfigEntry
 
     jdata: None
     data_loaded: bool = False
@@ -108,12 +111,18 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
     }
 
     def __init__(
-        self, hass: HomeAssistant, data_handler: SunseekerRoboticmower, devicesn, brand
+        self,
+        hass: HomeAssistant,
+        config_entry: SunSeekerConfigEntry,
+        data_handler: SunseekerRoboticmower,
+        devicesn,
+        brand,
     ) -> None:
         """Initialize my coordinator."""
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=config_entry,
             # Name of the data. For logging purposes.
             name=DOMAIN,
             # Polling interval. Will only be polled if there are subscribers.
