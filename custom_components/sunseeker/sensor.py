@@ -228,7 +228,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 None,
                 "ErrorText",
                 None,
-                "faultStatusName",
+                "faultStatusCode",
                 "devicedata",
                 "mdi:alert-circle",
                 "sunseeker_error_text",
@@ -332,7 +332,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                 val = (
                     self._data_handler.get_device(self._sn)
                     .devicedata["data"]
-                    .get("faultStatusName")
+                    .get("faultStatusCode")
                     + " ("
                     + str(self._data_handler.get_device(self._sn).errortype)
                     + ")"
