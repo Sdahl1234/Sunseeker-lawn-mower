@@ -134,6 +134,10 @@ class SunseekerMultiZoneSwitch(SunseekerEntity, SwitchEntity):
             self._data_handler.get_device(self._sn).mul_zon2,
             self._data_handler.get_device(self._sn).mul_zon3,
             self._data_handler.get_device(self._sn).mul_zon4,
+            self._data_handler.get_device(self._sn).mulpro_zon1,
+            self._data_handler.get_device(self._sn).mulpro_zon2,
+            self._data_handler.get_device(self._sn).mulpro_zon3,
+            self._data_handler.get_device(self._sn).mulpro_zon4,
             self._sn,
         )
 
@@ -147,6 +151,10 @@ class SunseekerMultiZoneSwitch(SunseekerEntity, SwitchEntity):
             self._data_handler.get_device(self._sn).mul_zon2,
             self._data_handler.get_device(self._sn).mul_zon3,
             self._data_handler.get_device(self._sn).mul_zon4,
+            self._data_handler.get_device(self._sn).mulpro_zon1,
+            self._data_handler.get_device(self._sn).mulpro_zon2,
+            self._data_handler.get_device(self._sn).mulpro_zon3,
+            self._data_handler.get_device(self._sn).mulpro_zon4,
             self._sn,
         )
 
@@ -160,6 +168,10 @@ class SunseekerMultiZoneSwitch(SunseekerEntity, SwitchEntity):
             self._data_handler.get_device(self._sn).mul_zon2,
             self._data_handler.get_device(self._sn).mul_zon3,
             self._data_handler.get_device(self._sn).mul_zon4,
+            self._data_handler.get_device(self._sn).mulpro_zon1,
+            self._data_handler.get_device(self._sn).mulpro_zon2,
+            self._data_handler.get_device(self._sn).mulpro_zon3,
+            self._data_handler.get_device(self._sn).mulpro_zon4,
             self._sn,
         )
 
@@ -202,6 +214,10 @@ class SunseekerMultiZoneAutoSwitch(SunseekerEntity, SwitchEntity):
             self._data_handler.get_device(self._sn).mul_zon2,
             self._data_handler.get_device(self._sn).mul_zon3,
             self._data_handler.get_device(self._sn).mul_zon4,
+            self._data_handler.get_device(self._sn).mulpro_zon1,
+            self._data_handler.get_device(self._sn).mulpro_zon2,
+            self._data_handler.get_device(self._sn).mulpro_zon3,
+            self._data_handler.get_device(self._sn).mulpro_zon4,
             self._sn,
         )
 
@@ -215,6 +231,10 @@ class SunseekerMultiZoneAutoSwitch(SunseekerEntity, SwitchEntity):
             self._data_handler.get_device(self._sn).mul_zon2,
             self._data_handler.get_device(self._sn).mul_zon3,
             self._data_handler.get_device(self._sn).mul_zon4,
+            self._data_handler.get_device(self._sn).mulpro_zon1,
+            self._data_handler.get_device(self._sn).mulpro_zon2,
+            self._data_handler.get_device(self._sn).mulpro_zon3,
+            self._data_handler.get_device(self._sn).mulpro_zon4,
             self._sn,
         )
 
@@ -228,6 +248,10 @@ class SunseekerMultiZoneAutoSwitch(SunseekerEntity, SwitchEntity):
             self._data_handler.get_device(self._sn).mul_zon2,
             self._data_handler.get_device(self._sn).mul_zon3,
             self._data_handler.get_device(self._sn).mul_zon4,
+            self._data_handler.get_device(self._sn).mulpro_zon1,
+            self._data_handler.get_device(self._sn).mulpro_zon2,
+            self._data_handler.get_device(self._sn).mulpro_zon3,
+            self._data_handler.get_device(self._sn).mulpro_zon4,
             self._sn,
         )
 

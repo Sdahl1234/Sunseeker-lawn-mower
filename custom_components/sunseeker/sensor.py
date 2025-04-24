@@ -228,8 +228,8 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 None,
                 "ErrorText",
                 None,
-                "faultStatusCode",
-                "devicedata",
+                "errortype",
+                "Etext",
                 "mdi:alert-circle",
                 "sunseeker_error_text",
             )
@@ -385,6 +385,15 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             val = self._data_handler.get_device(self._sn).mul_zon4
         elif self._valuepair == "errortype":
             val = self._data_handler.get_device(self._sn).errortype
+            if self._source == "Etext":
+                if val == 0:
+                    val = "normal"
+                elif val == 2:
+                    val = "Trapped"
+                elif val == 16:
+                    val = "No border"
+                else:
+                    val = "Unknown error"
         return val
 
     @property
