@@ -392,6 +392,10 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                     val = "Trapped"
                 elif val == 16:
                     val = "No border"
+                elif val == 32:
+                    val = "Started outside border"
+                elif val == 262144:
+                    val = "Charging power to high"
                 else:
                     val = "Unknown error"
         return val
