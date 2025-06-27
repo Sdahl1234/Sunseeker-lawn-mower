@@ -651,9 +651,7 @@ class SunseekerRoboticmower:
         """Update device."""
         endpoint = f"/mower/device/getBysn?sn={device_sn}"
         if self.apptype == "New":
-            endpoint = (
-                f"/app_wireless_mower/device/getDeviceSettingBySn?deviceSn={device_sn}"
-            )
+            endpoint = f"/app_wireless_mower/device/getBysn?sn={device_sn}"
 
         device = self.get_device(device_sn)
         attempt = 0
