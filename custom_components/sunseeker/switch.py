@@ -17,6 +17,13 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
 
+    AppNew = False
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.data_handler.apptype == "New":
+            # Skip if the app type is New, as these sensors are not supported
+            AppNew = True
+            break
+
     async_add_entities(
         [
             SunseekerRainSwitch(coordinator, "Rain sensor", "sunseeker_rain_sensor")
@@ -24,28 +31,33 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
         ]
     )
 
-    async_add_entities(
-        [
-            SunseekerMultiZoneSwitch(coordinator, "MultiZone", "sunseeker_multi_zone")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+    if not AppNew:
+        async_add_entities(
+            [
+                SunseekerMultiZoneSwitch(
+                    coordinator, "MultiZone", "sunseeker_multi_zone"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
-    async_add_entities(
-        [
-            SunseekerMultiZoneAutoSwitch(
-                coordinator, "MultiZone auto", "sunseeker_multi_zone_auto"
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+        async_add_entities(
+            [
+                SunseekerMultiZoneAutoSwitch(
+                    coordinator, "MultiZone auto", "sunseeker_multi_zone_auto"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
-    async_add_entities(
-        [
-            SunseekerScheduleSwitch(coordinator, "Schedule active", "schedule_active")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+        async_add_entities(
+            [
+                SunseekerScheduleSwitch(
+                    coordinator, "Schedule active", "schedule_active"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
 
 class SunseekerRainSwitch(SunseekerEntity, SwitchEntity):

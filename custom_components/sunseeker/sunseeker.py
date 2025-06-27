@@ -1,11 +1,15 @@
 """SunseekerPy."""
 
+import base64
 import json
 import logging
 from threading import Timer
 import time
 import uuid
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 import paho.mqtt.client as mqtt
 import requests
 
@@ -20,11 +24,25 @@ class SunseekerDevice:
     def __init__(self, Devicesn) -> None:
         """Init."""
 
+        self.apptype = "Old"  # Default app type
         self.devicesn = Devicesn
         self.devicedata = {}
         self.settings = {}
         self.power = 0
         self.mode = 0
+        # New apptype modes:
+        # Unknown	   = 0,
+        # Idle		   = 1,
+        # Working 	   = 2,
+        # Pause		   = 3,
+        # Error		   = 6,
+        # Return       = 7,
+        # ReturnPause  = 8,
+        # Charging	   = 9,
+        # ChargingFull = 10,
+        # Offline	   = 13,
+        # Locating	   = 15,
+        # Stopp		   = 18
         self.errortype = 0
         self.station = False
         self.wifi_lv = 0
@@ -53,6 +71,7 @@ class SunseekerDevice:
         self.DeviceModel = ""
         self.DeviceName = ""
         self.DeviceBluetooth = ""
+        self.DeviceWifiAddress = ""
         self.Schedule: SunseekerSchedule = SunseekerSchedule()
 
     def updateschedule(self) -> None:
@@ -68,28 +87,37 @@ class SunseekerDevice:
         """Init values at upstart."""
         self.power = self.devicedata["data"].get("electricity")
         self.mode = int(self.devicedata["data"].get("workStatusCode"))
-        self.station = self.devicedata["data"].get("stationFlag")
+        if self.apptype == "Old":
+            self.station = self.devicedata["data"].get("stationFlag")
         self.rain_en = self.devicedata["data"].get("rainFlag")
         self.rain_delay_set = int(self.devicedata["data"].get("rainDelayDuration"))
-        self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
+        if self.apptype == "Old":
+            self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
+        else:
+            self.rain_delay_left = self.devicedata["data"].get("rainCountdown")
         if self.devicedata["data"].get("rainStatusCode") == None:  # noqa: E711
             self.rain_status = 0
         else:
             self.rain_status = int(self.devicedata["data"].get("rainStatusCode"))
+        # Old
         if self.devicedata["data"].get("onlineFlag"):
             self.deviceOnlineFlag = '{"online":"1"}'
-        self.zoneOpenFlag = self.settings["data"].get("zoneOpenFlag")
-        self.mul_en = self.settings["data"].get("zoneOpenFlag")
-        self.mul_auto = self.settings["data"].get("zoneAutomaticFlag")
-        self.mul_zon1 = self.settings["data"].get("zoneFirstPercentage")
-        self.mul_zon2 = self.settings["data"].get("zoneSecondPercentage")
-        self.mul_zon3 = self.settings["data"].get("zoneThirdPercentage")
-        self.mul_zon4 = self.settings["data"].get("zoneFourthPercentage")
-        self.mulpro_zon1 = self.settings["data"].get("proFirst")
-        self.mulpro_zon2 = self.settings["data"].get("proSecond")
-        self.mulpro_zon3 = self.settings["data"].get("proThird")
-        self.mulpro_zon4 = self.settings["data"].get("proFour")
-        self.updateschedule()
+        # New
+        if self.devicedata["data"].get("DeviceonlineFlag"):
+            self.deviceOnlineFlag = self.devicedata["data"].get("DeviceonlineFlag")
+        if self.apptype == "Old":
+            self.zoneOpenFlag = self.settings["data"].get("zoneOpenFlag")
+            self.mul_en = self.settings["data"].get("zoneOpenFlag")
+            self.mul_auto = self.settings["data"].get("zoneAutomaticFlag")
+            self.mul_zon1 = self.settings["data"].get("zoneFirstPercentage")
+            self.mul_zon2 = self.settings["data"].get("zoneSecondPercentage")
+            self.mul_zon3 = self.settings["data"].get("zoneThirdPercentage")
+            self.mul_zon4 = self.settings["data"].get("zoneFourthPercentage")
+            self.mulpro_zon1 = self.settings["data"].get("proFirst")
+            self.mulpro_zon2 = self.settings["data"].get("proSecond")
+            self.mulpro_zon3 = self.settings["data"].get("proThird")
+            self.mulpro_zon4 = self.settings["data"].get("proFour")
+            self.updateschedule()
 
 
 class SunseekerScheduleDay:
@@ -176,11 +204,12 @@ class SunseekerSchedule:
 class SunseekerRoboticmower:
     """SunseekerRobot class."""
 
-    def __init__(self, brand, email, password, language) -> None:
+    def __init__(self, brand, apptype, email, password, language) -> None:
         """Init function."""
 
         self.language = language
         self.brand = brand
+        self.apptype = apptype
         self.username = email
         self.password = password
         self.deviceArray = []
@@ -194,6 +223,15 @@ class SunseekerRoboticmower:
         self.robotList = []
 
         self.login_ok: bool = False
+        self.url = "https://server.sk-robot.com/api"
+        self.host = "server.sk-robot.com"
+        if self.apptype == "New":
+            self.url = "https://wirefree-specific.sk-robot.com/api"
+            self.host = "wirefree-specific.sk-robot.com"
+
+        self.appId = "0123456789abcdef"
+        self.mqtt_passwd = str(uuid.uuid4()).replace("-", "")[:24]
+        self.public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u\n7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg\n2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeu\nCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrC\nftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWB\nSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4\nXwIDAQAB\n-----END PUBLIC KEY-----"
 
     def get_device(self, devicesn) -> SunseekerDevice:
         """Get the device object."""
@@ -209,7 +247,7 @@ class SunseekerRoboticmower:
     def on_load(self):
         """Init the robots."""
         if not self.username or not self.password:
-            _LOGGER.debug("Please set username and password in the instance settings")
+            _LOGGER.error("Please set username and password in the instance settings")
             return
 
         if self.login():
@@ -222,13 +260,20 @@ class SunseekerRoboticmower:
                     ad = SunseekerDevice(device_sn)
                     ad.DeviceModel = device["deviceModelName"]
                     ad.DeviceName = device["deviceName"]
-                    ad.DeviceBluetooth = device["bluetoothMac"]
+                    ad.apptype = self.apptype
+                    if self.apptype == "Old":
+                        ad.DeviceWifiAddress = device["ipAddr"]
+                    else:
+                        ad.DeviceBluetooth = device["bluetoothMac"]
                     self.robotList.append(ad)
                     self.get_settings(device_sn)
                 for device_sn in self.deviceArray:
                     self.update_devices(device_sn)
                     self.get_device(device_sn).InitValues()
-                self.connect_mqtt()
+                if self.apptype == "New":
+                    self.connect_mqtt_new()
+                else:
+                    self.connect_mqtt()
 
             self.refresh_token_interval = Timer(
                 (self.session.get("expires_in") or 3600) * 1000, self.refresh_token
@@ -237,27 +282,33 @@ class SunseekerRoboticmower:
 
     def login(self) -> bool:
         """Login."""
+
         login_attempt = 0
         while login_attempt < MAX_LOGIN_RETRIES:
             if login_attempt > 0:
                 time.sleep(1)
             login_attempt = login_attempt + 1
             try:
+                headers_ = {
+                    "Accept-Language": self.language,
+                    "Authorization": "Basic YXBwOmFwcA==",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Connection": "Keep-Alive",
+                    "User-Agent": "okhttp/4.8.1",
+                }
+                data_ = {
+                    "username": self.username,
+                    "password": self.password,
+                    "grant_type": "password",
+                    "scope": "server",
+                }
+                url_ = self.url + "/auth/oauth/token"
+
+                _LOGGER.debug(f"Login header: {headers_} data: {data_} url: {url_}")  # noqa: G004
                 response = requests.post(
-                    url="https://server.sk-robot.com/api/auth/oauth/token",
-                    headers={
-                        "Accept-Language": self.language,
-                        "Authorization": "Basic YXBwOmFwcA==",
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "Connection": "Keep-Alive",
-                        "User-Agent": "okhttp/4.8.1",
-                    },
-                    data={
-                        "username": self.username,
-                        "password": self.password,
-                        "grant_type": "password",
-                        "scope": "server",
-                    },
+                    url=url_,
+                    headers=headers_,
+                    data=data_,
                     timeout=10,
                 )
 
@@ -280,8 +331,52 @@ class SunseekerRoboticmower:
                 _LOGGER.debug(f"Login attempt {login_attempt}: failed {error}")  # noqa: G004
         return False
 
+    def connect_mqtt_new(self):
+        """Connect mqtt new."""
+
+        encrypted_pass = self.encrypt_rsa_base64(self.mqtt_passwd, self.public_key)
+        _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
+        _LOGGER.debug("MQTT encrypted password: " + encrypted_pass)  # noqa: G003
+        self.edit_password_mqtt(encrypted_pass)
+
+        if self.mqtt_client:
+            self.mqtt_client.disconnect()
+
+        self.mqtt_client = mqtt.Client(client_id=self.client_id, protocol=mqtt.MQTTv311)
+        self.mqtt_client.on_connect = self.on_mqtt_connect
+        self.mqtt_client.on_message = self.on_mqtt_message
+        self.mqtt_client.on_disconnect = self.on_mqtt_disconnect
+        self.mqtt_client.on_error = self.on_mqtt_error
+        self.mqtt_client.on_close = self.on_mqtt_close
+        self.mqtt_client.username_pw_set(
+            self.session["username"] + self.appId, self.mqtt_passwd
+        )
+        self.mqtt_client.tls_set()
+        host = "wfsmqtt-specific.sk-robot.com"
+        _LOGGER.debug("MQTT host: " + host)  # noqa: G003
+        _LOGGER.debug("MQTT username: " + self.session["username"] + self.appId)  # noqa: G003
+        _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
+        try:
+            self.mqtt_client.connect(
+                host=host,
+                keepalive=60,
+                port=1884,
+            )
+            _LOGGER.debug("MQTT starting loop")
+            self.mqtt_client.loop_start()
+        except Exception as error:  # noqa: BLE001
+            _LOGGER.debug("MQTT connect error: " + str(error))  # noqa: G003
+
+    def encrypt_rsa_base64(self, text: str, public_key_pem: str) -> str:
+        """Encrypt text with RSA public key and return base64 encoded string."""
+        public_key = serialization.load_pem_public_key(
+            public_key_pem.encode(), backend=default_backend()
+        )
+        encrypted = public_key.encrypt(text.encode("utf-8"), padding.PKCS1v15())
+        return base64.b64encode(encrypted).decode("utf-8")
+
     def connect_mqtt(self):
-        """Connect mgtt."""
+        """Connect mqtt."""
         if self.mqtt_client:
             self.mqtt_client.disconnect()
 
@@ -309,12 +404,16 @@ class SunseekerRoboticmower:
     def on_mqtt_connect(self, client, userdata, flags, rc):
         """On mqtt connect."""
         _LOGGER.debug("MQTT connected event")
+        if self.apptype == "Old":
+            ep = "app"
+        elif self.apptype == "New":
+            ep = "wirelessdevice"
+
+        sub = f"/{ep}/" + str(self.session["user_id"]) + "/get"
         _LOGGER.debug(
-            "MQTT subscribe to: " + "/app/" + str(self.session["user_id"]) + "/get"  # noqa: G003
+            f"MQTT subscribe to: {sub}"  # noqa: G004
         )
-        self.mqtt_client.subscribe(
-            "/app/" + str(self.session["user_id"]) + "/get", qos=0
-        )
+        self.mqtt_client.subscribe(sub, qos=0)
         _LOGGER.debug("MQTT subscribe ok")
 
     def on_mqtt_message(self, client, userdata, message):  # noqa: C901
@@ -331,6 +430,21 @@ class SunseekerRoboticmower:
                     device.power = data.get("power")
                 if "mode" in data:
                     device.mode = data.get("mode")
+                    if "errortype" in data:
+                        if device.errortype != data.get("errortype"):
+                            device.forceupdate = True
+                        device.errortype = data.get("errortype")
+                    else:
+                        if device.errortype != 0:
+                            device.forceupdate = True
+                        device.errortype = 0
+
+                    if device.forceupdate:
+                        device.forceupdate = False
+                        update_timer = Timer(10, self.update_devices, [devicesn])
+                        update_timer.start()
+                if "status" in data:
+                    device.mode = data.get("status")
                     if "errortype" in data:
                         if device.errortype != data.get("errortype"):
                             device.forceupdate = True
@@ -403,6 +517,16 @@ class SunseekerRoboticmower:
                 if "Sun" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Sun"), 7)
                     schedule = True
+                # New apptype values
+                if "elec" in data:
+                    device.power = data.get("elec")
+                if "rain_countdown" in data:
+                    device.rain_delay_left = data.get("rain_countdown")
+                if "rain" in data:
+                    if "rain_flag" in data.get("rain"):
+                        device.rain_en = data.get("rain").get("rain_flag")
+                    if "delay" in data.get("rain"):
+                        device.rain_delay_set = data.get("rain").get("delay")
                 if device.dataupdated is not None:
                     device.dataupdated(device.devicesn, schedule)
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
@@ -419,6 +543,9 @@ class SunseekerRoboticmower:
 
     def get_device_list(self):
         """Get device."""
+        endpoint = "/mower/device-user/list"
+        if self.apptype == "New":
+            endpoint = "/app_wireless_mower/device-user/allDevice"
         attempt = 0
         while attempt < MAX_LOGIN_RETRIES:
             if attempt > 0:
@@ -426,16 +553,19 @@ class SunseekerRoboticmower:
             attempt = attempt + 1
 
             try:
+                url_ = self.url + endpoint
+                headers_ = {
+                    "Content-Type": "application/json",
+                    "Accept-Language": self.language,
+                    "Authorization": "bearer " + self.session["access_token"],
+                    "Host": self.host,
+                    "Connection": "Keep-Alive",
+                    "User-Agent": "okhttp/4.4.1",
+                }
+                _LOGGER.debug(f"Get device list header: {headers_} url: {url_}")  # noqa: G004
                 response = requests.get(
-                    url="https://server.sk-robot.com/api/mower/device-user/list",
-                    headers={
-                        "Content-Type": "application/json",
-                        "Accept-Language": self.language,
-                        "Authorization": "bearer " + self.session["access_token"],
-                        "Host": "server.sk-robot.com",
-                        "Connection": "Keep-Alive",
-                        "User-Agent": "okhttp/4.4.1",
-                    },
+                    url=url_,
+                    headers=headers_,
                     timeout=10,
                 )
                 response_data = response.json()
@@ -467,6 +597,9 @@ class SunseekerRoboticmower:
 
     def get_settings(self, snr):
         """Get settings."""
+        endpoint = f"/mower/device-setting/{snr}"
+        if self.apptype == "New":
+            endpoint = f"/app_wireless_mower/device/info/{snr}"
         attempt = 0
         while attempt < MAX_LOGIN_RETRIES:
             if attempt > 0:
@@ -474,16 +607,19 @@ class SunseekerRoboticmower:
             attempt = attempt + 1
 
             try:
+                url_ = self.url + endpoint
+                headers_ = {
+                    "Accept-Language": self.language,
+                    "Authorization": "bearer " + self.session["access_token"],
+                    "Host": self.host,
+                    "Connection": "Keep-Alive",
+                    "User-Agent": "okhttp/4.4.1",
+                }
+                _LOGGER.debug(f"Get settings header: {headers_} url: {url_}")  # noqa: G004
                 device = self.get_device(snr)
                 response = requests.get(
-                    url=f"https://server.sk-robot.com/api/mower/device-setting/{snr}",
-                    headers={
-                        "Accept-Language": self.language,
-                        "Authorization": "bearer " + self.session["access_token"],
-                        "Host": "server.sk-robot.com",
-                        "Connection": "Keep-Alive",
-                        "User-Agent": "okhttp/4.4.1",
-                    },
+                    url=url_,
+                    headers=headers_,
                     timeout=10,
                 )
                 response_data = response.json()
@@ -512,6 +648,12 @@ class SunseekerRoboticmower:
 
     def update_devices(self, device_sn):
         """Update device."""
+        endpoint = f"/mower/device/getBysn?sn={device_sn}"
+        if self.apptype == "New":
+            endpoint = (
+                f"/app_wireless_mower/device/getDeviceSettingBySn?deviceSn={device_sn}"
+            )
+
         device = self.get_device(device_sn)
         attempt = 0
         while attempt < MAX_LOGIN_RETRIES:
@@ -522,25 +664,26 @@ class SunseekerRoboticmower:
             status_array = [
                 {
                     "path": "status",
-                    "url": "https://server.sk-robot.com/api/mower/device/getBysn?sn=$id",
+                    "url": self.url + endpoint,
                     "desc": "Status 1x update per hour",
                 },
             ]
 
             for element in status_array:
-                url = element["url"].replace("$id", device_sn)
+                url = element["url"]
 
                 try:
-                    response = requests.request(
-                        method=element.get("method", "get"),
+                    headers = {
+                        "Accept-Language": self.language,
+                        "Authorization": "bearer " + self.session["access_token"],
+                        "Host": self.host,
+                        "Connection": "Keep-Alive",
+                        "User-Agent": "okhttp/4.4.1",
+                    }
+                    _LOGGER.debug(f"Get status header: {headers} url: {url}")  # noqa: G004
+                    response = requests.get(
                         url=url,
-                        headers={
-                            "Accept-Language": self.language,
-                            "Authorization": "bearer " + self.session["access_token"],
-                            "Host": "server.sk-robot.com",
-                            "Connection": "Keep-Alive",
-                            "User-Agent": "okhttp/4.4.1",
-                        },
+                        headers=headers,
                         timeout=10,
                     )
                     response_data = response.json()
@@ -578,21 +721,25 @@ class SunseekerRoboticmower:
         _LOGGER.debug("Refresh token")
 
         try:
+            url = self.url + "/auth/oauth/token"
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "Basic YXBwOmFwcA==",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            data = {
+                "grant_type": "refresh_token",
+                "refresh_token": self.session["refresh_token"],
+                "scope": "server",
+            }
+            _LOGGER.debug(f"Refresh token header: {headers} data: {data} url: {url}")  # noqa: G004
             response = requests.post(
-                url="https://server.sk-robot.com/api/auth/oauth/token",
-                headers={
-                    "Accept-Language": self.language,
-                    "Authorization": "Basic YXBwOmFwcA==",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Host": "server.sk-robot.com",
-                    "Connection": "Keep-Alive",
-                    "User-Agent": "okhttp/4.4.1",
-                },
-                data={
-                    "grant_type": "refresh_token",
-                    "refresh_token": self.session["refresh_token"],
-                    "scope": "server",
-                },
+                url=url,
+                headers=headers,
+                data=data,
                 timeout=10,
             )
             response_data = response.json()
@@ -638,6 +785,11 @@ class SunseekerRoboticmower:
     def border(self, devicesn):
         """Border."""
         _LOGGER.debug("Border")
+        self.set_state_change("mode", 4, devicesn)
+
+    def stop(self, devicesn):
+        """Stop."""
+        _LOGGER.debug("Stop")
         self.set_state_change("mode", 4, devicesn)
 
     def refresh(self, devicesn):
@@ -738,18 +890,20 @@ class SunseekerRoboticmower:
                 time.sleep(1)
             attempt = attempt + 1
             try:
-                _LOGGER.debug(data)
+                url = self.url + "/api/app_mower/device-schedule/setScheduling"
+                headers = {
+                    "Accept-Language": self.language,
+                    "Authorization": "bearer " + self.session["access_token"],
+                    "Content-Type": "application/json; charset=UTF-8",
+                    "Host": self.host,
+                    "Connection": "Keep-Alive",
+                    "User-Agent": "okhttp/4.8.1",
+                    "Accept-Encoding": "gzip",
+                }
+                _LOGGER.debug(f"Set schedule url: {url} header: {headers} data: {data}")  # noqa: G004
                 response = requests.post(
-                    url="https://server.sk-robot.com/api/app_mower/device-schedule/setScheduling",
-                    headers={
-                        "Accept-Language": self.language,
-                        "Authorization": "bearer " + self.session["access_token"],
-                        "Content-Type": "application/json; charset=UTF-8",
-                        "Host": "server.sk-robot.com",
-                        "Connection": "Keep-Alive",
-                        "User-Agent": "okhttp/4.8.1",
-                        "Accept-Encoding": "gzip",
-                    },
+                    url=url,
+                    headers=headers,
                     json=data,
                     timeout=10,
                 )
@@ -807,6 +961,7 @@ class SunseekerRoboticmower:
                 time.sleep(1)
             attempt = attempt + 1
             try:
+                url = self.url + "/app_mower/device/setZones"
                 data = {
                     "appId": self.session["user_id"],
                     "deviceSn": devicesn,
@@ -826,18 +981,21 @@ class SunseekerRoboticmower:
                     "zoneSecondPercentage": zone2,
                     "zoneThirdPercentage": zone3,
                 }
-                _LOGGER.debug(data)
+                headers = {
+                    "Accept-Language": self.language,
+                    "Authorization": "bearer " + self.session["access_token"],
+                    "Content-Type": "application/json; charset=UTF-8",
+                    "Host": self.host,
+                    "Connection": "Keep-Alive",
+                    "User-Agent": "okhttp/4.8.1",
+                    "Accept-Encoding": "gzip",
+                }
+                _LOGGER.debug(
+                    f"Set zone status url: {url} header: {headers} data: {data}"  # noqa: G004
+                )
                 response = requests.post(
-                    url="https://server.sk-robot.com/api/app_mower/device/setZones",
-                    headers={
-                        "Accept-Language": self.language,
-                        "Authorization": "bearer " + self.session["access_token"],
-                        "Content-Type": "application/json; charset=UTF-8",
-                        "Host": "server.sk-robot.com",
-                        "Connection": "Keep-Alive",
-                        "User-Agent": "okhttp/4.8.1",
-                        "Accept-Encoding": "gzip",
-                    },
+                    url=url,
+                    headers=headers,
                     json=data,
                     timeout=10,
                 )
@@ -884,23 +1042,27 @@ class SunseekerRoboticmower:
                 time.sleep(1)
             attempt = attempt + 1
             try:
+                url = (self.url + "/api/app_mower/device/setRain",)
                 data = {
                     "appId": self.session["user_id"],
                     "deviceSn": devicesn,
                     "rainDelayDuration": delaymin,
                     "rainFlag": state,
                 }
-                _LOGGER.debug(data)
+                headers = {
+                    "Accept-Language": self.language,
+                    "Authorization": "bearer " + self.session["access_token"],
+                    "Content-Type": "application/json",
+                    "Host": self.host,
+                    "Connection": "Keep-Alive",
+                    "User-Agent": "okhttp/4.8.1",
+                }
+                _LOGGER.debug(
+                    f"Set rain status url: {url} header: {headers} data: {data}"  # noqa: G004
+                )
                 response = requests.post(
-                    url="https://server.sk-robot.com/api/app_mower/device/setRain",
-                    headers={
-                        "Accept-Language": self.language,
-                        "Authorization": "bearer " + self.session["access_token"],
-                        "Content-Type": "application/json",
-                        "Host": "server.sk-robot.com",
-                        "Connection": "Keep-Alive",
-                        "User-Agent": "okhttp/4.8.1",
-                    },
+                    url=url,
+                    headers=headers,
                     json=data,
                     timeout=10,
                 )
@@ -940,29 +1102,63 @@ class SunseekerRoboticmower:
                 _LOGGER.debug(f"Set rain status attempt {attempt}: failed {error}")  # noqa: G004
 
     def set_state_change(self, command, state, devicesn):
-        """Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Border."""
+        """Old Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Border."""
+        # New Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Stop.
         # device_id = self.DeviceSn  # self.devicedata["data"].get("id")
+        endpoint = "/api/app_mower/device/setWorkStatus"
+        if self.apptype == "New":
+            endpoint = "/iot_mower/wireless/device/action"
+
         attempt = 0
         while attempt < MAX_SET_CONFIG_RETRIES:
             if attempt > 0:
                 time.sleep(1)
             attempt = attempt + 1
             try:
-                data = {
-                    "appId": self.session["user_id"],
-                    "deviceSn": devicesn,
-                    "mode": state,
+                match self.apptype:
+                    case "Old":
+                        data = {
+                            "appId": self.session["user_id"],
+                            "deviceSn": devicesn,
+                            "mode": state,
+                        }
+                    case "New":
+                        if state == 1:
+                            cmd = "start"
+                            cmdid = "startWork"
+                        elif state == 0:
+                            cmd = "pause"
+                            cmdid = "pauseWork"
+                        elif state == 2:
+                            cmd = "start_find_charger"
+                            cmdid = "startFindCharger"
+                        elif state == 4:
+                            cmd = "stop"
+                            cmdid = "stopWork"
+
+                        data = {
+                            "appId": self.session["user_id"],
+                            "cmd": cmd,
+                            "deviceSn": devicesn,
+                            "id": cmdid,
+                            "method": "action",
+                            "work_id": 0,
+                        }
+                headers = {
+                    "Accept-Language": self.language,
+                    "Authorization": "bearer " + self.session["access_token"],
+                    "Content-Type": "application/json",
+                    "Host": self.host,
+                    "Connection": "Keep-Alive",
+                    "User-Agent": "okhttp/4.8.1",
                 }
+                url = self.url + endpoint
+                _LOGGER.debug(
+                    f"Set state change url: {url} header: {headers} data: {data}"  # noqa: G004
+                )
                 response = requests.post(
-                    url="https://server.sk-robot.com/api/app_mower/device/setWorkStatus",
-                    headers={
-                        "Accept-Language": self.language,
-                        "Authorization": "bearer " + self.session["access_token"],
-                        "Content-Type": "application/json",
-                        "Host": "server.sk-robot.com",
-                        "Connection": "Keep-Alive",
-                        "User-Agent": "okhttp/4.8.1",
-                    },
+                    url=url,
+                    headers=headers,
                     json=data,
                     timeout=10,
                 )
@@ -1005,3 +1201,54 @@ class SunseekerRoboticmower:
                 self.get_device(devicesn).error_text = error
                 self.get_device(devicesn).dataupdated(devicesn, False)
                 _LOGGER.debug(f"Set state change attempt {attempt}: failed {error}")  # noqa: G004
+
+    def edit_password_mqtt(self, password):
+        """Updates MQTT password."""  # noqa: D401
+        attempt = 0
+        while attempt < MAX_SET_CONFIG_RETRIES:
+            if attempt > 0:
+                time.sleep(1)
+            attempt = attempt + 1
+            try:
+                data_ = {
+                    "appIdCode": self.appId,
+                    "appType": 2,
+                    "mqttsPassword": password,
+                    "operatingSystemCode": "android",
+                }
+                headers_ = {
+                    "Authorization": "bearer " + self.session["access_token"],
+                }
+                url_ = self.url + "/admin/user/edit"
+                _LOGGER.debug("Edit password mqtt")
+                _LOGGER.debug(f"data: {data_}")  # noqa: G004
+                _LOGGER.debug(f"headers: {headers_}")  # noqa: G004
+                _LOGGER.debug(f"url: {url_}")  # noqa: G004
+                response = requests.put(
+                    url=url_,
+                    headers=headers_,
+                    json=data_,
+                    timeout=10,
+                )
+                response_data = response.json()
+                _LOGGER.debug(json.dumps(response_data))
+                if response_data.get("ok") is False:
+                    _LOGGER.debug(response_data.get("msg"))
+                return  # noqa: TRY300
+
+            except requests.exceptions.HTTPError as errh:
+                _LOGGER.debug(
+                    f"Set MQTT password attempt {attempt}: Http Error:  {errh}"  # noqa: G004
+                )
+            except requests.exceptions.ConnectionError as errc:
+                _LOGGER.debug(
+                    f"Set MQTT password attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
+                )
+            except requests.exceptions.Timeout as errt:
+                _LOGGER.debug(
+                    f"Set MQTT password attempt {attempt}: Timeout Error: {errt}"  # noqa: G004
+                )
+            except requests.exceptions.RequestException as err:
+                _LOGGER.debug(f"Set MQTT password attempt {attempt}: Error: {err}")  # noqa: G004
+            except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+                _LOGGER.debug(f"Set MQTT password attempt {attempt}: failed {error}")  # noqa: G004

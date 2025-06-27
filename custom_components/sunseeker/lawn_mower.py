@@ -17,12 +17,22 @@ from homeassistant.core import HomeAssistant
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
     SUNSEEKER_CHARGING,
+    SUNSEEKER_CHARGING_FULL,
+    SUNSEEKER_ERROR,
     SUNSEEKER_GOING_HOME,
+    SUNSEEKER_IDLE,
+    SUNSEEKER_LOCATING,
     SUNSEEKER_MOWING,
     SUNSEEKER_MOWING_BORDER,
+    SUNSEEKER_OFFLINE,
+    SUNSEEKER_PAUSE,
+    SUNSEEKER_RETURN,
+    SUNSEEKER_RETURN_PAUSE,
     SUNSEEKER_STANDBY,
+    SUNSEEKER_STOP,
     SUNSEEKER_UNKNOWN,
     SUNSEEKER_UNKNOWN_4,
+    SUNSEEKER_WORKING,
 )
 from .entity import SunseekerEntity
 
@@ -93,18 +103,49 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
                 + ")"
             )
         ival = self._data_handler.get_device(self._sn).mode
+
         if ival == 0:
-            val = SUNSEEKER_STANDBY
+            if self._data_handler.apptype == "New":
+                val = SUNSEEKER_UNKNOWN
+            else:
+                val = SUNSEEKER_STANDBY
         elif ival == 1:
-            val = SUNSEEKER_MOWING
+            if self._data_handler.apptype == "New":
+                val = SUNSEEKER_IDLE
+            else:
+                val = SUNSEEKER_MOWING
         elif ival == 2:
-            val = SUNSEEKER_GOING_HOME
+            if self._data_handler.apptype == "New":
+                val = SUNSEEKER_WORKING
+            else:
+                val = SUNSEEKER_GOING_HOME
         elif ival == 3:
-            val = SUNSEEKER_CHARGING
+            if self._data_handler.apptype == "New":
+                val = SUNSEEKER_PAUSE
+            else:
+                val = SUNSEEKER_CHARGING
         elif ival == 4:
             val = SUNSEEKER_UNKNOWN_4
+        elif ival == 6:
+            val = SUNSEEKER_ERROR
         elif ival == 7:
+            if self._data_handler.apptype == "New":
+                val = SUNSEEKER_RETURN
+            else:
+                val = SUNSEEKER_MOWING_BORDER
             val = SUNSEEKER_MOWING_BORDER
+        elif ival == 8:
+            val = SUNSEEKER_RETURN_PAUSE
+        elif ival == 9:
+            val = SUNSEEKER_CHARGING
+        elif ival == 10:
+            val = SUNSEEKER_CHARGING_FULL
+        elif ival == 13:
+            val = SUNSEEKER_OFFLINE
+        elif ival == 15:
+            val = SUNSEEKER_LOCATING
+        elif ival == 18:
+            val = SUNSEEKER_STOP
         else:
             val = SUNSEEKER_UNKNOWN
         return val

@@ -17,62 +17,70 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
 
-    async_add_entities(
-        [
-            SunseekerScheduleText(
-                coordinator, "Schedule Monday", 1, "sunseeker_schedule_text_1"
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerScheduleText(
-                coordinator, "Schedule Tuesday", 2, "sunseeker_schedule_text_2"
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerScheduleText(
-                coordinator, "Schedule Wednesday", 3, "sunseeker_schedule_text_3"
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerScheduleText(
-                coordinator, "Schedule Thursday", 4, "sunseeker_schedule_text_4"
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerScheduleText(
-                coordinator, "Schedule Fridays", 5, "sunseeker_schedule_text_5"
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerScheduleText(
-                coordinator, "Schedule Saturday", 6, "sunseeker_schedule_text_6"
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerScheduleText(
-                coordinator, "Schedule Sunday", 7, "sunseeker_schedule_text_7"
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+    AppNew = False
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.data_handler.apptype == "New":
+            # Skip if the app type is New, as these sensors are not supported
+            AppNew = True
+            break
+
+    if not AppNew:
+        async_add_entities(
+            [
+                SunseekerScheduleText(
+                    coordinator, "Schedule Monday", 1, "sunseeker_schedule_text_1"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerScheduleText(
+                    coordinator, "Schedule Tuesday", 2, "sunseeker_schedule_text_2"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerScheduleText(
+                    coordinator, "Schedule Wednesday", 3, "sunseeker_schedule_text_3"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerScheduleText(
+                    coordinator, "Schedule Thursday", 4, "sunseeker_schedule_text_4"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerScheduleText(
+                    coordinator, "Schedule Fridays", 5, "sunseeker_schedule_text_5"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerScheduleText(
+                    coordinator, "Schedule Saturday", 6, "sunseeker_schedule_text_6"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerScheduleText(
+                    coordinator, "Schedule Sunday", 7, "sunseeker_schedule_text_7"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
 
 class SunseekerScheduleText(SunseekerEntity, TextEntity):

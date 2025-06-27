@@ -16,6 +16,13 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
 
+    AppNew = False
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.data_handler.apptype == "New":
+            # Skip if the app type is New, as these sensors are not supported
+            AppNew = True
+            break
+
     async_add_entities(
         [
             SunseekerButton(coordinator, "Start", "start", "sunseeker_start")
@@ -34,12 +41,21 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    async_add_entities(
-        [
-            SunseekerButton(coordinator, "Border", "border", "sunseeker_border")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+    if not AppNew:
+        async_add_entities(
+            [
+                SunseekerButton(coordinator, "Border", "border", "sunseeker_border")
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+
+    if AppNew:
+        async_add_entities(
+            [
+                SunseekerButton(coordinator, "Stop", "stop", "sunseeker_stop")
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
 
 class SunseekerButton(SunseekerEntity, ButtonEntity):
@@ -75,3 +91,5 @@ class SunseekerButton(SunseekerEntity, ButtonEntity):
             await self.hass.async_add_executor_job(self._data_handler.pause, self._sn)
         elif self._valuepair == "border":
             await self.hass.async_add_executor_job(self._data_handler.border, self._sn)
+        elif self._valuepair == "stop":
+            await self.hass.async_add_executor_job(self._data_handler.stop, self._sn)

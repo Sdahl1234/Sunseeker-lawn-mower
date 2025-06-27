@@ -6,7 +6,13 @@ import logging
 import os
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
-from homeassistant.const import CONF_EMAIL, CONF_MODEL, CONF_PASSWORD, Platform
+from homeassistant.const import (
+    CONF_EMAIL,
+    CONF_MODEL,
+    CONF_MODEL_ID,
+    CONF_PASSWORD,
+    Platform,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -26,6 +32,7 @@ PLATFORMS = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.level = logging.DEBUG
 
 
 def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
@@ -45,10 +52,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     email = entry.data.get(CONF_EMAIL)
     password = entry.data.get(CONF_PASSWORD)
     brand = entry.data.get(CONF_MODEL)
+    apptype = entry.data.get(CONF_MODEL_ID, "Old")
 
     language = hass.config.language
 
-    data_handler = SunseekerRoboticmower(brand, email, password, language)
+    data_handler = SunseekerRoboticmower(brand, apptype, email, password, language)
     await hass.async_add_executor_job(data_handler.on_load)
     if not data_handler.login_ok:
         _LOGGER.error("Login error")
@@ -58,7 +66,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # robot = [1, 2]
     robot = data_handler.deviceArray
     robots = [
-        SunseekerDataCoordinator(hass, entry, data_handler, devicesn, brand)
+        SunseekerDataCoordinator(hass, entry, data_handler, devicesn, brand, apptype)
         for devicesn in robot
     ]
 
@@ -117,6 +125,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         data_handler: SunseekerRoboticmower,
         devicesn,
         brand,
+        apptype,
     ) -> None:
         """Initialize my coordinator."""
         super().__init__(
@@ -128,6 +137,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             # Polling interval. Will only be polled if there are subscribers.
             # update_interval=timedelta(seconds=5),  # 60 * 60),
         )
+        self.apptype = apptype
         self.brand = brand
         self.always_update = True
         self.data_handler = data_handler

@@ -10,21 +10,38 @@ from homeassistant.core import HomeAssistant
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
     SUNSEEKER_CHARGING,
+    SUNSEEKER_CHARGING_FULL,
     SUNSEEKER_DRY,
     SUNSEEKER_DRY_COUNTDOWN,
+    SUNSEEKER_ERROR,
     SUNSEEKER_GOING_HOME,
+    SUNSEEKER_IDLE,
+    SUNSEEKER_LOCATING,
     SUNSEEKER_MOWING,
     SUNSEEKER_MOWING_BORDER,
+    SUNSEEKER_OFFLINE,
+    SUNSEEKER_PAUSE,
+    SUNSEEKER_RETURN,
+    SUNSEEKER_RETURN_PAUSE,
     SUNSEEKER_STANDBY,
+    SUNSEEKER_STOP,
     SUNSEEKER_UNKNOWN,
     SUNSEEKER_UNKNOWN_4,
     SUNSEEKER_WET,
+    SUNSEEKER_WORKING,
 )
 from .entity import SunseekerEntity
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     """Async Setup entry."""
+
+    AppNew = False
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.data_handler.apptype == "New":
+            # Skip if the app type is New, as these sensors are not supported
+            AppNew = True
+            break
 
     async_add_devices(
         [
@@ -56,21 +73,22 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    async_add_devices(
-        [
-            SunseekerSensor(
-                coordinator,
-                None,
-                "Wifi level",
-                "Streger",
-                "wifi_lv",
-                "",
-                "mdi:wifi",
-                "sunseeker_wifi_level",
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+    if not AppNew:
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Wifi level",
+                    "Streger",
+                    "wifi_lv",
+                    "",
+                    "mdi:wifi",
+                    "sunseeker_wifi_level",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
     async_add_devices(
         [
             SunseekerSensor(
@@ -131,81 +149,82 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    async_add_devices(
-        [
-            SunseekerSensor(
-                coordinator,
-                SensorDeviceClass.DURATION,
-                "Actual mowing time",
-                "min",
-                "cur_min",
-                "",
-                "mdi:clock-time-three-outline",
-                "sunseeker_mowing_time",
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_devices(
-        [
-            SunseekerSensor(
-                coordinator,
-                SensorDeviceClass.POWER_FACTOR,
-                "Zone 1 start",
-                "%",
-                "mul_zon1",
-                "",
-                "mdi:map",
-                "sunseekerzone1",
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_devices(
-        [
-            SunseekerSensor(
-                coordinator,
-                SensorDeviceClass.POWER_FACTOR,
-                "Zone 2 start",
-                "%",
-                "mul_zon2",
-                "",
-                "mdi:map",
-                "sunseekerzone2",
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_devices(
-        [
-            SunseekerSensor(
-                coordinator,
-                SensorDeviceClass.POWER_FACTOR,
-                "Zone 3 start",
-                "%",
-                "mul_zon3",
-                "",
-                "mdi:map",
-                "sunseekerzone3",
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_devices(
-        [
-            SunseekerSensor(
-                coordinator,
-                SensorDeviceClass.POWER_FACTOR,
-                "Zone 4 start",
-                "%",
-                "mul_zon4",
-                "",
-                "mdi:map",
-                "sunseekerzone4",
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+    if not AppNew:
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    SensorDeviceClass.DURATION,
+                    "Actual mowing time",
+                    "min",
+                    "cur_min",
+                    "",
+                    "mdi:clock-time-three-outline",
+                    "sunseeker_mowing_time",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    SensorDeviceClass.POWER_FACTOR,
+                    "Zone 1 start",
+                    "%",
+                    "mul_zon1",
+                    "",
+                    "mdi:map",
+                    "sunseekerzone1",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    SensorDeviceClass.POWER_FACTOR,
+                    "Zone 2 start",
+                    "%",
+                    "mul_zon2",
+                    "",
+                    "mdi:map",
+                    "sunseekerzone2",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    SensorDeviceClass.POWER_FACTOR,
+                    "Zone 3 start",
+                    "%",
+                    "mul_zon3",
+                    "",
+                    "mdi:map",
+                    "sunseekerzone3",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    SensorDeviceClass.POWER_FACTOR,
+                    "Zone 4 start",
+                    "%",
+                    "mul_zon4",
+                    "",
+                    "mdi:map",
+                    "sunseekerzone4",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
     async_add_devices(
         [
             SunseekerSensor(
@@ -236,21 +255,22 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    async_add_devices(
-        [
-            SunseekerSensor(
-                coordinator,
-                None,
-                "Schedule",
-                None,
-                "Schedule",
-                "",
-                "mdi:calendar",
-                "sunseeker_schedule",
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+    if not AppNew:
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Schedule",
+                    None,
+                    "Schedule",
+                    "",
+                    "mdi:calendar",
+                    "sunseeker_schedule",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
 
 class SunseekerSensor(SunseekerEntity, SensorEntity):
@@ -338,17 +358,47 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                     + ")"
                 )
             elif ival == 0:
-                val = SUNSEEKER_STANDBY
+                if self._data_handler.apptype == "New":
+                    val = SUNSEEKER_UNKNOWN
+                else:
+                    val = SUNSEEKER_STANDBY
             elif ival == 1:
-                val = SUNSEEKER_MOWING
+                if self._data_handler.apptype == "New":
+                    val = SUNSEEKER_IDLE
+                else:
+                    val = SUNSEEKER_MOWING
             elif ival == 2:
-                val = SUNSEEKER_GOING_HOME
+                if self._data_handler.apptype == "New":
+                    val = SUNSEEKER_WORKING
+                else:
+                    val = SUNSEEKER_GOING_HOME
             elif ival == 3:
-                val = SUNSEEKER_CHARGING
+                if self._data_handler.apptype == "New":
+                    val = SUNSEEKER_PAUSE
+                else:
+                    val = SUNSEEKER_CHARGING
             elif ival == 4:
                 val = SUNSEEKER_UNKNOWN_4
+            elif ival == 6:
+                val = SUNSEEKER_ERROR
             elif ival == 7:
+                if self._data_handler.apptype == "New":
+                    val = SUNSEEKER_RETURN
+                else:
+                    val = SUNSEEKER_MOWING_BORDER
                 val = SUNSEEKER_MOWING_BORDER
+            elif ival == 8:
+                val = SUNSEEKER_RETURN_PAUSE
+            elif ival == 9:
+                val = SUNSEEKER_CHARGING
+            elif ival == 10:
+                val = SUNSEEKER_CHARGING_FULL
+            elif ival == 13:
+                val = SUNSEEKER_OFFLINE
+            elif ival == 15:
+                val = SUNSEEKER_LOCATING
+            elif ival == 18:
+                val = SUNSEEKER_STOP
             else:
                 val = SUNSEEKER_UNKNOWN
         elif self._valuepair == "wifi_lv":
@@ -358,9 +408,15 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             if ival == 0:
                 val = SUNSEEKER_DRY
             elif ival == 1:
-                val = SUNSEEKER_DRY_COUNTDOWN
+                if self._data_handler.apptype == "New":
+                    val = SUNSEEKER_WET
+                else:
+                    val = SUNSEEKER_DRY_COUNTDOWN
             elif ival == 2:
-                val = SUNSEEKER_WET
+                if self._data_handler.apptype == "New":
+                    val = SUNSEEKER_DRY_COUNTDOWN
+                else:
+                    val = SUNSEEKER_WET
             else:
                 val = SUNSEEKER_UNKNOWN
         elif self._valuepair == "Schedule":

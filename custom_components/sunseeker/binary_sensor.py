@@ -13,20 +13,27 @@ from .entity import SunseekerEntity
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     """Async Setup entry."""
 
-    async_add_devices(
-        [
-            SunseekerBinarySensor(
-                coordinator,
-                BinarySensorDeviceClass.PRESENCE,
-                "Dock",
-                None,
-                "Station",
-                "",
-                "sunseeker_dock",
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+    AppNew = False
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.data_handler.apptype == "New":
+            # Skip if the app type is New, as these sensors are not supported
+            AppNew = True
+            break
+    if not AppNew:
+        async_add_devices(
+            [
+                SunseekerBinarySensor(
+                    coordinator,
+                    BinarySensorDeviceClass.PRESENCE,
+                    "Dock",
+                    None,
+                    "Station",
+                    "",
+                    "sunseeker_dock",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
     async_add_devices(
         [
@@ -43,35 +50,36 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
         ]
     )
 
-    async_add_devices(
-        [
-            SunseekerBinarySensor(
-                coordinator,
-                None,
-                "Multizone",
-                None,
-                "mul_en",
-                "",
-                "sunseeker_multizone",
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+    if not AppNew:
+        async_add_devices(
+            [
+                SunseekerBinarySensor(
+                    coordinator,
+                    None,
+                    "Multizone",
+                    None,
+                    "mul_en",
+                    "",
+                    "sunseeker_multizone",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
-    async_add_devices(
-        [
-            SunseekerBinarySensor(
-                coordinator,
-                None,
-                "Multizone auto",
-                None,
-                "mul_auto",
-                "",
-                "sunseeker_multizoneauto",
-            )
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+        async_add_devices(
+            [
+                SunseekerBinarySensor(
+                    coordinator,
+                    None,
+                    "Multizone auto",
+                    None,
+                    "mul_auto",
+                    "",
+                    "sunseeker_multizoneauto",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
     async_add_devices(
         [

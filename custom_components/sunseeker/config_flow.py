@@ -3,13 +3,20 @@
 import voluptuous as vol
 
 from homeassistant import config_entries, core, exceptions
-from homeassistant.const import CONF_EMAIL, CONF_MODEL, CONF_NAME, CONF_PASSWORD
+from homeassistant.const import (
+    CONF_EMAIL,
+    CONF_MODEL,
+    CONF_MODEL_ID,
+    CONF_NAME,
+    CONF_PASSWORD,
+)
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import DOMAIN
 
 # _LOGGER = logging.getLogger(__name__)
+
 
 brands = [
     "Adano",
@@ -21,11 +28,22 @@ brands = [
     "Texas",
     "Grouw",
 ]
+
+apptypes = [
+    "Old",
+    "New",
+]
+
 DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_MODEL, default=False): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=brands, mode=selector.SelectSelectorMode.DROPDOWN
+            )
+        ),
+        vol.Required(CONF_MODEL_ID, default=False): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=apptypes, mode=selector.SelectSelectorMode.DROPDOWN
             )
         ),
         vol.Required(CONF_NAME): str,
@@ -35,12 +53,16 @@ DATA_SCHEMA = vol.Schema(
 )
 
 
-async def validate_input(hass: core.HomeAssistant, brand, name, email, password):
+async def validate_input(
+    hass: core.HomeAssistant, brand, apptype, name, email, password
+):
     """Validate the user input allows us to connect."""
 
     # Pre-validation for missing mandatory fields
     if not brand:
         raise MissingbrandValue("The 'brand' field is required.")
+    if not apptype:
+        raise MissingAppValue("The 'apptype' field is required.")
     if not name:
         raise MissingnameValue("The 'name' field is required.")
     if not email:
@@ -52,6 +74,7 @@ async def validate_input(hass: core.HomeAssistant, brand, name, email, password)
         if any(
             [
                 entry.data[CONF_MODEL] == brand,
+                entry.data[CONF_MODEL_ID] == apptype,
                 entry.data[CONF_NAME] == name,
                 entry.data[CONF_EMAIL] == email,
                 entry.data[CONF_PASSWORD] == password,
@@ -75,16 +98,18 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 brand = user_input[CONF_MODEL]
+                apptype = user_input[CONF_MODEL_ID]
                 name = user_input[CONF_NAME]
                 email = user_input[CONF_EMAIL]
                 password = user_input[CONF_PASSWORD].replace(" ", "")
-                await validate_input(self.hass, brand, name, email, password)
+                await validate_input(self.hass, brand, apptype, name, email, password)
                 unique_id = f"{name}"
                 await self.async_set_unique_id(unique_id)
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
                     title=unique_id,
                     data={
+                        CONF_MODEL_ID: apptype,
                         CONF_MODEL: brand,
                         CONF_NAME: name,
                         CONF_EMAIL: email,
@@ -97,10 +122,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except CannotConnect:
                 errors["base"] = "connection_error"
             except MissingEmailValue:
-                errors["base"] = "missing_name"
+                errors["base"] = "missing_Email"
             except MissingnameValue:
                 errors["base"] = "missing_name"
-
+            except MissingbrandValue:
+                errors["base"] = "missing_brand"
+            except MissingAppValue:
+                errors["base"] = "missing_apptype"
+            except MissingPasswordValue:
+                errors["base"] = "missing_password"
         return self.async_show_form(
             step_id="user",
             data_schema=DATA_SCHEMA,
@@ -138,13 +168,17 @@ class MissingbrandValue(exceptions.HomeAssistantError):
     """Error to indicate brand is missing."""
 
 
+class MissingAppValue(exceptions.HomeAssistantError):
+    """Error to indicate apptype is missing."""
+
+
 class MissingnameValue(exceptions.HomeAssistantError):
     """Error to indicate name is missing."""
 
 
 class MissingEmailValue(exceptions.HomeAssistantError):
-    """Error to indicate name is missing."""
+    """Error to indicate Email is missing."""
 
 
 class MissingPasswordValue(exceptions.HomeAssistantError):
-    """Error to indicate name is missing."""
+    """Error to indicate password is missing."""

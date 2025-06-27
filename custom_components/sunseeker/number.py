@@ -15,6 +15,12 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
+    AppNew = False
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.data_handler.apptype == "New":
+            # Skip if the app type is New, as these sensors are not supported
+            AppNew = True
+            break
 
     async_add_entities(
         [
@@ -22,55 +28,56 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    async_add_entities(
-        [
-            SunseekerZoneNumber(coordinator, "Zone1", 1, "sunseeker_zone1")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerZoneNumber(coordinator, "Zone2", 2, "sunseeker_zone2")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerZoneNumber(coordinator, "Zone3", 3, "sunseeker_zone3")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerZoneNumber(coordinator, "Zone4", 4, "sunseeker_zone4")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+    if not AppNew:
+        async_add_entities(
+            [
+                SunseekerZoneNumber(coordinator, "Zone1", 1, "sunseeker_zone1")
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerZoneNumber(coordinator, "Zone2", 2, "sunseeker_zone2")
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerZoneNumber(coordinator, "Zone3", 3, "sunseeker_zone3")
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerZoneNumber(coordinator, "Zone4", 4, "sunseeker_zone4")
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
-    async_add_entities(
-        [
-            SunseekerMulNumber(coordinator, "MulZone1", 1, "sunseeker_mulpro1")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerMulNumber(coordinator, "MulZone2", 2, "sunseeker_mulpro2")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerMulNumber(coordinator, "MulZone3", 3, "sunseeker_mulpro3")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-    async_add_entities(
-        [
-            SunseekerMulNumber(coordinator, "MulZone4", 4, "sunseeker_mulpro4")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
+        async_add_entities(
+            [
+                SunseekerMulNumber(coordinator, "MulZone1", 1, "sunseeker_mulpro1")
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerMulNumber(coordinator, "MulZone2", 2, "sunseeker_mulpro2")
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerMulNumber(coordinator, "MulZone3", 3, "sunseeker_mulpro3")
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerMulNumber(coordinator, "MulZone4", 4, "sunseeker_mulpro4")
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
 
 class SunseekerRainDelayNumber(SunseekerEntity, NumberEntity):
