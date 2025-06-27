@@ -256,6 +256,7 @@ class SunseekerRoboticmower:
                 self.get_device_list()
                 for device in self.devicelist["data"]:
                     device_sn = device["deviceSn"]
+                    deviceId = device["deviceId"]
                     self.deviceArray.append(device_sn)
                     ad = SunseekerDevice(device_sn)
                     ad.DeviceModel = device["deviceModelName"]
@@ -266,7 +267,7 @@ class SunseekerRoboticmower:
                     else:
                         ad.DeviceBluetooth = device["bluetoothMac"]
                     self.robotList.append(ad)
-                    self.get_settings(device_sn)
+                    self.get_settings(device_sn, deviceId)
                 for device_sn in self.deviceArray:
                     self.update_devices(device_sn)
                     self.get_device(device_sn).InitValues()
@@ -595,11 +596,11 @@ class SunseekerRoboticmower:
             except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
                 _LOGGER.debug(f"Get device list attempt {attempt}: failed {error}")  # noqa: G004
 
-    def get_settings(self, snr):
+    def get_settings(self, snr, deviceId):
         """Get settings."""
         endpoint = f"/mower/device-setting/{snr}"
         if self.apptype == "New":
-            endpoint = f"/app_wireless_mower/device/info/{snr}"
+            endpoint = f"/app_wireless_mower/device/info/{deviceId}"
         attempt = 0
         while attempt < MAX_LOGIN_RETRIES:
             if attempt > 0:
