@@ -262,7 +262,7 @@ class SunseekerRoboticmower:
                     ad.DeviceModel = device["deviceModelName"]
                     ad.DeviceName = device["deviceName"]
                     ad.apptype = self.apptype
-                    if self.apptype == "New":
+                    if self.apptype == "Old":
                         ad.DeviceWifiAddress = device["ipAddr"]
                     else:
                         ad.DeviceBluetooth = device["bluetoothMac"]
