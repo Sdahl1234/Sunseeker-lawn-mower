@@ -142,11 +142,15 @@ class SunseekerBinarySensor(SunseekerEntity, BinarySensorEntity):
             return self._data_handler.get_device(self._sn).mul_en
         if self._valuepair == "mul_auto":
             return self._data_handler.get_device(self._sn).mul_auto
-        if self._valuepair == "deviceOnlineFlag":
-            return (
-                self._data_handler.get_device(self._sn).deviceOnlineFlag
-                == '{"online":"1"}'
-            )
+        if self.coordinator.data_handler.apptype == "Old":
+            if self._valuepair == "deviceOnlineFlag":
+                return (
+                    self._data_handler.get_device(self._sn).deviceOnlineFlag
+                    == '{"online":"1"}'
+                )
+        elif self.coordinator.data_handler.apptype == "New":
+            if self._valuepair == "deviceOnlineFlag":
+                return self._data_handler.get_device(self._sn).deviceOnlineFlag
         return False
 
     @property

@@ -91,20 +91,18 @@ class SunseekerDevice:
             self.station = self.devicedata["data"].get("stationFlag")
         self.rain_en = self.devicedata["data"].get("rainFlag")
         self.rain_delay_set = int(self.devicedata["data"].get("rainDelayDuration"))
-        if self.apptype == "Old":
-            self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
-        else:
-            self.rain_delay_left = self.devicedata["data"].get("rainCountdown")
+        self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
         if self.devicedata["data"].get("rainStatusCode") == None:  # noqa: E711
             self.rain_status = 0
         else:
             self.rain_status = int(self.devicedata["data"].get("rainStatusCode"))
         # Old
-        if self.devicedata["data"].get("onlineFlag"):
-            self.deviceOnlineFlag = '{"online":"1"}'
-        # New
-        if self.devicedata["data"].get("DeviceonlineFlag"):
-            self.deviceOnlineFlag = self.devicedata["data"].get("DeviceonlineFlag")
+        if self.apptype == "Old":
+            if self.devicedata["data"].get("onlineFlag"):
+                self.deviceOnlineFlag = '{"online":"1"}'
+        elif self.apptype == "New":
+            if self.devicedata["data"].get("onlineFlag"):
+                self.deviceOnlineFlag = self.devicedata["data"].get("onlineFlag")
         if self.apptype == "Old":
             self.zoneOpenFlag = self.settings["data"].get("zoneOpenFlag")
             self.mul_en = self.settings["data"].get("zoneOpenFlag")
@@ -461,6 +459,21 @@ class SunseekerRoboticmower:
                             device.forceupdate = False
                             update_timer = Timer(10, self.update_devices, [devicesn])
                             update_timer.start()
+                            # New apptype values
+                    if "elec" in data.get("data"):
+                        device.power = data.get("data").get("elec")
+                    if "rain_countdown" in data.get("data"):
+                        device.rain_delay_left = data.get("data").get("rain_countdown")
+                    if "rain" in data.get("data"):
+                        if "rain_flag" in data.get("data").get("rain"):
+                            device.rain_en = (
+                                data.get("data").get("rain").get("rain_flag")
+                            )
+                        if "delay" in data.get("data").get("rain"):
+                            device.rain_delay_set = (
+                                data.get("data").get("rain").get("delay")
+                            )
+
                 if "station" in data:
                     device.station = data.get("station")
                 if "wifi_lv" in data:
@@ -520,16 +533,6 @@ class SunseekerRoboticmower:
                 if "Sun" in data:
                     device.Schedule.UpdateFromMqtt(data.get("Sun"), 7)
                     schedule = True
-                # New apptype values
-                if "elec" in data:
-                    device.power = data.get("elec")
-                if "rain_countdown" in data:
-                    device.rain_delay_left = data.get("rain_countdown")
-                if "rain" in data:
-                    if "rain_flag" in data.get("rain"):
-                        device.rain_en = data.get("rain").get("rain_flag")
-                    if "delay" in data.get("rain"):
-                        device.rain_delay_set = data.get("rain").get("delay")
                 if device.dataupdated is not None:
                     device.dataupdated(device.devicesn, schedule)
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
@@ -1043,13 +1046,25 @@ class SunseekerRoboticmower:
                 time.sleep(1)
             attempt = attempt + 1
             try:
-                url = (self.url + "/app_mower/device/setRain",)
-                data = {
-                    "appId": self.session["user_id"],
-                    "deviceSn": devicesn,
-                    "rainDelayDuration": delaymin,
-                    "rainFlag": state,
-                }
+                if self.apptype == "New":
+                    url = self.url + "/iot_mower/wireless/device/set_property"
+                    data = {
+                        "appId": self.session["user_id"],
+                        "delay": int(delaymin),
+                        "deviceSn": devicesn,
+                        "id": "setDevRain",
+                        "key": "rain",
+                        "method": "set_property",
+                        "rain_flag": state,
+                    }
+                else:
+                    url = self.url + "/app_mower/device/setRain"
+                    data = {
+                        "appId": self.session["user_id"],
+                        "deviceSn": devicesn,
+                        "rainDelayDuration": int(delaymin),
+                        "rainFlag": state,
+                    }
                 headers = {
                     "Accept-Language": self.language,
                     "Authorization": "bearer " + self.session["access_token"],
