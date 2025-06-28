@@ -411,6 +411,7 @@ class SunseekerRoboticmower:
             ep = "wirelessdevice"
 
         sub = f"/{ep}/" + str(self.session["user_id"]) + "/get"
+
         _LOGGER.debug(
             f"MQTT subscribe to: {sub}"  # noqa: G004
         )
@@ -444,21 +445,22 @@ class SunseekerRoboticmower:
                         device.forceupdate = False
                         update_timer = Timer(10, self.update_devices, [devicesn])
                         update_timer.start()
-                if "status" in data:
-                    device.mode = data.get("status")
-                    if "errortype" in data:
-                        if device.errortype != data.get("errortype"):
-                            device.forceupdate = True
-                        device.errortype = data.get("errortype")
-                    else:
-                        if device.errortype != 0:
-                            device.forceupdate = True
-                        device.errortype = 0
+                if "data" in data:
+                    if "status" in data.get("data"):
+                        device.mode = data.get("data").get("status")
+                        if "errortype" in data:
+                            if device.errortype != data.get("errortype"):
+                                device.forceupdate = True
+                            device.errortype = data.get("errortype")
+                        else:
+                            if device.errortype != 0:
+                                device.forceupdate = True
+                            device.errortype = 0
 
-                    if device.forceupdate:
-                        device.forceupdate = False
-                        update_timer = Timer(10, self.update_devices, [devicesn])
-                        update_timer.start()
+                        if device.forceupdate:
+                            device.forceupdate = False
+                            update_timer = Timer(10, self.update_devices, [devicesn])
+                            update_timer.start()
                 if "station" in data:
                     device.station = data.get("station")
                 if "wifi_lv" in data:
@@ -1041,7 +1043,7 @@ class SunseekerRoboticmower:
                 time.sleep(1)
             attempt = attempt + 1
             try:
-                url = (self.url + "/api/app_mower/device/setRain",)
+                url = (self.url + "/app_mower/device/setRain",)
                 data = {
                     "appId": self.session["user_id"],
                     "deviceSn": devicesn,
@@ -1135,14 +1137,23 @@ class SunseekerRoboticmower:
                             cmd = "stop"
                             cmdid = "stopWork"
 
-                        data = {
-                            "appId": self.session["user_id"],
-                            "cmd": cmd,
-                            "deviceSn": devicesn,
-                            "id": cmdid,
-                            "method": "action",
-                            "work_id": 0,
-                        }
+                        if state == -1:
+                            data = {
+                                "appId": self.session["user_id"],
+                                "cmd": cmd,
+                                "deviceSn": devicesn,
+                                "id": cmdid,
+                                "method": "action",
+                                "work_id": 1,
+                            }
+                        else:
+                            data = {
+                                "appId": self.session["user_id"],
+                                "cmd": cmd,
+                                "deviceSn": devicesn,
+                                "id": cmdid,
+                                "method": "action",
+                            }
                 headers = {
                     "Accept-Language": self.language,
                     "Authorization": "bearer " + self.session["access_token"],

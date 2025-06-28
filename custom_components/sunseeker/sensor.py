@@ -386,7 +386,6 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                     val = SUNSEEKER_RETURN
                 else:
                     val = SUNSEEKER_MOWING_BORDER
-                val = SUNSEEKER_MOWING_BORDER
             elif ival == 8:
                 val = SUNSEEKER_RETURN_PAUSE
             elif ival == 9:

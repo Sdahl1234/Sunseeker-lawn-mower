@@ -133,7 +133,11 @@
 			},
 			"sunseeker_home": {
 				"name": "Hjem"
+			},
+			"sunseeker_stop": {
+				"name": "Stop"
 			}
+
 		},
 		"device_tracker": {
 			"sunseeker_tracker": {

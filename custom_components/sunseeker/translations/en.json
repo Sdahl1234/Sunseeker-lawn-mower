@@ -132,6 +132,9 @@
         },
         "sunseeker_home": {
           "name": "Home"
+        },
+        "sunseeker_stop": {
+          "name": "Stop"
         }
       },
       "device_tracker": {
