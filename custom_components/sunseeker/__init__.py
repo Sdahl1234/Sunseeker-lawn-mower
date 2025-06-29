@@ -53,10 +53,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     password = entry.data.get(CONF_PASSWORD)
     brand = entry.data.get(CONF_MODEL)
     apptype = entry.data.get(CONF_MODEL_ID, "Old")
+    region = entry.data.get("region", "EU")  # Default to EU if not set
 
     language = hass.config.language
 
-    data_handler = SunseekerRoboticmower(brand, apptype, email, password, language)
+    data_handler = SunseekerRoboticmower(
+        brand, apptype, region, email, password, language
+    )
     await hass.async_add_executor_job(data_handler.on_load)
     if not data_handler.login_ok:
         _LOGGER.error("Login error")
@@ -66,7 +69,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # robot = [1, 2]
     robot = data_handler.deviceArray
     robots = [
-        SunseekerDataCoordinator(hass, entry, data_handler, devicesn, brand, apptype)
+        SunseekerDataCoordinator(
+            hass, entry, data_handler, devicesn, brand, apptype, region
+        )
         for devicesn in robot
     ]
 
@@ -126,6 +131,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         devicesn,
         brand,
         apptype,
+        region,
     ) -> None:
         """Initialize my coordinator."""
         super().__init__(
@@ -137,6 +143,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             # Polling interval. Will only be polled if there are subscribers.
             # update_interval=timedelta(seconds=5),  # 60 * 60),
         )
+        self.region = region
         self.apptype = apptype
         self.brand = brand
         self.always_update = True

@@ -9,6 +9,7 @@ from homeassistant.const import (
     CONF_MODEL_ID,
     CONF_NAME,
     CONF_PASSWORD,
+    CONF_REGION,
 )
 from homeassistant.core import callback
 from homeassistant.helpers import selector
@@ -34,6 +35,11 @@ apptypes = [
     "New",
 ]
 
+regions = [
+    "EU",
+    "US",
+]
+
 DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_MODEL, default=False): selector.SelectSelector(
@@ -46,6 +52,11 @@ DATA_SCHEMA = vol.Schema(
                 options=apptypes, mode=selector.SelectSelectorMode.DROPDOWN
             )
         ),
+        vol.Required(CONF_REGION, default=False): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=regions, mode=selector.SelectSelectorMode.DROPDOWN
+            )
+        ),
         vol.Required(CONF_NAME): str,
         vol.Required(CONF_EMAIL): str,
         vol.Required(CONF_PASSWORD): str,
@@ -54,7 +65,7 @@ DATA_SCHEMA = vol.Schema(
 
 
 async def validate_input(
-    hass: core.HomeAssistant, brand, apptype, name, email, password
+    hass: core.HomeAssistant, brand, apptype, region, name, email, password
 ):
     """Validate the user input allows us to connect."""
 
@@ -63,6 +74,8 @@ async def validate_input(
         raise MissingbrandValue("The 'brand' field is required.")
     if not apptype:
         raise MissingAppValue("The 'apptype' field is required.")
+    if not region:
+        raise MissingRegion("The 'region' field is required.")
     if not name:
         raise MissingnameValue("The 'name' field is required.")
     if not email:
@@ -75,6 +88,7 @@ async def validate_input(
             [
                 entry.data[CONF_MODEL] == brand,
                 entry.data[CONF_MODEL_ID] == apptype,
+                entry.data[CONF_REGION] == region,
                 entry.data[CONF_NAME] == name,
                 entry.data[CONF_EMAIL] == email,
                 entry.data[CONF_PASSWORD] == password,
@@ -99,10 +113,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 brand = user_input[CONF_MODEL]
                 apptype = user_input[CONF_MODEL_ID]
+                region = user_input[CONF_REGION]
                 name = user_input[CONF_NAME]
                 email = user_input[CONF_EMAIL]
                 password = user_input[CONF_PASSWORD].replace(" ", "")
-                await validate_input(self.hass, brand, apptype, name, email, password)
+                await validate_input(
+                    self.hass, brand, apptype, region, name, email, password
+                )
                 unique_id = f"{name}"
                 await self.async_set_unique_id(unique_id)
                 self._abort_if_unique_id_configured()
@@ -129,6 +146,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "missing_brand"
             except MissingAppValue:
                 errors["base"] = "missing_apptype"
+            except MissingRegion:
+                errors["base"] = "missing_region"
             except MissingPasswordValue:
                 errors["base"] = "missing_password"
         return self.async_show_form(
@@ -170,6 +189,10 @@ class MissingbrandValue(exceptions.HomeAssistantError):
 
 class MissingAppValue(exceptions.HomeAssistantError):
     """Error to indicate apptype is missing."""
+
+
+class MissingRegion(exceptions.HomeAssistantError):
+    """Error to indicate region is missing."""
 
 
 class MissingnameValue(exceptions.HomeAssistantError):

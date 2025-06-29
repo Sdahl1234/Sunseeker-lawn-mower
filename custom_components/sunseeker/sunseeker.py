@@ -220,7 +220,7 @@ class SunseekerSchedule:
 class SunseekerRoboticmower:
     """SunseekerRobot class."""
 
-    def __init__(self, brand, apptype, email, password, language) -> None:
+    def __init__(self, brand, apptype, region, email, password, language) -> None:
         """Init function."""
 
         self.language = language
@@ -237,13 +237,18 @@ class SunseekerRoboticmower:
         self.refresh_token_interval = None
         self.refresh_token_timeout = None
         self.robotList = []
+        self.region = region
 
         self.login_ok: bool = False
         self.url = "https://server.sk-robot.com/api"
         self.host = "server.sk-robot.com"
         if self.apptype == "New":
-            self.url = "https://wirefree-specific.sk-robot.com/api"
-            self.host = "wirefree-specific.sk-robot.com"
+            if region == "EU":
+                self.url = "https://wirefree-specific.sk-robot.com/api"
+                self.host = "wirefree-specific.sk-robot.com"
+            elif region == "US":
+                self.url = "https://wirefree-specific-us.sk-robot.com/api"
+                self.host = "wirefree-specific-us.sk-robot.com"
 
         self.appId = "0123456789abcdef"
         self.mqtt_passwd = str(uuid.uuid4()).replace("-", "")[:24]
@@ -369,7 +374,10 @@ class SunseekerRoboticmower:
             self.session["username"] + self.appId, self.mqtt_passwd
         )
         self.mqtt_client.tls_set()
-        host = "wfsmqtt-specific.sk-robot.com"
+        if self.region == "EU":
+            host = "wfsmqtt-specific.sk-robot.com"
+        elif self.region == "US":
+            host = "wfsmqtt-specific-us.sk-robot.com"
         _LOGGER.debug("MQTT host: " + host)  # noqa: G003
         _LOGGER.debug("MQTT username: " + self.session["username"] + self.appId)  # noqa: G003
         _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
@@ -801,8 +809,9 @@ class SunseekerRoboticmower:
             self.refresh_token_timeout.cancel()
         if self.refresh_token_interval:
             self.refresh_token_interval.cancel()
-        if self.mqtt_client.is_connected():
-            self.mqtt_client.disconnect()
+        if self.mqtt_client is not None:
+            if self.mqtt_client.is_connected():
+                self.mqtt_client.disconnect()
 
     def start_mowing(self, devicesn):
         """Start Mowing."""
