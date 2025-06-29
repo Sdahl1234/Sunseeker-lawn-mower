@@ -19,6 +19,24 @@
 	},
 	"entity": {
 		"sensor": {
+			"sunseeker_blade_speed": {
+				"name": "Kniv hastighed"
+			},
+			"sunseeker_blade_height": {
+				"name": "Kniv højde"
+			},
+			"sunseeker_taskProgress": {
+				"name": "Progress"
+			},
+			"sunseeker_taskTotalArea": {
+				"name": "Total område"
+			},
+			"sunseeker_taskCoverArea": {
+				"name": "Klippet område"
+			},
+			"sunseeker_net4g_level": {
+				"name": "4G net styrke"
+			},
 			"sunseeker_state_error": {
 				"name": "Status fejl"
 			},

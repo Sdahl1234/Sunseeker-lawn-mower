@@ -23,13 +23,13 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             # Skip if the app type is New, as these sensors are not supported
             AppNew = True
             break
-    if not AppNew:
-        async_add_entities(
-            [
-                SunseekerDeviceTracker(coordinator, "Location", "sunseeker_tracker")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+    # if not AppNew:
+    async_add_entities(
+        [
+            SunseekerDeviceTracker(coordinator, "Location", "sunseeker_tracker")
+            for coordinator in robot_coordinators(hass, entry)
+        ]
+    )
 
 
 class SunseekerDeviceTracker(SunseekerEntity, TrackerEntity):

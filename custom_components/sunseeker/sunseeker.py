@@ -74,6 +74,14 @@ class SunseekerDevice:
         self.DeviceWifiAddress = ""
         self.Schedule: SunseekerSchedule = SunseekerSchedule()
 
+        # New apptype values
+        self.taskCoverArea = 0
+        self.taskTotalArea = 0
+        self.RTKSignal = 0
+        self.net_4g_sig = 0
+        self.blade_speed = 0
+        self.blade_height = 0
+
     def updateschedule(self) -> None:
         """Refresh schedule from settings."""
         for dsl in self.settings["data"]["deviceScheduleList"]:
@@ -91,7 +99,10 @@ class SunseekerDevice:
             self.station = self.devicedata["data"].get("stationFlag")
         self.rain_en = self.devicedata["data"].get("rainFlag")
         self.rain_delay_set = int(self.devicedata["data"].get("rainDelayDuration"))
-        self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
+        if self.apptype == "New":
+            self.rain_delay_left = self.settings["data"].get("rainCountdown")
+        else:
+            self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
         if self.devicedata["data"].get("rainStatusCode") == None:  # noqa: E711
             self.rain_status = 0
         else:
@@ -116,6 +127,13 @@ class SunseekerDevice:
             self.mulpro_zon3 = self.settings["data"].get("proThird")
             self.mulpro_zon4 = self.settings["data"].get("proFour")
             self.updateschedule()
+        if self.apptype == "New":
+            self.net_4g_sig = self.settings["data"].get("net4gSig")
+            self.taskCoverArea = self.settings["data"].get("taskCoverArea")
+            self.taskTotalArea = self.settings["data"].get("taskTotalArea")
+            self.wifi_lv = self.settings["data"].get("wifiLv")
+            self.blade_speed = self.settings["data"].get("bladeSpeed")
+            self.blade_height = self.settings["data"].get("bladeHeight")
 
 
 class SunseekerScheduleDay:
@@ -409,7 +427,6 @@ class SunseekerRoboticmower:
             ep = "wirelessdevice"
 
         sub = f"/{ep}/" + str(self.session["user_id"]) + "/get"
-
         _LOGGER.debug(
             f"MQTT subscribe to: {sub}"  # noqa: G004
         )
@@ -473,7 +490,23 @@ class SunseekerRoboticmower:
                             device.rain_delay_set = (
                                 data.get("data").get("rain").get("delay")
                             )
-
+                    if "wifi_sig" in data.get("data"):
+                        device.wifi_lv = data.get("data").get("wifi_sig")
+                    if "task_total_area" in data.get("data"):
+                        device.taskTotalArea = data.get("data").get("task_total_area")
+                    if "task_cover_area" in data.get("data"):
+                        device.taskCoverArea = data.get("data").get("task_cover_area")
+                    if "net_4g_sig" in data.get("data"):
+                        device.net_4g_sig = data.get("data").get("net_4g_sig")
+                    if "blade" in data.get("data"):
+                        if "speed" in data.get("data").get("blade"):
+                            device.blade_speed = (
+                                data.get("data").get("blade").get("speed")
+                            )
+                        if "height" in data.get("data").get("blade"):
+                            device.blade_height = (
+                                data.get("data").get("blade").get("height")
+                            )
                 if "station" in data:
                     device.station = data.get("station")
                 if "wifi_lv" in data:

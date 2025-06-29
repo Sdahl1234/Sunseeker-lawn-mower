@@ -19,6 +19,24 @@
     },
     "entity": {
       "sensor": {
+  			"sunseeker_blade_speed": {
+				"name": "Blade speed"
+	  		},
+		  	"sunseeker_blade_height": {
+				"name": "Blade height"
+},
+        "sunseeker_taskProgress": {
+				"name": "Progress"
+			  },
+        "sunseeker_taskTotalArea": {
+				"name": "Total area"
+			  },
+			  "sunseeker_taskCoverArea": {
+				"name": "Coverd area"
+			  },
+			  "sunseeker_net4g_level": {
+				"name": "4G Net strength"
+        },
         "sunseeker_state_error": {
           "name": "State change error"
         },

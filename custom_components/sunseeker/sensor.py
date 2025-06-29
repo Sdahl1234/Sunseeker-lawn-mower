@@ -89,6 +89,112 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 for coordinator in robot_coordinators(hass, entry)
             ]
         )
+    if AppNew:
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Wifi level",
+                    "dBm",
+                    "wifi_lv",
+                    "",
+                    "mdi:wifi",
+                    "sunseeker_wifi_level",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Net 4G Level",
+                    "dBm",
+                    "4gnetSig",
+                    "",
+                    "mdi:wifi",
+                    "sunseeker_net4g_level",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Covered Area",
+                    "",
+                    "taskCoverArea",
+                    "",
+                    "mdi:texture-box",
+                    "sunseeker_taskCoverArea",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Total Area",
+                    "",
+                    "taskTotalArea",
+                    "",
+                    "mdi:texture-box",
+                    "sunseeker_taskTotalArea",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Progress",
+                    "%",
+                    "taskProgress",
+                    "",
+                    "",
+                    "sunseeker_taskProgress",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Blade speed",
+                    "rpm",
+                    "blade_speed",
+                    "",
+                    "mdi:saw-blade",
+                    "sunseeker_blade_speed",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Blade height",
+                    "mm",
+                    "blade_height",
+                    "",
+                    "mdi:saw-blade",
+                    "sunseeker_blade_height",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
     async_add_devices(
         [
             SunseekerSensor(
@@ -438,6 +544,20 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             val = self._data_handler.get_device(self._sn).mul_zon3
         elif self._valuepair == "mul_zon4":
             val = self._data_handler.get_device(self._sn).mul_zon4
+        elif self._valuepair == "4gnetSig":
+            val = self._data_handler.get_device(self._sn).net_4g_sig
+        elif self._valuepair == "taskTotalArea":
+            val = self._data_handler.get_device(self._sn).taskTotalArea
+        elif self._valuepair == "taskCoverArea":
+            val = self._data_handler.get_device(self._sn).taskCoverArea
+        elif self._valuepair == "taskProgress":
+            if self._data_handler.get_device(self._sn).taskTotalArea == 0:
+                val = 0
+            else:
+                # Calculate the progress as a percentage
+                val = (
+                    self._data_handler.get_device(self._sn).taskCoverArea * 100
+                ) / self._data_handler.get_device(self._sn).taskTotalArea
         elif self._valuepair == "errortype":
             val = self._data_handler.get_device(self._sn).errortype
             if self._source == "Etext":
@@ -453,6 +573,11 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                     val = "Charging power to high"
                 else:
                     val = "Unknown error"
+        elif self._valuepair == "blade_speed":
+            val = self._data_handler.get_device(self._sn).blade_speed
+        elif self._valuepair == "blade_height":
+            val = self._data_handler.get_device(self._sn).blade_height
+
         return val
 
     @property
