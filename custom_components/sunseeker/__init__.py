@@ -32,7 +32,7 @@ PLATFORMS = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.level = logging.DEBUG
+# _LOGGER.level = logging.DEBUG
 
 
 def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
