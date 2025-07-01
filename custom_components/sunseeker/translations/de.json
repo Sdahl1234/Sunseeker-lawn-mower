@@ -1,0 +1,230 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Account bereits konfiguriert"
+        },
+        "error": {
+            "connection_error": "Verbindung fehlgeschlagen"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "model": "Marke",
+                    "name": "Name",
+                    "email": "E-mail",
+                    "password": "Passwort"
+                }
+            }
+        }
+    },
+    "entity": {
+      "sensor": {
+  			"sunseeker_blade_speed": {
+				"name": "Messergeschwindigkeit"
+	  		},
+		  	"sunseeker_blade_height": {
+				"name": "Messerhöhe"
+},
+        "sunseeker_taskProgress": {
+				"name": "Mähfortschritt"
+			  },
+        "sunseeker_taskTotalArea": {
+				"name": "Gesamtfläche"
+			  },
+			  "sunseeker_taskCoverArea": {
+				"name": "Gemähte Fläche"
+			  },
+			  "sunseeker_net4g_level": {
+				"name": "4G Empfangsstärke"
+        },
+        "sunseeker_state_error": {
+          "name": "Statuswechsel-Fehler"
+        },
+        "sunseeker_mower_state": {
+          "name": "Rasenmäher-Status",
+          "state": {
+            "Standby": "Standby",
+            "Mowing": "Mäht",
+            "On the way home": "Fährt zum Dock",
+            "Charging": "Lädt",
+            "Mowing border": "Mäht Grenze",
+            "Unknown": "Unbekannt",
+            "Unknown4": "Modus 4"
+          }
+        },
+        "sunseeker_battery": {
+          "name": "Batterie"
+        },
+        "sunseeker_rain_delay_set": {
+          "name": "Regensensor-Verzögerung"
+        },
+        "sunseeker_sensor_counter": {
+          "name": "Regensensor-Countdown"
+        },
+        "sunseeker_mowing_time": {
+          "name": "Tatsächliche Mähzeit"
+        },
+        "sunseeker_error": {
+          "name": "Fehlercode"
+        },
+        "sunseeker_error_text": {
+          "name": "Fehler"
+        },
+        "sunseeker_wifi_level": {
+          "name": "WLAN Empfangsstärke"
+        },
+        "sunseeker_rain_status": {
+          "name": "Regensensor",
+          "state": {
+            "Dry": "Trocken",
+            "Dry countdown": "Trocken Countdown",
+            "Wet": "Nass",
+            "Unknown": "Unbekannt"
+          }
+        },
+        "sunseekerzone1": {
+          "name": "Zone 1 Start"
+        },
+        "sunseekerzone2": {
+          "name": "Zone 2 Start"
+        },
+        "sunseekerzone3": {
+          "name": "Zone 3 Start"
+        },
+        "sunseekerzone4": {
+          "name": "Zone 4 Start"
+        }
+      },
+      "binary_sensor": {
+        "sunseeker_dock": {
+          "name": "Dock",
+          "state": {
+            "Away": "Weg",
+            "Home": "Zuhause",
+            "Unknown": "Unbekannt"
+          }
+        },
+        "sunseeker_rain_sensor_active": {
+          "name": "Regensensor aktiv"
+        },
+        "sunseeker_multizone": {
+          "name": "Multizone"
+        },
+        "sunseeker_multizoneauto": {
+          "name": "Multizone auto"
+        },
+        "sunseeker_schedule": {
+          "name": "Arbeitsplan"
+        },
+        "sunseeker_online": {
+          "name": "Online",
+          "state": {
+            "Connected": "Verbunden",
+            "Disconnected": "Getrennt",
+            "Unknown": "Unbekannt"
+          }
+        }
+      },
+      "lawn_mower": {
+        "sunseeker_lawnmower": {
+          "state": {
+            "Standby": "Standby",
+            "Mowing": "Mäht",
+            "On the way home": "Fährt zum Dock",
+            "Charging": "Lädt",
+            "Mowing border": "Mäht Grenze",
+            "Unknown": "Unbekannt",
+            "Unknown4": "Modus 4"
+          }
+        }
+      },
+      "button": {
+        "sunseeker_start": {
+          "name": "Mähvorgang starten"
+        },
+        "sunseeker_pause": {
+          "name": "Mähvorgang pausieren"
+        },
+        "sunseeker_border": {
+          "name": "Kanten mähen"
+        },
+        "sunseeker_home": {
+          "name": "Zum Dock fahren"
+        },
+        "sunseeker_stop": {
+          "name": "Stopp"
+        }
+      },
+      "device_tracker": {
+        "sunseeker_tracker": {
+          "name": "Roboter Position"
+        }
+      },
+      "switch": {
+        "sunseeker_rain_sensor": {
+          "name": "Regensensor"
+        },
+        "sunseeker_multi_zone": {
+          "name": "Multizone"
+        },
+        "sunseeker_multi_zone_auto": {
+          "name": "Multizone auto"
+        },
+        "schedule_active": {
+          "name": "Arbeitsplan"
+        }
+      },
+      "number": {
+        "sunseeker_rain_delay": {
+          "name": "Regenverzögerung"
+        },
+        "sunseeker_zone1": {
+          "name": "Zone 1 Start"
+        },
+        "sunseeker_zone2": {
+          "name": "Zone 2 Start"
+        },
+        "sunseeker_zone3": {
+          "name": "Zone 3 Start"
+        },
+        "sunseeker_zone4": {
+          "name": "Zone 4 Start"
+        },
+				"sunseeker_mulpro1": {
+				  "name": "Zone 1 Priorität"
+			  },
+			  "sunseeker_mulpro2": {
+				  "name": "Zone 2 Priorität"
+			  },
+			  "sunseeker_mulpro3": {
+				  "name": "Zone 3 Priorität"
+			  },
+			  "sunseeker_mulpro4": {
+				  "name": "Zone 4 Priorität"
+			  }
+      },
+      "text": {
+        "sunseeker_schedule_text_1": {
+          "name": "Arbeitsplan Montag"
+        },
+        "sunseeker_schedule_text_2": {
+          "name": "Arbeitsplan Dienstag"
+        },
+        "sunseeker_schedule_text_3": {
+          "name": "Arbeitsplan Mittwoch"
+        },
+        "sunseeker_schedule_text_4": {
+          "name": "Arbeitsplan Donnerstag"
+        },
+        "sunseeker_schedule_text_5": {
+          "name": "Arbeitsplan Freitag"
+        },
+        "sunseeker_schedule_text_6": {
+          "name": "Arbeitsplan Samstag"
+        },
+        "sunseeker_schedule_text_7": {
+          "name": "Arbeitsplan Sonntag"
+        }
+      }
+    }
+  }
