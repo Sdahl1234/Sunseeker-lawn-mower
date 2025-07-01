@@ -20,7 +20,7 @@ Search for *Sunseeker robotic mower* and add it.
 You must now choose a barnd and a name for the device. Email and password for the robotic-mower connect APP.
 
 ## Translation
-English, Danish, Finnish and French
+English, Danish, German, Finnish and French
 
 # Entities
 ## lawn mower
