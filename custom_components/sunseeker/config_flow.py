@@ -86,12 +86,12 @@ async def validate_input(
     for entry in hass.config_entries.async_entries(DOMAIN):
         if any(
             [
-                entry.data[CONF_MODEL] == brand,
-                entry.data[CONF_MODEL_ID] == apptype,
-                entry.data[CONF_REGION] == region,
+                # entry.data[CONF_MODEL] == brand,
+                # entry.data[CONF_MODEL_ID] == apptype,
+                # entry.data[CONF_REGION] == region,
                 entry.data[CONF_NAME] == name,
-                entry.data[CONF_EMAIL] == email,
-                entry.data[CONF_PASSWORD] == password,
+                # entry.data[CONF_EMAIL] == email,
+                # entry.data[CONF_PASSWORD] == password,
             ]
         ):
             raise AlreadyConfigured("An entry with the given details already exists.")
@@ -128,6 +128,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={
                         CONF_MODEL_ID: apptype,
                         CONF_MODEL: brand,
+                        CONF_REGION: region,
                         CONF_NAME: name,
                         CONF_EMAIL: email,
                         CONF_PASSWORD: password,
