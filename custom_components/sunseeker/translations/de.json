@@ -1,18 +1,18 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Account is already configured"
+            "already_configured": "Account bereit konfiguriert"
         },
         "error": {
-            "connection_error": "Failed to connect"
+            "connection_error": "Verbindung fehlgeschlagen"
         },
         "step": {
             "user": {
                 "data": {
-                    "model": "Brand",
+                    "model": "Marke",
                     "name": "Name",
                     "email": "E-mail",
-                    "password": "Password"
+                    "password": "Passwort"
                 }
             }
         }
@@ -20,92 +20,92 @@
     "entity": {
       "sensor": {
   			"sunseeker_blade_speed": {
-				"name": "Blade speed"
+				"name": "Messergeschwindigkeit"
 	  		},
 		  	"sunseeker_blade_height": {
-				"name": "Blade height"
+				"name": "Messerhöhe"
 },
         "sunseeker_taskProgress": {
-				"name": "Progress"
+				"name": "Mähfortschritt"
 			  },
         "sunseeker_taskTotalArea": {
-				"name": "Total area"
+				"name": "Gesamtfläche"
 			  },
 			  "sunseeker_taskCoverArea": {
-				"name": "Coverd area"
+				"name": "Gemähte Fläche"
 			  },
 			  "sunseeker_net4g_level": {
-				"name": "4G Net strength"
+				"name": "4G Empfangsstärke"
         },
         "sunseeker_state_error": {
-          "name": "State change error"
+          "name": "Statuswechsel-Fehler"
         },
         "sunseeker_mower_state": {
-          "name": "Mower status",
+          "name": "Rasenmäher-Status",
           "state": {
             "Standby": "Standby",
-            "Mowing": "Mowing",
-            "On the way home": "Going home",
-            "Charging": "Charging",
-            "Mowing border": "Border",
-            "Unknown": "Unknown",
-            "Unknown4": "Mode 4"
+            "Mowing": "Mäht",
+            "On the way home": "Fährt zum Dock",
+            "Charging": "Lädt",
+            "Mowing border": "Mäht Grenze",
+            "Unknown": "Unbekannt",
+            "Unknown4": "Modus 4"
           }
         },
         "sunseeker_battery": {
-          "name": "Battery"
+          "name": "Batterie"
         },
         "sunseeker_rain_delay_set": {
-          "name": "Rain sensor delay"
+          "name": "Regensensor-Verzögerung"
         },
         "sunseeker_sensor_counter": {
-          "name": "Rain sensor countdown"
+          "name": "Regensensor-Countdown"
         },
         "sunseeker_mowing_time": {
-          "name": "Actual mowingtime"
+          "name": "Tatsächliche Mähzeit"
         },
         "sunseeker_error": {
-          "name": "ErrorCode"
+          "name": "Fehlercode"
         },
         "sunseeker_error_text": {
-          "name": "Error"
+          "name": "Fehler"
         },
         "sunseeker_wifi_level": {
-          "name": "Wifi strength"
+          "name": "WLAN Empfangsstärke"
         },
         "sunseeker_rain_status": {
-          "name": "Rain sensor",
+          "name": "Regensensor",
           "state": {
-            "Dry": "Dry",
-            "Dry countdown": "Dry countdown",
-            "Wet": "Wet",
-            "Unknown": "Unknown"
+            "Dry": "Trocken",
+            "Dry countdown": "Trocken Countdown",
+            "Wet": "Nass",
+            "Unknown": "Unbekannt"
           }
         },
         "sunseekerzone1": {
-          "name": "Zone 1 start"
+          "name": "Zone 1 Start"
         },
         "sunseekerzone2": {
-          "name": "Zone 2 start"
+          "name": "Zone 2 Start"
         },
         "sunseekerzone3": {
-          "name": "Zone 3 start"
+          "name": "Zone 3 Start"
         },
         "sunseekerzone4": {
-          "name": "Zone 4 start"
+          "name": "Zone 4 Start"
         }
       },
       "binary_sensor": {
         "sunseeker_dock": {
           "name": "Dock",
           "state": {
-            "Away": "Away",
-            "Home": "Home",
-            "Unknown": "Unknown"
+            "Away": "Weg",
+            "Home": "Zuhause",
+            "Unknown": "Unbekannt"
           }
         },
         "sunseeker_rain_sensor_active": {
-          "name": "Rain sensor active"
+          "name": "Regensensor aktiv"
         },
         "sunseeker_multizone": {
           "name": "Multizone"
@@ -114,14 +114,14 @@
           "name": "Multizone auto"
         },
         "sunseeker_schedule": {
-          "name": "Schedule"
+          "name": "Arbeitsplan"
         },
         "sunseeker_online": {
           "name": "Online",
           "state": {
-            "Connected": "Connected",
-            "Disconnected": "Disconnected",
-            "Unknown": "Unknown"
+            "Connected": "Verbunden",
+            "Disconnected": "Getrennt",
+            "Unknown": "Unbekannt"
           }
         }
       },
@@ -129,40 +129,40 @@
         "sunseeker_lawnmower": {
           "state": {
             "Standby": "Standby",
-            "Mowing": "Mowing",
-            "On the way home": "Going home",
-            "Charging": "Charging",
-            "Mowing border": "Border",
-            "Unknown": "Unknown",
-            "Unknown4": "Mode 4"
+            "Mowing": "Mäht",
+            "On the way home": "Fährt zum Dock",
+            "Charging": "Lädt",
+            "Mowing border": "Mäht Grenze",
+            "Unknown": "Unbekannt",
+            "Unknown4": "Modus 4"
           }
         }
       },
       "button": {
         "sunseeker_start": {
-          "name": "Start robot"
+          "name": "Mähvorgang starten"
         },
         "sunseeker_pause": {
-          "name": "Pause robot"
+          "name": "Mähvorgang pausieren"
         },
         "sunseeker_border": {
-          "name": "Cut border"
+          "name": "Kanten mähen"
         },
         "sunseeker_home": {
-          "name": "Home"
+          "name": "Zum Dock fahren"
         },
         "sunseeker_stop": {
-          "name": "Stop"
+          "name": "Stopp"
         }
       },
       "device_tracker": {
         "sunseeker_tracker": {
-          "name": "Robot location"
+          "name": "Roboter Position"
         }
       },
       "switch": {
         "sunseeker_rain_sensor": {
-          "name": "Rain sensor"
+          "name": "Regensensor"
         },
         "sunseeker_multi_zone": {
           "name": "Multizone"
@@ -171,59 +171,59 @@
           "name": "Multizone auto"
         },
         "schedule_active": {
-          "name": "Schedule"
+          "name": "Arbeitsplan"
         }
       },
       "number": {
         "sunseeker_rain_delay": {
-          "name": "Rain delay"
+          "name": "Regenverzögerung"
         },
         "sunseeker_zone1": {
-          "name": "Zone 1 start"
+          "name": "Zone 1 Start"
         },
         "sunseeker_zone2": {
-          "name": "Zone 2 start"
+          "name": "Zone 2 Start"
         },
         "sunseeker_zone3": {
-          "name": "Zone 3 start"
+          "name": "Zone 3 Start"
         },
         "sunseeker_zone4": {
-          "name": "Zone 4 start"
+          "name": "Zone 4 Start"
         },
 				"sunseeker_mulpro1": {
-				  "name": "Zone 1 priority"
+				  "name": "Zone 1 Priorität"
 			  },
 			  "sunseeker_mulpro2": {
-				  "name": "Zone 2 priority"
+				  "name": "Zone 2 Priorität"
 			  },
 			  "sunseeker_mulpro3": {
-				  "name": "Zone 3 priority"
+				  "name": "Zone 3 Priorität"
 			  },
 			  "sunseeker_mulpro4": {
-				  "name": "Zone 4 priority"
+				  "name": "Zone 4 Priorität"
 			  }
       },
       "text": {
         "sunseeker_schedule_text_1": {
-          "name": "Schedule Monday"
+          "name": "Arbeitsplan Montag"
         },
         "sunseeker_schedule_text_2": {
-          "name": "Schedule Tuesday"
+          "name": "Arbeitsplan Dienstag"
         },
         "sunseeker_schedule_text_3": {
-          "name": "Schedule Wednesday"
+          "name": "Arbeitsplan Mittwoch"
         },
         "sunseeker_schedule_text_4": {
-          "name": "Schedule Thursday"
+          "name": "Arbeitsplan Donnerstag"
         },
         "sunseeker_schedule_text_5": {
-          "name": "Schedule Friday"
+          "name": "Arbeitsplan Freitag"
         },
         "sunseeker_schedule_text_6": {
-          "name": "Schedule Saturday"
+          "name": "Arbeitsplan Samstag"
         },
         "sunseeker_schedule_text_7": {
-          "name": "Schedule Sunday"
+          "name": "Arbeitsplan Sonntag"
         }
       }
     }
