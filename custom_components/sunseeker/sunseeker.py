@@ -936,7 +936,7 @@ class SunseekerRoboticmower:
                 time.sleep(1)
             attempt = attempt + 1
             try:
-                url = self.url + "/api/app_mower/device-schedule/setScheduling"
+                url = self.url + "/app_mower/device-schedule/setScheduling"
                 headers = {
                     "Accept-Language": self.language,
                     "Authorization": "bearer " + self.session["access_token"],
@@ -1163,7 +1163,7 @@ class SunseekerRoboticmower:
         """Old Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Border."""
         # New Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Stop.
         # device_id = self.DeviceSn  # self.devicedata["data"].get("id")
-        endpoint = "/api/app_mower/device/setWorkStatus"
+        endpoint = "/app_mower/device/setWorkStatus"
         if self.apptype == "New":
             endpoint = "/iot_mower/wireless/device/action"
 
