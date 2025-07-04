@@ -1,6 +1,7 @@
 """Sunseeker mower integration."""
 
 import asyncio
+from datetime import datetime
 import json
 import logging
 import os
@@ -24,6 +25,7 @@ PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.DEVICE_TRACKER,
+    Platform.IMAGE,
     Platform.LAWN_MOWER,
     Platform.NUMBER,
     Platform.SENSOR,
@@ -32,7 +34,7 @@ PLATFORMS = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
-# _LOGGER.level = logging.DEBUG
+_LOGGER.level = logging.DEBUG
 
 
 def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
@@ -156,6 +158,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         )
         _LOGGER.info(self.filepath)
         self.jdata = self.data_default
+        self.livemap_entity = None
         self.hass.add_job(self.set_schedule_data)
         self.hass.add_job(self.file_exits)
         self.hass.add_job(self.load_data)
@@ -243,6 +246,10 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         _LOGGER.debug(f"callback - Sunseeker {self.devicesn} data updated")  # noqa: G004
         if self.devicesn == devicesn:
             self.hass.add_job(self.async_set_updated_data, None)
+
+            if self.data_handler.get_device(self.devicesn).livemap_updated:
+                if self.livemap_entity:
+                    self.livemap_entity.image_last_updated = datetime.now()
         if (
             schedule
             and not self.data_handler.get_device(self.devicesn).Schedule.IsEmpty()

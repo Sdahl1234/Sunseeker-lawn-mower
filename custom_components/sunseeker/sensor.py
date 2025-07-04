@@ -505,7 +505,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             elif ival == 18:
                 val = SUNSEEKER_STOP
             else:
-                val = SUNSEEKER_UNKNOWN
+                val = SUNSEEKER_UNKNOWN + " (Code: " + str(ival) + ")"
         elif self._valuepair == "wifi_lv":
             val = self._data_handler.get_device(self._sn).wifi_lv
         elif self._valuepair == "rain_status":

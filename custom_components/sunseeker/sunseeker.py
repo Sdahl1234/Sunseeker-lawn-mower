@@ -1,8 +1,11 @@
 """SunseekerPy."""
 
 import base64
+import importlib.resources
+from io import BytesIO
 import json
 import logging
+import math
 from threading import Timer
 import time
 import uuid
@@ -11,6 +14,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 import paho.mqtt.client as mqtt
+from PIL import Image, ImageDraw
 import requests
 
 from .const import MAX_LOGIN_RETRIES, MAX_SET_CONFIG_RETRIES
@@ -81,6 +85,180 @@ class SunseekerDevice:
         self.net_4g_sig = 0
         self.blade_speed = 0
         self.blade_height = 0
+        self.image = None
+        self.image_state = "Not loaded"
+        self.image_data = None
+        self.map_min_x = 0
+        self.map_max_x = 0
+        self.map_min_y = 0
+        self.map_max_y = 0
+        self.canvas_width = 0
+        self.canvas_height = 0
+        self.livemap = None
+        self.mower_pos_x = 0
+        self.mower_pos_y = 0
+        self.mower_orientation = 0
+        self.robot_image_url = None
+        self.livemap_updated = False
+        self.map_phi = 0
+        self.robot_image = None
+
+    def load_robot_image(self) -> Image.Image:
+        """Load robot.png from the integration folder."""
+        with importlib.resources.path(
+            "custom_components.sunseeker", "robot.png"
+        ) as img_path:
+            return Image.open(img_path)
+
+    def generate_livemap(self, x: float, y: float) -> None:
+        """Generate livemap."""
+        image = self.image.copy()
+        draw = ImageDraw.Draw(image)
+
+        x_norm = (x - self.map_min_x) / (self.map_max_x - self.map_min_x)
+        y_norm = (y - self.map_min_y) / (self.map_max_y - self.map_min_y)
+        # Flip Y-axis for image coordinates
+        xx, yy = (
+            int(x_norm * self.canvas_width),
+            int((1 - y_norm) * self.canvas_height),
+        )
+
+        robot_img = self.robot_image.convert("RGBA")
+        w1, h1 = robot_img.size
+        iw, ih = image.size
+        mul = (iw + ih) / 2 / 1000
+        rw = int(w1 * mul)
+        rh = int(h1 * mul)
+        robot_img = robot_img.resize((rw, rh))
+
+        angle = math.degrees(self.mower_orientation)
+        robot_img = robot_img.rotate(angle)
+        w, h = robot_img.size
+        # Center the robot image at (xx, yy)
+        xx_centered = int(xx - w / 2)
+        yy_centered = int(yy - h / 2)
+
+        # Paste the robot image on top of the map, using itself as the mask for transparency
+        image.paste(robot_img, (xx_centered, yy_centered), robot_img)
+
+        # draw.bitmap((xx, yy), self.robot_image, fill=None)
+        draw.circle((xx, yy), 50, fill=None, outline="red")
+        self.livemap = image
+        self.livemap_updated = True
+
+    def generate_map(self):
+        """Generate map."""
+
+        json_data = self.image_data
+        _LOGGER.debug("Generate map")
+        data = json.loads(json_data)
+        if data.get("map_coordniate"):
+            if data.get("map_coordniate").get("phi"):
+                self.map_phi = data.get("map_coordniate").get("phi")
+
+        min_x = 0
+        max_x = 0
+        min_y = 0
+        max_y = 0
+
+        def parse_points(points_str):
+            """Convert points string to list of tuples."""
+            points_str = points_str.strip()
+            # Use eval safely
+            points_list = json.loads(points_str)
+            return [(float(p[0]), float(p[1])) for p in points_list]
+
+        def transform(point):
+            x, y = point
+            x_norm = (x - min_x) / (max_x - min_x)
+            y_norm = (y - min_y) / (max_y - min_y)
+            # Flip Y-axis for image coordinates
+            return (int(x_norm * canvas_width), int((1 - y_norm) * canvas_height))
+
+        def get_min_max(pts_):
+            nonlocal min_x, max_x, min_y, max_y
+            gmin_x = min(p[0] for p in pts_)
+            gmax_x = max(p[0] for p in pts_)
+            gmin_y = min(p[1] for p in pts_)
+            gmax_y = max(p[1] for p in pts_)
+            min_x = min(gmin_x, min_x)
+            max_x = max(gmax_x, max_x)
+            min_y = min(gmin_y, min_y)
+            max_y = max(gmax_y, max_y)
+
+        for work in data.get("region_work", []):
+            pts = parse_points(work["points"])
+            get_min_max(pts)
+
+        for region in data.get("region_channel", []):
+            pts = parse_points(region["points"])
+            get_min_max(pts)
+
+        for obstacle in data.get("region_obstacle", []):
+            pts = parse_points(obstacle["points"])
+            get_min_max(pts)
+
+        for forb in data.get("region_forbidden", []):
+            pts = parse_points(forb["points"])
+            get_min_max(pts)
+
+        for rb in data.get("region_placed_blank", []):
+            pts = parse_points(rb["points"])
+            get_min_max(pts)
+
+        for charger in data.get("region_charger_channel", []):
+            pts = parse_points(charger["points"])
+            get_min_max(pts)
+
+        self.map_max_x = max_x
+        self.map_min_x = min_x
+        self.map_max_y = max_y
+        self.map_min_y = min_y
+
+        width = max_x - min_x
+        height = max_y - min_y
+
+        canvas_width = width * 25  # 1920
+        canvas_height = height * 25  # 1080
+        self.canvas_width = canvas_width
+        self.canvas_height = canvas_height
+        # Create a new image
+        image = Image.new("RGBA", (int(canvas_width), int(canvas_height)), (0, 0, 0, 0))
+
+        draw = ImageDraw.Draw(image)
+
+        for work in data.get("region_work", []):
+            pts = parse_points(work["points"])
+            transformed_points = [transform(p) for p in pts]
+            draw.polygon(transformed_points, outline="green", fill="green")
+
+        for region in data.get("region_channel", []):
+            pts = parse_points(region["points"])
+            transformed_points = [transform(p) for p in pts]
+            draw.polygon(transformed_points, outline="gray", fill="gray")
+
+        for obstacle in data.get("region_obstacle", []):
+            pts = parse_points(obstacle["points"])
+            transformed_points = [transform(p) for p in pts]
+            draw.polygon(transformed_points, outline="red", fill="red")
+
+        for forb in data.get("region_forbidden", []):
+            pts = parse_points(forb["points"])
+            transformed_points = [transform(p) for p in pts]
+            draw.polygon(transformed_points, outline="black", fill="black")
+
+        # for rb in data.get("region_placed_blank", []):
+        #    pts = parse_points(rb["points"])
+        #    transformed_points = [transform(p) for p in pts]
+        #    draw.polygon(transformed_points, outline="blue", fill="blue")
+
+        for charger in data.get("region_charger_channel", []):
+            pts = parse_points(charger["points"])
+            transformed_points = [transform(p) for p in pts]
+            draw.polygon(transformed_points, outline="yellow", fill="yellow")
+
+        self.image = image
+        self.image_state = "Loaded"
 
     def updateschedule(self) -> None:
         """Refresh schedule from settings."""
@@ -128,12 +306,28 @@ class SunseekerDevice:
             self.mulpro_zon4 = self.settings["data"].get("proFour")
             self.updateschedule()
         if self.apptype == "New":
+            if self.robot_image_url:
+                response = requests.get(self.robot_image_url, timeout=10)
+                if response.status_code == 200:
+                    robot_data = response.content
+                    self.robot_image = Image.open(BytesIO(robot_data))
+                    self.robot_image = self.robot_image.resize((50, 50))
+            if not self.robot_image:
+                self.robot_image = self.load_robot_image()
+            robotpos = self.settings["data"].get("robotPos")
+            rp = json.loads(robotpos)
+            self.mower_orientation = rp["angle"]
+            self.mower_pos_x, self.mower_pos_y = rp["point"]
+
             self.net_4g_sig = self.settings["data"].get("net4gSig")
             self.taskCoverArea = self.settings["data"].get("taskCoverArea")
             self.taskTotalArea = self.settings["data"].get("taskTotalArea")
             self.wifi_lv = self.settings["data"].get("wifiLv")
             self.blade_speed = self.settings["data"].get("bladeSpeed")
             self.blade_height = self.settings["data"].get("bladeHeight")
+            if self.image_data is not None:
+                self.generate_map()
+                self.generate_livemap(self.mower_pos_x, self.mower_pos_y)
 
 
 class SunseekerScheduleDay:
@@ -234,6 +428,7 @@ class SunseekerRoboticmower:
         self.mqttdata = {}
         self.client_id = str(uuid.uuid4())
         self.mqtt_client = None
+        self.mqtt_client_new = None
         self.refresh_token_interval = None
         self.refresh_token_timeout = None
         self.robotList = []
@@ -281,6 +476,8 @@ class SunseekerRoboticmower:
                     self.deviceArray.append(device_sn)
                     ad = SunseekerDevice(device_sn)
                     ad.DeviceModel = device["deviceModelName"]
+                    if self.apptype == "New":
+                        ad.robot_image_url = device["picUrlDetail"]
                     ad.DeviceName = device["deviceName"]
                     ad.apptype = self.apptype
                     if self.apptype == "New":
@@ -291,6 +488,8 @@ class SunseekerRoboticmower:
                     self.get_settings(device_sn, deviceId)
                 for device_sn in self.deviceArray:
                     self.update_devices(device_sn)
+                    if self.apptype == "New":
+                        self.get_map_data(device_sn, deviceId)
                     self.get_device(device_sn).InitValues()
                 if self.apptype == "New":
                     self.connect_mqtt_new()
@@ -361,19 +560,21 @@ class SunseekerRoboticmower:
         _LOGGER.debug("MQTT encrypted password: " + encrypted_pass)  # noqa: G003
         self.edit_password_mqtt(encrypted_pass)
 
-        if self.mqtt_client:
-            self.mqtt_client.disconnect()
+        if self.mqtt_client_new:
+            self.mqtt_client_new.disconnect()
 
-        self.mqtt_client = mqtt.Client(client_id=self.client_id, protocol=mqtt.MQTTv311)
-        self.mqtt_client.on_connect = self.on_mqtt_connect
-        self.mqtt_client.on_message = self.on_mqtt_message
-        self.mqtt_client.on_disconnect = self.on_mqtt_disconnect
-        self.mqtt_client.on_error = self.on_mqtt_error
-        self.mqtt_client.on_close = self.on_mqtt_close
-        self.mqtt_client.username_pw_set(
+        self.mqtt_client_new = mqtt.Client(
+            client_id=self.client_id, protocol=mqtt.MQTTv311
+        )
+        self.mqtt_client_new.on_connect = self.on_mqtt_connect
+        self.mqtt_client_new.on_message = self.on_mqtt_message
+        self.mqtt_client_new.on_disconnect = self.on_mqtt_disconnect
+        self.mqtt_client_new.on_error = self.on_mqtt_error
+        self.mqtt_client_new.on_close = self.on_mqtt_close
+        self.mqtt_client_new.username_pw_set(
             self.session["username"] + self.appId, self.mqtt_passwd
         )
-        self.mqtt_client.tls_set()
+        self.mqtt_client_new.tls_set()
         if self.region == "EU":
             host = "wfsmqtt-specific.sk-robot.com"
         elif self.region == "US":
@@ -382,13 +583,13 @@ class SunseekerRoboticmower:
         _LOGGER.debug("MQTT username: " + self.session["username"] + self.appId)  # noqa: G003
         _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
         try:
-            self.mqtt_client.connect(
+            self.mqtt_client_new.connect(
                 host=host,
                 keepalive=60,
                 port=1884,
             )
             _LOGGER.debug("MQTT starting loop")
-            self.mqtt_client.loop_start()
+            self.mqtt_client_new.loop_start()
         except Exception as error:  # noqa: BLE001
             _LOGGER.debug("MQTT connect error: " + str(error))  # noqa: G003
 
@@ -515,6 +716,17 @@ class SunseekerRoboticmower:
                             device.blade_height = (
                                 data.get("data").get("blade").get("height")
                             )
+                    if "robot_pos" in data.get("data"):
+                        if "angle" in data.get("data").get("robot_pos"):
+                            device.mower_orientation = (
+                                data.get("data").get("robot_pos").get("angle")
+                            )
+                        if "point" in data.get("data").get("robot_pos"):
+                            x, y = data["data"]["robot_pos"]["point"]
+                            device.mower_pos_x = x
+                            device.mower_pos_y = y
+                            device.generate_livemap(x, y)
+                            device.livemap_updated = True
                 if "station" in data:
                     device.station = data.get("station")
                 if "wifi_lv" in data:
@@ -812,6 +1024,9 @@ class SunseekerRoboticmower:
         if self.mqtt_client is not None:
             if self.mqtt_client.is_connected():
                 self.mqtt_client.disconnect()
+        if self.mqtt_client_new is not None:
+            if self.mqtt_client_new.is_connected():
+                self.mqtt_client_new.disconnect()
 
     def start_mowing(self, devicesn):
         """Start Mowing."""
@@ -1319,3 +1534,59 @@ class SunseekerRoboticmower:
                 _LOGGER.debug(f"Set MQTT password attempt {attempt}: Error: {err}")  # noqa: G004
             except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
                 _LOGGER.debug(f"Set MQTT password attempt {attempt}: failed {error}")  # noqa: G004
+
+    def get_map_data(self, snr, deviceId):
+        """Get mapdata."""
+        endpoint = f"/mower/device-setting/{snr}"
+        if self.apptype == "New":
+            endpoint = f"/wireless_map/wireless_device/get?deviceSn={snr}"
+        attempt = 0
+        while attempt < MAX_LOGIN_RETRIES:
+            if attempt > 0:
+                time.sleep(1)
+            attempt = attempt + 1
+
+            try:
+                url_ = self.url + endpoint
+                headers_ = {
+                    "Accept-Language": self.language,
+                    "Authorization": "bearer " + self.session["access_token"],
+                    "Host": self.host,
+                    "Connection": "Keep-Alive",
+                    "User-Agent": "okhttp/4.4.1",
+                }
+                _LOGGER.debug(f"Get map header: {headers_} url: {url_}")  # noqa: G004
+                device = self.get_device(snr)
+                response = requests.get(
+                    url=url_,
+                    headers=headers_,
+                    timeout=10,
+                )
+                response_data = response.json()
+                mapurl = response_data["data"].get("mapPathFileUrl")
+                if mapurl:
+                    response = requests.get(mapurl, timeout=10)
+                    if response.status_code == 200:
+                        device.image_data = response.content
+                        device.image_state = "Loaded"
+                        _LOGGER.debug(f"Map data loaded for {snr}")  # noqa: G004
+
+                _LOGGER.debug(json.dumps(response_data))
+
+                if response_data["code"] != 0:
+                    _LOGGER.debug(f"Error getting map for {snr}")  # noqa: G004
+                    _LOGGER.debug(json.dumps(response_data))
+                    return
+                return  # noqa: TRY300
+            except requests.exceptions.HTTPError as errh:
+                _LOGGER.debug(f"Get map attempt {attempt}: Http Error:  {errh}")  # noqa: G004
+            except requests.exceptions.ConnectionError as errc:
+                _LOGGER.debug(
+                    f"Get map attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
+                )
+            except requests.exceptions.Timeout as errt:
+                _LOGGER.debug(f"Get map attempt {attempt}: Timeout Error: {errt}")  # noqa: G004
+            except requests.exceptions.RequestException as err:
+                _LOGGER.debug(f"Get map attempt {attempt}: Error: {err}")  # noqa: G004
+            except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+                _LOGGER.debug(f"Get map attempt {attempt}: failed {error}")  # noqa: G004
