@@ -49,7 +49,17 @@
 					"Charging": "Oplader",
 					"Mowing border": "Klipper kant",
 					"Unknown": "Ukendt",
-					"Unknown4": "Mode 4"
+					"Unknown4": "Mode 4",
+					"Idle": "Standby",
+					"Working": "Klipper",
+					"Pause": "Pause",
+					"Error": "Fejl",
+					"Return": "På vej hjem",
+					"Return pause": "Pause på vej hjem",
+					"Charging full": "Opladet",
+					"Offline": "Offline",
+					"Locating": "Positionere",
+					"Stop": "Stoppet"
 				}
 			},
 			"sunseeker_battery": {
@@ -134,8 +144,17 @@
 					"Charging": "Oplader",
 					"Mowing border": "Klipper kant",
 					"Unknown": "Ukendt",
-					"Unknown4": "Mode 4"
-
+					"Unknown4": "Mode 4",
+					"Idle": "Standby",
+					"Working": "Klipper",
+					"Pause": "Pause",
+					"Error": "Fejl",
+					"Return": "På vej hjem",
+					"Return pause": "Pause på vej hjem",
+					"Charging full": "Opladet",
+					"Offline": "Offline",
+					"Locating": "Positionere",
+					"Stop": "Stoppet"
 				}
 			}
 		},

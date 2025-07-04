@@ -31,7 +31,17 @@
             "Charging": "Lataa",
             "Mowing border": "Reunaleikkaus",
             "Unknown": "Tuntematon",
-            "Unknown4": "Mode 4"
+            "Unknown4": "Mode 4",
+            "Idle": "Standby",
+            "Working": "Working",
+					"Pause": "Pause",
+					"Error": "Error",
+					"Return": "Returning",
+					"Return pause": "Returning paused",
+					"Charging full": "Charged",
+					"Offline": "Offline",
+					"Locating": "Locating",
+					"Stop": "Stoped"
           }
         },
         "sunseeker_battery": {
@@ -116,7 +126,17 @@
             "Charging": "Lataa",
             "Mowing border": "Reunaleikkaus",
             "Unknown": "Tuntematon",
-            "Unknown4": "Mode 4"
+            "Unknown4": "Mode 4",
+            "Idle": "Standby",
+            "Working": "Working",
+					"Pause": "Pause",
+					"Error": "Error",
+					"Return": "Returning",
+					"Return pause": "Returning paused",
+					"Charging full": "Charged",
+					"Offline": "Offline",
+					"Locating": "Locating",
+					"Stop": "Stoped"
           }
         }
       },

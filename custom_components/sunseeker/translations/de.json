@@ -46,10 +46,20 @@
             "Standby": "Standby",
             "Mowing": "Mäht",
             "On the way home": "Fährt zum Dock",
-            "Charging": "Lädt",
+            "Charging": "Im Dock (Lädt)",
             "Mowing border": "Mäht Grenze",
             "Unknown": "Unbekannt",
-            "Unknown4": "Modus 4"
+            "Unknown4": "Modus 4",
+            "Idle": "Bereit",
+            "Working": "Mäht",
+					"Pause": "Pausiert",
+					"Error": "Fehler",
+					"Return": "Fährt zum Dock",
+					"Return pause": "Fahrt zum Dock pausiert",
+					"Charging full": "Im Dock (Vollgeladen)",
+					"Offline": "Keine Verbindung",
+					"Locating": "Positionsbestimmung",
+					"Stop": "Gestoppt"
           }
         },
         "sunseeker_battery": {
@@ -134,7 +144,17 @@
             "Charging": "Lädt",
             "Mowing border": "Mäht Grenze",
             "Unknown": "Unbekannt",
-            "Unknown4": "Modus 4"
+            "Unknown4": "Modus 4",
+            "Idle": "Bereit",
+            "Working": "Mäht",
+					"Pause": "Pausiert",
+					"Error": "Fehler",
+					"Return": "Fährt zum Dock",
+					"Return pause": "Fahrt zum Dock pausiert",
+					"Charging full": "Im Dock (Vollgeladen)",
+					"Offline": "Keine Verbindung",
+					"Locating": "Positionsbestimmung",
+					"Stop": "Gestoppt"
           }
         }
       },

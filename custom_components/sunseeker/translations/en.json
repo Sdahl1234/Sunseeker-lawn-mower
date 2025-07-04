@@ -49,7 +49,17 @@
             "Charging": "Charging",
             "Mowing border": "Border",
             "Unknown": "Unknown",
-            "Unknown4": "Mode 4"
+            "Unknown4": "Mode 4",
+            "Idle": "Standby",
+					"Working": "Working",
+					"Pause": "Pause",
+					"Error": "Error",
+					"Return": "Returning",
+					"Return pause": "Returning paused",
+					"Charging full": "Charged",
+					"Offline": "Offline",
+					"Locating": "Locating",
+					"Stop": "Stoped"
           }
         },
         "sunseeker_battery": {
@@ -134,7 +144,17 @@
             "Charging": "Charging",
             "Mowing border": "Border",
             "Unknown": "Unknown",
-            "Unknown4": "Mode 4"
+            "Unknown4": "Mode 4",
+            "Idle": "Standby",
+            "Working": "Working",
+					"Pause": "Pause",
+					"Error": "Error",
+					"Return": "Returning",
+					"Return pause": "Returning paused",
+					"Charging full": "Charged",
+					"Offline": "Offline",
+					"Locating": "Locating",
+					"Stop": "Stoped"
           }
         }
       },

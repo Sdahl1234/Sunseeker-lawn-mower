@@ -51,7 +51,15 @@
 					"Unknown": "Inconnu",
 					"Unknown4": "Mode 4",
 					"Working": "En fonctionnement",
-					"Locating": "Localisation"
+					"Locating": "Localisation",
+					"Idle": "Inactif",
+            		"Pause": "Pause",
+					"Error": "Erreur",
+					"Return": "Retour",
+					"Return pause": "Retour en pause",
+					"Charging full": "Chargé",
+					"Offline": "Hors ligne",
+					"Stop": "Arrêter"
 				}
 			},
 			"sunseeker_battery": {
@@ -138,7 +146,15 @@
             		"Unknown": "Inconnu",
             		"Unknown4": "Mode 4",
 					"Working": "En fonctionnement",
-					"Locating": "Localisation"
+					"Locating": "Localisation",
+					"Idle": "Inactif",
+            		"Pause": "Pause",
+					"Error": "Erreur",
+					"Return": "Retour",
+					"Return pause": "Retour en pause",
+					"Charging full": "Chargé",
+					"Offline": "Hors ligne",
+					"Stop": "Arrêter"
           		}
         	}
       	},
