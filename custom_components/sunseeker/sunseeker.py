@@ -564,9 +564,9 @@ class SunseekerRoboticmower:
             self.mqtt_client_new.disconnect()
 
         self.mqtt_client_new = mqtt.Client(
-            client_id=self.client_id, protocol=mqtt.MQTTv311
+            client_id=self.client_id + "new", protocol=mqtt.MQTTv311
         )
-        self.mqtt_client_new.on_connect = self.on_mqtt_connect
+        self.mqtt_client_new.on_connect = self.on_mqtt_connect_new
         self.mqtt_client_new.on_message = self.on_mqtt_message
         self.mqtt_client_new.on_disconnect = self.on_mqtt_disconnect
         self.mqtt_client_new.on_error = self.on_mqtt_error
@@ -640,6 +640,21 @@ class SunseekerRoboticmower:
             f"MQTT subscribe to: {sub}"  # noqa: G004
         )
         self.mqtt_client.subscribe(sub, qos=0)
+        _LOGGER.debug("MQTT subscribe ok")
+
+    def on_mqtt_connect_new(self, client, userdata, flags, rc):
+        """On mqtt connect."""
+        _LOGGER.debug("MQTT connected event")
+        if self.apptype == "Old":
+            ep = "app"
+        elif self.apptype == "New":
+            ep = "wirelessdevice"
+
+        sub = f"/{ep}/" + str(self.session["user_id"]) + "/get"
+        _LOGGER.debug(
+            f"MQTT subscribe to: {sub}"  # noqa: G004
+        )
+        self.mqtt_client_new.subscribe(sub, qos=0)
         _LOGGER.debug("MQTT subscribe ok")
 
     def on_mqtt_message(self, client, userdata, message):  # noqa: C901
