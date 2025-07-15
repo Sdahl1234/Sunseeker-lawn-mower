@@ -18,6 +18,7 @@ from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
+    SUNSEEKER_CONTINUE_CUTTING,
     SUNSEEKER_ERROR,
     SUNSEEKER_GOING_HOME,
     SUNSEEKER_IDLE,
@@ -30,6 +31,7 @@ from .const import (
     SUNSEEKER_RETURN_PAUSE,
     SUNSEEKER_STANDBY,
     SUNSEEKER_STOP,
+    SUNSEEKER_STUCK,
     SUNSEEKER_UNKNOWN,
     SUNSEEKER_UNKNOWN_4,
     SUNSEEKER_WORKING,
@@ -59,7 +61,8 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
         self.coordinator = coordinator
         self._data_handler = self.coordinator.data_handler
         self._sn = self.coordinator.devicesn
-        self._name = self._data_handler.get_device(self._sn).DeviceName
+        self.device = self._data_handler.get_device(self._sn)
+        self._name = self.device.DeviceName
 
     @property
     def translation_key(self) -> str:
@@ -141,8 +144,12 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
             val = SUNSEEKER_CHARGING_FULL
         elif ival == 13:
             val = SUNSEEKER_OFFLINE
+        elif ival == 14:
+            val = SUNSEEKER_CONTINUE_CUTTING
         elif ival == 15:
             val = SUNSEEKER_LOCATING
+        elif ival == 17:
+            val = SUNSEEKER_STUCK
         elif ival == 18:
             val = SUNSEEKER_STOP
         else:
@@ -152,7 +159,7 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
     async def async_start_mowing(self) -> None:
         """Start or resume mowing."""
         await self.hass.async_add_executor_job(
-            self._data_handler.start_mowing, self._sn
+            self._data_handler.start_mowing, self._sn, None
         )
 
     async def async_dock(self) -> None:

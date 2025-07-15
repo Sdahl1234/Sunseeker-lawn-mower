@@ -4,13 +4,15 @@
 import time
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
-from homeassistant.const import PERCENTAGE
+from homeassistant.const import AREA, PERCENTAGE
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
+    DOMAIN,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
+    SUNSEEKER_CONTINUE_CUTTING,
     SUNSEEKER_DRY,
     SUNSEEKER_DRY_COUNTDOWN,
     SUNSEEKER_ERROR,
@@ -25,6 +27,7 @@ from .const import (
     SUNSEEKER_RETURN_PAUSE,
     SUNSEEKER_STANDBY,
     SUNSEEKER_STOP,
+    SUNSEEKER_STUCK,
     SUNSEEKER_UNKNOWN,
     SUNSEEKER_UNKNOWN_4,
     SUNSEEKER_WET,
@@ -90,6 +93,84 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             ]
         )
     if AppNew:
+        est_time = []
+        est_size = []
+        for coordinator in robot_coordinators(hass, entry):
+            zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
+            for zone in zones:
+                zid, zname = zone
+                if zid != 0:  # skipping global
+                    p = SunseekerCustomEstimatedTimeSensor(
+                        coordinator,
+                        None,
+                        f"{zname} Estimated time",
+                        "min",
+                        "mdi:timer-outline",
+                        "sunseeker_estimated_time_custom",
+                        zname,
+                        zid,
+                    )
+                    est_time.append(p)
+                    s = SunseekerCustomZoneSizeSensor(
+                        coordinator,
+                        AREA,
+                        f"{zname} Zone size",
+                        "m²",
+                        "mdi:ruler-square",
+                        "sunseeker_area_size_custom",
+                        zname,
+                        zid,
+                    )
+                    est_size.append(s)
+        async_add_devices(est_time)
+        async_add_devices(est_size)
+
+        async_add_devices(
+            [
+                SunseekerScheduleSensor(
+                    coordinator,
+                    None,
+                    "Schedule",
+                    None,
+                    "schedule",
+                    "",
+                    "mdi:calendar",
+                    "sunseeker_schedule",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Event",
+                    None,
+                    "event",
+                    "",
+                    "mdi:calendar-alert",
+                    "sunseeker_events",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Robot sginal",
+                    "",
+                    "robot_sig",
+                    "",
+                    "mdi:wifi",
+                    "sunseeker_robot_signal",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
         async_add_devices(
             [
                 SunseekerSensor(
@@ -255,22 +336,24 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
+
+    async_add_devices(
+        [
+            SunseekerSensor(
+                coordinator,
+                SensorDeviceClass.DURATION,
+                "Actual mowing time",
+                "min",
+                "cur_min",
+                "",
+                "mdi:clock-time-three-outline",
+                "sunseeker_mowing_time",
+            )
+            for coordinator in robot_coordinators(hass, entry)
+        ]
+    )
+
     if not AppNew:
-        async_add_devices(
-            [
-                SunseekerSensor(
-                    coordinator,
-                    SensorDeviceClass.DURATION,
-                    "Actual mowing time",
-                    "min",
-                    "cur_min",
-                    "",
-                    "mdi:clock-time-three-outline",
-                    "sunseeker_mowing_time",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
         async_add_devices(
             [
                 SunseekerSensor(
@@ -407,6 +490,19 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
+        self._oldevent = ""
+
+    def save_to_logbook(self, message: str) -> None:
+        """Save a message to the Home Assistant logbook."""
+        self.hass.bus.fire(
+            "logbook_entry",
+            {
+                "name": self._name,
+                "message": message,
+                "entity_id": self.entity_id,
+                "domain": DOMAIN,
+            },
+        )
 
     def AddAttributes(self, day: str, data: any, attributes: dict) -> None:
         """Add schedule."""
@@ -500,8 +596,12 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                 val = SUNSEEKER_CHARGING_FULL
             elif ival == 13:
                 val = SUNSEEKER_OFFLINE
+            elif ival == 14:
+                val = SUNSEEKER_CONTINUE_CUTTING
             elif ival == 15:
                 val = SUNSEEKER_LOCATING
+            elif ival == 17:
+                val = SUNSEEKER_STUCK
             elif ival == 18:
                 val = SUNSEEKER_STOP
             else:
@@ -577,6 +677,14 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             val = self._data_handler.get_device(self._sn).blade_speed
         elif self._valuepair == "blade_height":
             val = self._data_handler.get_device(self._sn).blade_height
+        elif self._valuepair == "robot_sig":
+            val = self._data_handler.get_device(self._sn).robotsignal
+        elif self._valuepair == "event":
+            ec = str(self._data_handler.get_device(self._sn).eventcode)
+            val = f"{self._data_handler.get_device(self._sn).eventtype} (Code: {ec})"
+            # if val != self._oldevent:
+            #    self.save_to_logbook(f"New event: {val}")
+            #    self._oldevent = val
 
         return val
 
@@ -606,3 +714,124 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
     def icon(self):
         """Icon."""
         return self._icon
+
+
+class SunseekerScheduleSensor(SunseekerEntity, SensorEntity):
+    """Sunseeker Schedule Sensor."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        device_class: SensorDeviceClass,
+        name: str,
+        unit: str,
+        valuepair: str,
+        source: str,
+        icon: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_device_class = device_class
+        self._attr_native_unit_of_measurement = unit
+        self._valuepair = valuepair
+        self._source = source
+        self._icon = icon
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        # A simple state, could be a timestamp or a status
+        return "Use this in the schedule card"
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        # return self.device.Schedule_new.GenerateAttributeData()
+        return {"schedule": self.device.Schedule_new.GenerateAttributeData()}
+
+
+class SunseekerCustomEstimatedTimeSensor(SunseekerEntity, SensorEntity):
+    """Sunseeker Custom Estimated time Sensor."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        device_class: SensorDeviceClass,
+        name: str,
+        unit: str,
+        icon: str,
+        translationkey: str,
+        zonename: str,
+        zoneid: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_device_class = device_class
+        self._attr_native_unit_of_measurement = unit
+        self._zonename = zonename
+        self._zoneid = zoneid
+        self._icon = icon
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_translation_placeholders = {"post_name": zonename}
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self.zone = self.device.get_zone(zoneid)
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        # A simple state, could be a timestamp or a status
+        return self.zone.estimate_time
+
+
+class SunseekerCustomZoneSizeSensor(SunseekerEntity, SensorEntity):
+    """Sunseeker Custom Estimated time Sensor."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        device_class: SensorDeviceClass,
+        name: str,
+        unit: str,
+        icon: str,
+        translationkey: str,
+        zonename: str,
+        zoneid: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_device_class = device_class
+        self._attr_native_unit_of_measurement = unit
+        self._zonename = zonename
+        self._zoneid = zoneid
+        self._icon = icon
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_translation_placeholders = {"post_name": zonename}
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self.zone = self.device.get_zone(zoneid)
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        # A simple state, could be a timestamp or a status
+        return self.zone.region_size

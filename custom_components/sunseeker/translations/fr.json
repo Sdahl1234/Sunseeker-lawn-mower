@@ -18,233 +18,345 @@
         }
     },
     "entity": {
-      "sensor": {
-			"sunseeker_blade_speed": {
-				"name": "Vitesse de rotation de la coupe"
+        "select": {
+            "sunseeker_schedule_mode": {
+                "name": "Mode de planification",
+                "state": {
+                    "No schedule": "Aucun planning",
+                    "Recommended": "Recommandé",
+                    "User defined": "Défini par l'utilisateur"
+                }
+            },
+            "sunseeker_zones": {
+                "name": "Zones"
+            },
+            "sunseeker_cutting_pattern": {
+                "name": "Motif de coupe",
+                "state": {
+                    "Standard": "Standard",
+                    "Change pattern": "Changer de motif",
+                    "User defined": "Défini par l'utilisateur"
+                }
+            },
+            "sunseeker_avoiding_objects": {
+                "name": "Évitement d'obstacles",
+                "state": {
+                    "No touch": "Sans contact",
+                    "Slow touch": "Contact lent"
+                }
+            },
+            "sunseeker_ai_sensitivity": {
+                "name": "Sensibilité de l'IA",
+                "state": {
+                    "Low": "Faible",
+                    "High": "Élevée"
+                }
+            },
+            "sunseeker_edge_freq": {
+                "name": "Fréquence de coupe des bords",
+                "state": {
+                    "Every time": "À chaque fois",
+                    "Every 2nd time": "Une fois sur deux",
+                    "Every 3rd time": "Une fois sur trois"
+                }
+            },
+            "sunseeker_work_speed": {
+                "name": "Vitesse de travail",
+                "state": {
+                    "Slow": "Lente",
+                    "Normal": "Normale",
+                    "Fast": "Rapide"
+                }
+            },
+            "sunseeker_gap": {
+                "name": "Espacement de coupe",
+                "state": {
+                    "Narrow": "Étroit",
+                    "Normal": "Normal",
+                    "Wide": "Large"
+                }
+            }
+        },
+        "sensor": {
+			"sunseeker_estimated_time_custom": {
+				"name": "{post_name} Temps estimé"
 			},
-			"sunseeker_blade_height": {
-				"name": "Hauteur de la coupe"
+			"sunseeker_area_size_custom": {
+				"name": "{post_name} Zone"
 			},
-			"sunseeker_taskProgress": {
-				"name": "Avancement"
-			},
-			"sunseeker_taskTotalArea": {
-				"name": "Surface à tondre"
-			},
-			"sunseeker_taskCoverArea": {
-				"name": "Surface tondue"
-			},
-			"sunseeker_net4g_level": {
-				"name": "Puissance du réseau 4G"
-			},
-			"sunseeker_state_error": {
-				"name": "Erreur du changement d'état"
-			},
-			"sunseeker_mower_state": {
-				"name": "Etat du robot",
-				"state": {
-					"Standby": "En attente",
-					"Mowing": "En cours de tonte",
-					"On the way home": "Sur le chemin du retour",
-					"Charging": "En charge",
-					"Mowing border": "Coupe des bordures",
-					"Unknown": "Inconnu",
-					"Unknown4": "Mode 4",
-					"Working": "En fonctionnement",
-					"Locating": "Localisation",
-					"Idle": "Inactif",
-            		"Pause": "Pause",
-					"Error": "Erreur",
-					"Return": "Retour",
-					"Return pause": "Retour en pause",
-					"Charging full": "Chargé",
-					"Offline": "Hors ligne",
-					"Stop": "Arrêter"
-				}
-			},
-			"sunseeker_battery": {
-				"name": "Batterie"
-			},
-			"sunseeker_rain_delay_set": {
-				"name": "Délai en cas de pluie"
-			},
-			"sunseeker_sensor_counter": {
-				"name": "Durée restant en cas de pluie"
-			},
-			"sunseeker_mowing_time": {
-				"name": "Durée de tonte"
-			},
-			"sunseeker_error": {
-				"name": "Code erreur"
-			},
-			"sunseeker_error_text": {
-				"name": "Erreur"
-			},
-			"sunseeker_wifi_level": {
-				"name": "Puissance du signal Wifi"
-			},
-			"sunseeker_rain_status": {
-				"name": "Capteur de pluie",
-				"state": {
-					"Dry": "Pas de pluie",
-					"Dry countdown": "Durée restante en cas de pluie",
-					"Wet": "Mouillé",
-					"Unknown": "Inconnu"
-				}
-			},
-			"sunseekerzone1": {
-          		"name": "Démarrer la Zone 1"
-        	},
-        	"sunseekerzone2": {
-          		"name": "Démarrer la Zone 2"
-        	},
-        	"sunseekerzone3": {
-          		"name": "Démarrer la Zone 3"
-        	},
-        	"sunseekerzone4": {
-          		"name": "Démarrer la Zone 4"
-        	}
-      	},
-      	"binary_sensor": {
-        	"sunseeker_dock": {
-          		"name": "Station de recharge",
-          		"state": {
-            		"Away": "Loin",
-            		"Home": "Dans la station",
-            		"Unknown": "Inconnu"
-          		}
-        	},
-        	"sunseeker_rain_sensor_active": {
-          		"name": "Capteur de pluie activé"
-        	},
-        	"sunseeker_multizone": {
-          		"name": "Multizone"
-        	},
-        	"sunseeker_multizoneauto": {
-          		"name": "Multizone auto"
-        	},
-        	"sunseeker_schedule": {
-          		"name": "Planning"
-        	},
-        	"sunseeker_online": {
-          		"name": "En ligne",
-          		"state": {
-            		"Connected": "Connecté",
-            		"Disconnected": "Déconnecté",
-            		"Unknown": "Inconnu"
-          		}
-        	}
-      	},
-      	"lawn_mower": {
-        	"sunseeker_lawnmower": {
-          		"state": {
-            		"Standby": "En attente",
-            		"Mowing": "En cours de tonte",
-            		"On the way home": "Sur le chemin du retour",
-            		"Charging": "En charge",
-            		"Mowing border": "Coupe des bordures",
-            		"Unknown": "Inconnu",
-            		"Unknown4": "Mode 4",
-					"Working": "En fonctionnement",
-					"Locating": "Localisation",
-					"Idle": "Inactif",
-            		"Pause": "Pause",
-					"Error": "Erreur",
-					"Return": "Retour",
-					"Return pause": "Retour en pause",
-					"Charging full": "Chargé",
-					"Offline": "Hors ligne",
-					"Stop": "Arrêter"
-          		}
-        	}
-      	},
-      	"button": {
-        	"sunseeker_start": {
-          		"name": "Démarrer"
-        	},
-        	"sunseeker_pause": {
-          		"name": "Mettre en pause"
-        	},
-        	"sunseeker_border": {
-          		"name": "Couper les bordures"
-        	},
-        	"sunseeker_home": {
-          		"name": "Retourner à la station"
-        	},
-        	"sunseeker_stop": {
-          		"name": "Stop"
-        	}
-      	},
-      	"device_tracker": {
-        	"sunseeker_tracker": {
-          		"name": "Localisation du robot"
-        	}
-      	},
-      	"switch": {
-        	"sunseeker_rain_sensor": {
-          		"name": "Capteur de pluie"
-        	},
-        	"sunseeker_multi_zone": {
-          		"name": "Multizone"
-        	},
-        	"sunseeker_multi_zone_auto": {
-          		"name": "Multizone auto"
-        	},
-        	"schedule_active": {
-          		"name": "Planning"
-        	}
-      	},
-      	"number": {
-        	"sunseeker_rain_delay": {
-          		"name": "Délai en cas de pluie"
-        	},
-        	"sunseeker_zone1": {
-          		"name": "Démarrer la Zone 1"
-        	},
-        	"sunseeker_zone2": {
-          		"name": "Démarrer la Zone 2"
-        	},
-        	"sunseeker_zone3": {
-          		"name": "Démarrer la Zone 3"
-        	},
-        	"sunseeker_zone4": {
-          		"name": "Démarrer la Zone 4"
-        	},
-			"sunseeker_mulpro1": {
-				"name": "Priorité de la Zone 1"
-			},
-			"sunseeker_mulpro2": {
-				"name": "Priorité de la Zone 2"
-			},
-			"sunseeker_mulpro3": {
-				"name": "Priorité de la Zone 3"
-			},
-         	"sunseeker_mulpro4": {
-				"name": "Priorité de la Zone 4"
-			}
-      	},
-      	"text": {
-        	"sunseeker_schedule_text_1": {
-          		"name": "Planning du Lundi"
-        	},
-        	"sunseeker_schedule_text_2": {
-          		"name": "Planning du Mardi"
-        	},
-        	"sunseeker_schedule_text_3": {
-          		"name": "Planning du Mercredi"
-        	},
-        	"sunseeker_schedule_text_4": {
-          		"name": "Planning du Jeudi"
-        	},
-        	"sunseeker_schedule_text_5": {
-          		"name": "Planning du Vendredi"
-        	},
-        	"sunseeker_schedule_text_6": {
-          		"name": "Planning du Samedi"
-        	},
-        	"sunseeker_schedule_text_7": {
-          		"name": "Planning du Dimanche"
-        	}
-		}
-	}
+            "sunseeker_events": {
+                "name": "Événement"
+            },
+            "sunseeker_robot_sig": {
+                "name": "Signal du robot"
+            },
+            "sunseeker_blade_speed": {
+                "name": "Vitesse de rotation de la coupe"
+            },
+            "sunseeker_blade_height": {
+                "name": "Hauteur de la coupe"
+            },
+            "sunseeker_taskProgress": {
+                "name": "Avancement"
+            },
+            "sunseeker_taskTotalArea": {
+                "name": "Surface à tondre"
+            },
+            "sunseeker_taskCoverArea": {
+                "name": "Surface tondue"
+            },
+            "sunseeker_net4g_level": {
+                "name": "Puissance du réseau 4G"
+            },
+            "sunseeker_state_error": {
+                "name": "Erreur du changement d'état"
+            },
+            "sunseeker_mower_state": {
+                "name": "État du robot",
+                "state": {
+                    "Standby": "En attente",
+                    "Mowing": "En cours de tonte",
+                    "On the way home": "Sur le chemin du retour",
+                    "Charging": "En charge",
+                    "Mowing border": "Coupe des bordures",
+                    "Unknown": "Inconnu",
+                    "Unknown4": "Mode 4",
+                    "Working": "En fonctionnement",
+                    "Locating": "Localisation",
+                    "Idle": "Inactif",
+                    "Pause": "Pause",
+                    "Error": "Erreur",
+                    "Return": "Retour",
+                    "Return pause": "Retour en pause",
+                    "Charging full": "Chargé",
+                    "Offline": "Hors ligne",
+                    "Stop": "Arrêté",
+                    "Continue mowing": "Continuer la tonte",
+                    "Stuck": "Bloqué"
+                }
+            },
+            "sunseeker_battery": {
+                "name": "Batterie"
+            },
+            "sunseeker_rain_delay_set": {
+                "name": "Délai en cas de pluie"
+            },
+            "sunseeker_sensor_counter": {
+                "name": "Durée restante en cas de pluie"
+            },
+            "sunseeker_mowing_time": {
+                "name": "Durée de tonte"
+            },
+            "sunseeker_error": {
+                "name": "Code erreur"
+            },
+            "sunseeker_error_text": {
+                "name": "Erreur"
+            },
+            "sunseeker_wifi_level": {
+                "name": "Puissance du signal Wifi"
+            },
+            "sunseeker_rain_status": {
+                "name": "Capteur de pluie",
+                "state": {
+                    "Dry": "Pas de pluie",
+                    "Dry countdown": "Durée restante en cas de pluie",
+                    "Wet": "Mouillé",
+                    "Unknown": "Inconnu"
+                }
+            },
+            "sunseekerzone1": {
+                "name": "Démarrer la Zone 1"
+            },
+            "sunseekerzone2": {
+                "name": "Démarrer la Zone 2"
+            },
+            "sunseekerzone3": {
+                "name": "Démarrer la Zone 3"
+            },
+            "sunseekerzone4": {
+                "name": "Démarrer la Zone 4"
+            }
+        },
+        "binary_sensor": {
+            "sunseeker_dock": {
+                "name": "Station de recharge",
+                "state": {
+                    "Away": "Absent",
+                    "Home": "Dans la station",
+                    "Unknown": "Inconnu"
+                }
+            },
+            "sunseeker_rain_sensor_active": {
+                "name": "Capteur de pluie activé"
+            },
+            "sunseeker_multizone": {
+                "name": "Multizone"
+            },
+            "sunseeker_multizoneauto": {
+                "name": "Multizone auto"
+            },
+            "sunseeker_schedule": {
+                "name": "Planning"
+            },
+            "sunseeker_online": {
+                "name": "En ligne",
+                "state": {
+                    "Connected": "Connecté",
+                    "Disconnected": "Déconnecté",
+                    "Unknown": "Inconnu"
+                }
+            }
+        },
+        "lawn_mower": {
+            "sunseeker_lawnmower": {
+                "state": {
+                    "Standby": "En attente",
+                    "Mowing": "En cours de tonte",
+                    "On the way home": "Sur le chemin du retour",
+                    "Charging": "En charge",
+                    "Mowing border": "Coupe des bordures",
+                    "Unknown": "Inconnu",
+                    "Unknown4": "Mode 4",
+                    "Working": "En fonctionnement",
+                    "Locating": "Localisation",
+                    "Idle": "Inactif",
+                    "Pause": "Pause",
+                    "Error": "Erreur",
+                    "Return": "Retour",
+                    "Return pause": "Retour en pause",
+                    "Charging full": "Chargé",
+                    "Offline": "Hors ligne",
+                    "Stop": "Arrêté",
+                    "Continue mowing": "Continuer la tonte",
+                    "Stuck": "Bloqué"
+                }
+            }
+        },
+        "button": {
+            "sunseeker_start": {
+                "name": "Démarrer"
+            },
+            "sunseeker_pause": {
+                "name": "Mettre en pause"
+            },
+            "sunseeker_border": {
+                "name": "Couper les bordures"
+            },
+            "sunseeker_home": {
+                "name": "Retourner à la station"
+            },
+            "sunseeker_stop": {
+                "name": "Arrêter"
+            }
+        },
+        "device_tracker": {
+            "sunseeker_tracker": {
+                "name": "Localisation du robot"
+            }
+        },
+        "camera": {
+            "mower_live_map": {
+                "name": "Carte en direct"
+            }
+        },
+        "image": {
+            "mower_wifimap": {
+                "name": "Carte Wifi"
+            },
+            "mower_heatmap": {
+                "name": "Carte thermique"
+            },
+            "mower_map": {
+                "name": "Carte"
+            }
+        },
+        "switch": {
+            "sunseeker_custom_enable": {
+                "name": "Zones définies par l'utilisateur"
+            },
+            "sunseeker_time_work_repeat": {
+                "name": "Répéter la période de travail"
+            },
+            "sunseeker_border_first": {
+                "name": "Bordure en premier"
+            },
+            "sunseeker_rain_sensor": {
+                "name": "Capteur de pluie"
+            },
+            "sunseeker_multi_zone": {
+                "name": "Multizone"
+            },
+            "sunseeker_multi_zone_auto": {
+                "name": "Multizone auto"
+            },
+            "schedule_active": {
+                "name": "Planning"
+            }
+        },
+        "number": {
+            "sunseeker_blade_speed_custom": {
+                "name": "{post_name} Vitesse de coupe"
+            },
+            "sunseeker_blade_height_custom": {
+                "name": "{post_name} Hauteur de coupe"
+            },
+            "sunseeker_blade_speed": {
+                "name": "Vitesse de rotation de la coupe"
+            },
+            "sunseeker_blade_height": {
+                "name": "Hauteur de la coupe"
+            },
+            "sunseeker_rain_delay": {
+                "name": "Délai en cas de pluie"
+            },
+            "sunseeker_zone1": {
+                "name": "Démarrer la Zone 1"
+            },
+            "sunseeker_zone2": {
+                "name": "Démarrer la Zone 2"
+            },
+            "sunseeker_zone3": {
+                "name": "Démarrer la Zone 3"
+            },
+            "sunseeker_zone4": {
+                "name": "Démarrer la Zone 4"
+            },
+            "sunseeker_mulpro1": {
+                "name": "Priorité de la Zone 1"
+            },
+            "sunseeker_mulpro2": {
+                "name": "Priorité de la Zone 2"
+            },
+            "sunseeker_mulpro3": {
+                "name": "Priorité de la Zone 3"
+            },
+            "sunseeker_mulpro4": {
+                "name": "Priorité de la Zone 4"
+            }
+        },
+        "text": {
+            "sunseeker_schedule_text_1": {
+                "name": "Planning du Lundi"
+            },
+            "sunseeker_schedule_text_2": {
+                "name": "Planning du Mardi"
+            },
+            "sunseeker_schedule_text_3": {
+                "name": "Planning du Mercredi"
+            },
+            "sunseeker_schedule_text_4": {
+                "name": "Planning du Jeudi"
+            },
+            "sunseeker_schedule_text_5": {
+                "name": "Planning du Vendredi"
+            },
+            "sunseeker_schedule_text_6": {
+                "name": "Planning du Samedi"
+            },
+            "sunseeker_schedule_text_7": {
+                "name": "Planning du Dimanche"
+            }
+        }
+    }
 }

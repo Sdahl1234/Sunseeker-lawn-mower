@@ -84,8 +84,9 @@ class SunseekerButton(SunseekerEntity, ButtonEntity):
         if self._valuepair == "home":
             await self.hass.async_add_executor_job(self._data_handler.dock, self._sn)
         elif self._valuepair == "start":
+            zone = None
             await self.hass.async_add_executor_job(
-                self._data_handler.start_mowing, self._sn
+                self._data_handler.start_mowing, self._sn, zone
             )
         elif self._valuepair == "pause":
             await self.hass.async_add_executor_job(self._data_handler.pause, self._sn)

@@ -18,7 +18,113 @@
 		}
 	},
 	"entity": {
+		"select": {
+			"sunseeker_gap_custom": {
+				"name": "{post_name} Klippeafstand",
+				"state": {
+					"Narrow": "Smal",
+					"Normal": "Normal",
+					"Wide": "Bred"
+				}
+
+			},
+			"sunseeker_cutting_pattern_custom": {
+				"name": "{post_name} Klippe mønster",
+				"state": {
+					"Standard": "Standard",
+					"Change pattern": "Skift mønster",
+					"User defined": "Bruger defineret"
+				}
+
+			},
+			"sunseeker_work_speed_custom": {
+				"name": "{post_name} Arbejdshastighed",
+				"state": {
+					"Slow": "Langsom",
+					"Normal": "Normal",
+					"Fast": "Hurtig"
+				}
+
+			},
+			"sunseeker_schedule_mode": {
+				"name": "Tidsstyrrings type",
+				"state": {
+					"No schedule": "Ingen",
+					"Recommended": "Foreslået",
+					"User defined": "Bruger defineret"
+				}
+
+			},
+			"sunseeker_zones": {
+				"name": "Zoner"
+			},
+			"sunseeker_cutting_pattern": {
+				"name": "Klippe mønster",
+				"state": {
+					"Standard": "Standard",
+					"Change pattern": "Skift mønster",
+					"User defined": "Bruger defineret"
+				}
+
+			},
+			"sunseeker_avoiding_objects": {
+				"name": "Omgåelse af genstande",
+				"state": {
+					"No touch": "Ingen berøring",
+					"Slow touch": "Langsom berøring"
+				}
+
+			},
+			"sunseeker_ai_sensitivity": {
+				"name": "AI Sensitivity",
+				"state": {
+					"Low": "Lav",
+					"High": "Høj"
+				}
+
+			},
+			"sunseeker_edge_freq": {
+				"name": "Kantklip frekvens",
+				"state": {
+					"Every time": "Hver gang",
+					"Every 2nd time": "Hver 2. gang",
+					"Every 3rd time": "Hver 3. gang"
+				}
+
+			},
+			"sunseeker_work_speed": {
+				"name": "Arbejdshastighed",
+				"state": {
+					"Slow": "Langsom",
+					"Normal": "Normal",
+					"Fast": "Hurtig"
+				}
+
+			},
+			"sunseeker_gap": {
+				"name": "Klippeafstand",
+				"state": {
+					"Narrow": "Smal",
+					"Normal": "Normal",
+					"Wide": "Bred"
+				}
+
+			}
+
+		},
 		"sensor": {
+			"sunseeker_estimated_time_custom": {
+				"name": "{post_name} Estimeret tid"
+			},
+			"sunseeker_area_size_custom": {
+				"name": "{post_name} Areal"
+			},
+			"sunseeker_events": {
+				"name": "Event"
+			},
+			"sunseeker_robot_signal": {
+				"name": "Robot signal"
+			},
 			"sunseeker_blade_speed": {
 				"name": "Kniv hastighed"
 			},
@@ -59,7 +165,9 @@
 					"Charging full": "Opladet",
 					"Offline": "Offline",
 					"Locating": "Positionere",
-					"Stop": "Stoppet"
+					"Stop": "Stoppet",
+					"Continue mowing": "Fortsætter klipning",
+       			    "Stuck": "Sidder fast"
 				}
 			},
 			"sunseeker_battery": {
@@ -154,7 +262,9 @@
 					"Charging full": "Opladet",
 					"Offline": "Offline",
 					"Locating": "Positionere",
-					"Stop": "Stoppet"
+					"Stop": "Stoppet",
+					"Continue mowing": "Fortsætter klipning",
+          			"Stuck": "Sidder fast"
 				}
 			}
 		},
@@ -181,7 +291,34 @@
 				"name": "Robot lokation"
 			}
 		},
+		"camera": {
+			"mower_live_map": {
+				"name": "Live map"
+			}
+
+		},
+		"image": {
+			"mower_wifimap": {
+				"name": "Wifi Map"
+			},
+			"mower_heatmap": {
+				"name": "Heat Map"
+			},
+			"mower_map": {
+				"name": "Map"
+			}
+
+		},
 		"switch": {
+			"sunseeker_custom_enable": {
+				"name": "Bruger defineret zoner"
+			},
+			"sunseeker_time_work_repeat": {
+				"name": "Fortsæt klip"
+			},
+			"sunseeker_border_first": {
+				"name": "Kantklip først"
+			},
 			"sunseeker_rain_sensor": {
 				"name": "Regn sensor"
 			},
@@ -196,6 +333,24 @@
 			}
 		},
 		"number": {
+			"sunseeker_angle": {
+				"name": "Klippe vinkel"
+			},
+			"sunseeker_angle_custom": {
+				"name": "{post_name} Klippe vinkel"
+			},
+			"sunseeker_blade_speed_custom": {
+				"name": "{post_name} Kniv hastighed"
+			},
+			"sunseeker_blade_height_custom": {
+				"name": "{post_name} Kniv højde"
+			},
+			"sunseeker_blade_speed": {
+				"name": "Kniv hastighed"
+			},
+			"sunseeker_blade_height": {
+				"name": "Kniv højde"
+			},
 			"sunseeker_rain_delay": {
 				"name": "Regn forsinkelse"
 			},

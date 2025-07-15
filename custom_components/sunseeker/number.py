@@ -28,6 +28,70 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
+    if AppNew:
+        blade_speed = []
+        blade_height = []
+        plan_angle = []
+        for coordinator in robot_coordinators(hass, entry):
+            zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
+            for zone in zones:
+                zid, zname = zone
+                if zid != 0:  # skipping global
+                    p = SunseekerCustomBladespeedNumber(
+                        coordinator,
+                        f"{zname} Blade speed",
+                        "sunseeker_blade_speed_custom",
+                        zname,
+                        zid,
+                    )
+                    blade_speed.append(p)
+                    s = SunseekerCustomBladeheightNumber(
+                        coordinator,
+                        f"{zname} Blade height",
+                        "sunseeker_blade_height_custom",
+                        zname,
+                        zid,
+                    )
+                    blade_height.append(s)
+                    a = SunseekerCustomPlanangleNumber(
+                        coordinator,
+                        f"{zname} Cutting angle",
+                        "sunseeker_angle_custom",
+                        zname,
+                        zid,
+                    )
+                    plan_angle.append(a)
+
+        async_add_entities(blade_height)
+        async_add_entities(blade_speed)
+        async_add_entities(plan_angle)
+
+        async_add_entities(
+            [
+                SunseekerPlanangleNumber(
+                    coordinator, "Cutting angle", "sunseeker_angle"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+
+        async_add_entities(
+            [
+                SunseekerBladespeedNumber(
+                    coordinator, "Blade speed", "sunseeker_blade_speed"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerBladeheightNumber(
+                    coordinator, "Blade height", "sunseeker_blade_height"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+
     if not AppNew:
         async_add_entities(
             [
@@ -323,3 +387,259 @@ class SunseekerMulNumber(SunseekerEntity, NumberEntity):
         if self.mulnumber == 4:
             return self._data_handler.get_device(self._sn).mulpro_zon4
         return 0
+
+
+class SunseekerBladespeedNumber(SunseekerEntity, NumberEntity):
+    """LawnMower number."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self.native_max_value = 3000
+        self.native_min_value = 2800
+        self.native_step = 100
+        self.native_unit_of_measurement = "rpm"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self._attr_mode = "box"
+        self.icon = "mdi:saw-blade"
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_blade_speed,
+            int(value),
+            self._sn,
+        )
+
+    @property
+    def native_value(self):
+        """Return value."""
+        return self._data_handler.get_device(self._sn).blade_speed
+
+
+class SunseekerBladeheightNumber(SunseekerEntity, NumberEntity):
+    """LawnMower number."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self.native_max_value = 100
+        self.native_min_value = 20
+        self.native_step = 5
+        self.native_unit_of_measurement = "mm"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self._attr_mode = "box"
+        self.icon = "mdi:saw-blade"
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_blade_height,
+            int(value),
+            self._sn,
+        )
+
+    @property
+    def native_value(self):
+        """Return value."""
+        return self._data_handler.get_device(self._sn).blade_height
+
+
+class SunseekerPlanangleNumber(SunseekerEntity, NumberEntity):
+    """LawnMower number."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self.native_max_value = 360
+        self.native_min_value = 0
+        self.native_step = 5
+        self.native_unit_of_measurement = "°"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self._attr_mode = "box"
+        self.icon = "mdi:angle-acute"
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_plan_mode,
+            self._data_handler.get_device(self._sn).plan_mode,
+            int(value),
+            self._sn,
+        )
+
+    @property
+    def native_value(self):
+        """Return value."""
+        return self._data_handler.get_device(self._sn).plan_angle
+
+
+class SunseekerCustomBladeheightNumber(SunseekerEntity, NumberEntity):
+    """LawnMower number."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+        zonename: str,
+        zoneid: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self.native_max_value = 100
+        self.native_min_value = 20
+        self.native_step = 5
+        self.native_unit_of_measurement = "mm"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_translation_placeholders = {"post_name": zonename}
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self._attr_mode = "box"
+        self.icon = "mdi:saw-blade"
+        self.zoneid = zoneid
+        self.zonename = zonename
+        self.zone = self.device.get_zone(zoneid)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_custon_property,
+            self.zone,
+            self._sn,
+        )
+
+    @property
+    def native_value(self):
+        """Return value."""
+        return self.zone.blade_height
+
+
+class SunseekerCustomBladespeedNumber(SunseekerEntity, NumberEntity):
+    """LawnMower number."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+        zonename: str,
+        zoneid: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self.native_max_value = 3000
+        self.native_min_value = 2800
+        self.native_step = 100
+        self.native_unit_of_measurement = "rpm"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_translation_placeholders = {"post_name": zonename}
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self._attr_mode = "box"
+        self.icon = "mdi:saw-blade"
+        self.zoneid = zoneid
+        self.zonename = zonename
+        self.device = self._data_handler.get_device(self._sn)
+        self.zone = self.device.get_zone(zoneid)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_custon_property,
+            self.zone,
+            self._sn,
+        )
+
+    @property
+    def native_value(self):
+        """Return value."""
+        return self.zone.blade_speed
+
+
+class SunseekerCustomPlanangleNumber(SunseekerEntity, NumberEntity):
+    """LawnMower number."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+        zonename: str,
+        zoneid: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self.native_max_value = 360
+        self.native_min_value = 0
+        self.native_step = 5
+        self.native_unit_of_measurement = "°"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_translation_placeholders = {"post_name": zonename}
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self._attr_mode = "box"
+        self.icon = "mdi:angle-acute"
+        self.zoneid = zoneid
+        self.zonename = zonename
+        self.device = self._data_handler.get_device(self._sn)
+        self.zone = self.device.get_zone(zoneid)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_custon_property,
+            self.zone,
+            self._sn,
+        )
+
+    @property
+    def native_value(self):
+        """Return value."""
+        return self.zone.plan_angle

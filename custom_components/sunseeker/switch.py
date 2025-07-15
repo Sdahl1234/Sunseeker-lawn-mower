@@ -31,6 +31,32 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
         ]
     )
 
+    if AppNew:
+        async_add_entities(
+            [
+                SunseekerCustomEnableSwitch(
+                    coordinator, "Custom zones", "sunseeker_custom_enable"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerBorderFirstSwitch(
+                    coordinator, "Cut edge first", "sunseeker_border_first"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerTimeWorkRepeatSwitch(
+                    coordinator, "Repeat time work", "sunseeker_time_work_repeat"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+
     if not AppNew:
         async_add_entities(
             [
@@ -401,3 +427,165 @@ class SunseekerScheduleSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return not self._data_handler.get_device(self._sn).Schedule.IsEmpty()
+
+
+class SunseekerBorderFirstSwitch(SunseekerEntity, SwitchEntity):
+    """LawnMower switches."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:border-none-variant"
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_border_first,
+            True,
+            self._sn,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_border_first,
+            False,
+            self._sn,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_border_first,
+            not self.is_on,
+            self._sn,
+        )
+
+    async def async_update(self) -> None:
+        """Fetch new state data for the sensor."""
+        self.is_on = await self._data_handler.get_device(self._sn).border_first
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return self._data_handler.get_device(self._sn).border_first
+
+
+class SunseekerTimeWorkRepeatSwitch(SunseekerEntity, SwitchEntity):
+    """LawnMower switches."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:repeat"
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_time_work_repeat,
+            True,
+            self._sn,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_time_work_repeat,
+            False,
+            self._sn,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_time_work_repeat,
+            not self.is_on,
+            self._sn,
+        )
+
+    async def async_update(self) -> None:
+        """Fetch new state data for the sensor."""
+        self.is_on = await self._data_handler.get_device(self._sn).time_work_repeat
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return self._data_handler.get_device(self._sn).time_work_repeat
+
+
+class SunseekerCustomEnableSwitch(SunseekerEntity, SwitchEntity):
+    """LawnMower switches."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:account-arrow-right"
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_custom_flag,
+            True,
+            self._sn,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_custom_flag,
+            False,
+            self._sn,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_custom_flag,
+            not self.is_on,
+            self._sn,
+        )
+
+    async def async_update(self) -> None:
+        """Fetch new state data for the sensor."""
+        self.is_on = await self._data_handler.get_device(self._sn).custom_zones
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return self._data_handler.get_device(self._sn).custom_zones

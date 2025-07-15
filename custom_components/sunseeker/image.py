@@ -1,7 +1,8 @@
-"""Support for SS."""
+"""Support for Image map."""
 
 from __future__ import annotations
 
+from datetime import datetime
 import io
 import logging
 
@@ -37,21 +38,33 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     "Map",
                     "mower_map",
                     "mdi:map",
-                    False,
+                    0,
                 )
                 for coordinator in robot_coordinators(hass, entry)
             ]
         )
-
         async_add_entities(
             [
                 MowerImage(
                     hass,
                     coordinator,
-                    "Live Map",
-                    "mower_live_map",
+                    "Heat Map",
+                    "mower_heatmap",
                     "mdi:map",
-                    True,
+                    1,
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                MowerImage(
+                    hass,
+                    coordinator,
+                    "Wifi Map",
+                    "mower_wifimap",
+                    "mdi:map",
+                    2,
                 )
                 for coordinator in robot_coordinators(hass, entry)
             ]
@@ -70,7 +83,7 @@ class MowerImage(SunseekerEntity, ImageEntity):
         name: str,
         translationkey: str,
         icon: str,
-        live: bool = False,
+        mapid: int,
     ) -> None:
         """Init."""
         self.hass = hass
@@ -79,29 +92,45 @@ class MowerImage(SunseekerEntity, ImageEntity):
         self.data_coordinator = coordinator
         self._data_handler = self.data_coordinator.data_handler
         self._name = name
-        self._live = live
         self._icon = icon
         self._attr_has_entity_name = True
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
-        if live:
-            self.data_coordinator.livemap_entity = self
+        if mapid == 0:
+            self.data_coordinator.map_entity = self
+        elif mapid == 1:
+            self.data_coordinator.heatmap_entity = self
+        elif mapid == 2:
+            self.data_coordinator.wifimap_entity = self
+        self._device = self._data_handler.get_device(self._sn)
+        self.mapid = mapid
 
     @property
     def state(self):
         """State."""
-        if self._live:
-            return self.image_last_updated
-        return self._data_handler.get_device(self._sn).image_state
+        return self.image_last_updated
+        #    if self._live:
+        #        return self._device.live_image_state
+        #    return self._device.image_state
+
+    async def trigger_update(self) -> None:
+        """Trigger a state update for this image entity."""
+
+        # self.async_write_ha_state()
+        self.image_last_updated = datetime.now()
+        if self.mapid == 0:
+            self._device.map_updated = False
 
     async def async_image(self) -> bytes | None:
         """Return bytes of image."""
         try:
-            if self._live:
-                roi_img = self._data_handler.get_device(self._sn).livemap
-            else:
+            if self.mapid == 0:
                 roi_img = self._data_handler.get_device(self._sn).image
+            elif self.mapid == 1:
+                roi_img = self._data_handler.get_device(self._sn).heatmap
+            elif self.mapid == 2:
+                roi_img = self._data_handler.get_device(self._sn).wifimap
             # roi_img = img.convert("RGB")
             if roi_img is not None:
                 img_byte_arr = io.BytesIO()

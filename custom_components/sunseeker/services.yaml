@@ -1,0 +1,63 @@
+start_mowing:
+  name: Start mowing
+  description: >
+    Start the mower and optionally specify a list of zones to mow.
+    If no zones are provided, the mower will use its default behavior.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity to control.
+      required: true
+      selector:
+        entity:
+          domain: mower
+    zones:
+      name: Zones
+      description: A list of zone names to mow.
+      required: true
+      example: ["Front yard", "Back yard"]
+      selector:
+        object:
+          domain: select
+
+set_schedule:
+  name: Set schedule
+  description: >
+    Set the mowing schedule for your Sunseeker mower. You must provide the mower entity and a complete schedule object.
+  fields:
+    entity_id:
+      name: Sensor entity with schedule add to attributes
+      description: The mowers sensor entity to set the schedule for.
+      required: true
+      selector:
+        entity:
+          domain: sensor
+    schedule:
+      name: Schedule
+      description: >
+        The schedule data to apply. This must be a dictionary matching the expected schedule format, including all days and options.
+      required: true
+      example: |
+        {
+          "recommended_time_work": false,
+          "user_defined": true,
+          "pause": false,
+          "locations": ["Front", "Back"],
+          "monday": [
+            {
+              "enabled": true,
+              "starttime": "08:00",
+              "endtime": "10:00",
+              "locations": ["Front"]
+            },
+            {
+              "enabled": false,
+              "starttime": "00:00",
+              "endtime": "00:00",
+              "locations": []
+            }
+          ],
+          "tuesday": [],
+          "wednesday": [],
+          "thursday": [],
+          "friday": [],

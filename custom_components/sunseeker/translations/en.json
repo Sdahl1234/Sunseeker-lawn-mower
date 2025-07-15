@@ -18,7 +18,86 @@
         }
     },
     "entity": {
+		"select": {
+			"sunseeker_schedule_mode": {
+				"name": "Schedule mode",
+				"state": {
+					"No schedule": "No schedule",
+					"Recommended": "Recommended",
+					"User defined": "User defined"
+				}
+
+			},
+			"sunseeker_zones": {
+				"name": "Zones"
+			},
+			"sunseeker_cutting_pattern": {
+				"name": "Cutting pattern",
+				"state": {
+					"Standard": "Standard",
+					"Change pattern": "Change pattern",
+					"User defined": "User defined"
+				}
+
+			},
+			"sunseeker_avoiding_objects": {
+				"name": "Avoiding objects",
+				"state": {
+					"No touch": "No touch",
+					"Slow touch": "Slow touch"
+				}
+
+			},
+			"sunseeker_ai_sensitivity": {
+				"name": "AI Sensitivity",
+				"state": {
+					"Low": "Low",
+					"High": "High"
+				}
+
+			},
+			"sunseeker_edge_freq": {
+				"name": "Edge trim frequency",
+				"state": {
+					"Every time": "Every time",
+					"Every 2nd time": "Every 2nd time",
+					"Every 3rd time": "Every 3rd time"
+				}
+
+			},
+			"sunseeker_work_speed": {
+				"name": "Work speed",
+				"state": {
+					"Slow": "Slow",
+					"Normal": "Normal",
+					"Fast": "Fast"
+				}
+
+			},
+			"sunseeker_gap": {
+				"name": "Cutting gap",
+				"state": {
+					"Narrow": "Narrow",
+					"Normal": "Normal",
+					"Wide": "Wide"
+				}
+
+			}
+
+		},
       "sensor": {
+			"sunseeker_estimated_time_custom": {
+				"name": "{post_name} Estimated time"
+			},
+			"sunseeker_area_size_custom": {
+				"name": "{post_name} Area"
+			},
+			"sunseeker_events": {
+				"name": "Event"
+			},
+			"sunseeker_robot_sig": {
+				"name": "Robot signal"
+			},
   			"sunseeker_blade_speed": {
 				"name": "Blade speed"
 	  		},
@@ -59,7 +138,9 @@
 					"Charging full": "Charged",
 					"Offline": "Offline",
 					"Locating": "Locating",
-					"Stop": "Stoped"
+					"Stop": "Stoped",
+          "Continue mowing": "Continue mowing",
+          "Stuck": "Stuck"
           }
         },
         "sunseeker_battery": {
@@ -154,7 +235,9 @@
 					"Charging full": "Charged",
 					"Offline": "Offline",
 					"Locating": "Locating",
-					"Stop": "Stoped"
+					"Stop": "Stoped",
+ 					"Continue mowing": "Continue mowing",
+          "Stuck": "Stuck"
           }
         }
       },
@@ -180,7 +263,34 @@
           "name": "Robot location"
         }
       },
+		"camera": {
+			"mower_live_map": {
+				"name": "Live map"
+			}
+
+		},
+		"image": {
+			"mower_wifimap": {
+				"name": "Wifi Map"
+			},
+			"mower_heatmap": {
+				"name": "Heat Map"
+			},
+			"mower_map": {
+				"name": "Map"
+			}
+
+		},
       "switch": {
+			"sunseeker_custom_enable": {
+				"name": "User defined zones"
+			},
+			"sunseeker_time_work_repeat": {
+				"name": "Repeat time work"
+			},
+			"sunseeker_border_first": {
+				"name": "Edge first"
+			},
         "sunseeker_rain_sensor": {
           "name": "Rain sensor"
         },
@@ -195,6 +305,18 @@
         }
       },
       "number": {
+			"sunseeker_blade_speed_custom": {
+				"name": "{post_name} Blade speed"
+			},
+			"sunseeker_blade_height_custom": {
+				"name": "{post_name} Blade height"
+			},
+  			"sunseeker_blade_speed": {
+				"name": "Blade speed"
+	  		},
+		  	"sunseeker_blade_height": {
+				"name": "Blade height"
+},
         "sunseeker_rain_delay": {
           "name": "Rain delay"
         },
