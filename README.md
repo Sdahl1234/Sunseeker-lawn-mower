@@ -1,3 +1,5 @@
+# I need to update this page with information about the wireless models
+
 # Sunseeker lawn mower integration for Home Assistant
 Home assistant integration from lawnmower using the robotic-mower connect APP.
 
