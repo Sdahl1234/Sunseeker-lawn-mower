@@ -1,5 +1,13 @@
 # I need to update this page with information about the wireless models
 
+# The two new lovelace card that works with v.1.1.0
+## Schedule card:
+### https://github.com/Sdahl1234/sunseeker-schedule-card
+## Mower control card:
+### https://github.com/Sdahl1234/sunseeker-mower-control-card
+
+Add them to hacs and install.
+
 # Sunseeker lawn mower integration for Home Assistant
 Home assistant integration from lawnmower using the robotic-mower connect APP.
 
