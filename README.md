@@ -1,10 +1,12 @@
 # I need to update this page with information about the wireless models
 
-# The two new lovelace card that works with v.1.1.0
+# The tree new lovelace card that works with v.1.1.0
 ## Schedule card:
 ### https://github.com/Sdahl1234/sunseeker-schedule-card
 ## Mower control card:
 ### https://github.com/Sdahl1234/sunseeker-mower-control-card
+## Mower zones card
+### https://github.com/Sdahl1234/sunseeker-zone-card
 
 Add them to hacs and install.
 
