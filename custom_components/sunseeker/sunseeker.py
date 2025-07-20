@@ -756,16 +756,17 @@ class SunseekerDevice:
                 for z in data:
                     regionid = z["region_id"]
                     zone = self.get_zone(regionid)
-                    zone.id = regionid
-                    zone.gap = z.get("work_gap", zone.gap)
-                    zone.region_size = z.get("region_size", zone.region_size)
-                    zone.blade_height = z.get("blade_height", zone.blade_height)
-                    zone.estimate_time = z.get("estimate_time", zone.estimate_time)
-                    zone.blade_speed = z.get("blade_speed", zone.blade_speed)
-                    zone.plan_mode = z.get("plan_mode", zone.plan_mode)
-                    zone.work_speed = z.get("work_speed", zone.work_speed)
-                    zone.setting = z.get("setting", zone.setting)
-                    zone.plan_angle = z.get("plan_angle", zone.plan_angle)
+                    if zone:
+                        zone.id = regionid
+                        zone.gap = z.get("work_gap", zone.gap)
+                        zone.region_size = z.get("region_size", zone.region_size)
+                        zone.blade_height = z.get("blade_height", zone.blade_height)
+                        zone.estimate_time = z.get("estimate_time", zone.estimate_time)
+                        zone.blade_speed = z.get("blade_speed", zone.blade_speed)
+                        zone.plan_mode = z.get("plan_mode", zone.plan_mode)
+                        zone.work_speed = z.get("work_speed", zone.work_speed)
+                        zone.setting = z.get("setting", zone.setting)
+                        zone.plan_angle = z.get("plan_angle", zone.plan_angle)
 
 
 class SunseekerScheduleDay:
