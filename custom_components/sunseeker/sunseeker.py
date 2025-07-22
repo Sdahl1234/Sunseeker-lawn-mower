@@ -951,7 +951,7 @@ class SunseekerRoboticmower:
                     self.connect_mqtt()
 
             self.refresh_token_interval = Timer(
-                (self.session.get("expires_in") or 3600) * 1000, self.refresh_token
+                (self.session.get("expires_in") or 3600), self.refresh_token
             )
             self.refresh_token_interval.start()
 
