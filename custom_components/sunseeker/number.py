@@ -481,7 +481,7 @@ class SunseekerPlanangleNumber(SunseekerEntity, NumberEntity):
         self.data_coordinator = coordinator
         self._data_handler = self.data_coordinator.data_handler
         self._name = name
-        self.native_max_value = 360
+        self.native_max_value = 180
         self.native_min_value = 0
         self.native_step = 5
         self.native_unit_of_measurement = "°"
@@ -541,6 +541,7 @@ class SunseekerCustomBladeheightNumber(SunseekerEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
+        self.zone.blade_height = int(value)
         await self.hass.async_add_executor_job(
             self._data_handler.set_custon_property,
             self.zone,
@@ -587,6 +588,7 @@ class SunseekerCustomBladespeedNumber(SunseekerEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
+        self.zone.blade_speed = int(value)
         await self.hass.async_add_executor_job(
             self._data_handler.set_custon_property,
             self.zone,
@@ -615,7 +617,7 @@ class SunseekerCustomPlanangleNumber(SunseekerEntity, NumberEntity):
         self.data_coordinator = coordinator
         self._data_handler = self.data_coordinator.data_handler
         self._name = name
-        self.native_max_value = 360
+        self.native_max_value = 180
         self.native_min_value = 0
         self.native_step = 5
         self.native_unit_of_measurement = "°"
@@ -633,6 +635,7 @@ class SunseekerCustomPlanangleNumber(SunseekerEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
+        self.zone.plan_angle = int(value)
         await self.hass.async_add_executor_job(
             self._data_handler.set_custon_property,
             self.zone,
