@@ -17,8 +17,7 @@ start_mowing:
       required: true
       example: ["Front yard", "Back yard"]
       selector:
-        object:
-          domain: select
+        object: {}
 
 set_schedule:
   name: Set schedule
