@@ -19,6 +19,33 @@
     },
     "entity": {
         "select": {
+			"sunseeker_gap_custom": {
+				"name": "{post_name} Espacement de coupe",
+				"state": {
+					"Narrow": "Étroit",
+					"Normal": "Normal",
+					"Wide": "Large"
+				}
+
+			},
+			"sunseeker_cutting_pattern_custom": {
+				"name": "{post_name} Motif de coupe",
+				"state": {
+					"Standard": "Standard",
+					"Change pattern": "Changer de motif",
+					"User defined": "Défini par l'utilisateur"
+				}
+
+			},
+			"sunseeker_work_speed_custom": {
+				"name": "{post_name} Vitesse de travail",
+				"state": {
+					"Slow": "Lente",
+					"Normal": "Normale",
+					"Fast": "Rapide"
+				}
+
+			},
             "sunseeker_schedule_mode": {
                 "name": "Mode de planification",
                 "state": {
@@ -295,6 +322,12 @@
             }
         },
         "number": {
+			"sunseeker_angle": {
+				"name": "Angle de coupe"
+			},
+			"sunseeker_angle_custom": {
+				"name": "{post_name} Angle de coupe"
+			},
             "sunseeker_blade_speed_custom": {
                 "name": "{post_name} Vitesse de coupe"
             },

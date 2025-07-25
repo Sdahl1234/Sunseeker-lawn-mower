@@ -19,6 +19,34 @@
   },
   "entity": {
     "select": {
+			"sunseeker_gap_custom": {
+				"name": "{post_name} Schnittabstand",
+				"state": {
+					"Narrow": "Schmal",
+					"Normal": "Normal",
+					"Wide": "Breit"
+				}
+
+			},
+			"sunseeker_cutting_pattern_custom": {
+				"name": "{post_name} Mähmuster",
+				"state": {
+					"Standard": "Standard",
+					"Change pattern": "Muster wechseln",
+					"User defined": "Benutzerdefiniert"
+				}
+
+			},
+			"sunseeker_work_speed_custom": {
+				"name": "{post_name} Arbeitsgeschwindigkeit",
+				"state": {
+					"Slow": "Langsam",
+					"Normal": "Normal",
+					"Fast": "Schnell"
+				}
+
+			},
+
       "sunseeker_schedule_mode": {
         "name": "Zeitplanmodus",
         "state": {
@@ -295,6 +323,12 @@
       }
     },
     "number": {
+			"sunseeker_angle": {
+				"name": "Schnittwinkel"
+			},
+			"sunseeker_angle_custom": {
+				"name": "{post_name} Schnittwinkel"
+			},
       "sunseeker_blade_speed_custom": {
         "name": "{post_name} Messergeschwindigkeit"
       },

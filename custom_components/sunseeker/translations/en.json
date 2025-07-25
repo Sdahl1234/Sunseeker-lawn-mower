@@ -19,7 +19,35 @@
     },
     "entity": {
 		"select": {
-			"sunseeker_schedule_mode": {
+			"sunseeker_gap_custom": {
+				"name": "{post_name} Cutting gap",
+				"state": {
+					"Narrow": "Narrow",
+					"Normal": "Normal",
+					"Wide": "Wide"
+				}
+
+			},
+			"sunseeker_cutting_pattern_custom": {
+				"name": "{post_name} Cutting pattern",
+				"state": {
+					"Standard": "Standard",
+					"Change pattern": "Change pattern",
+					"User defined": "User defined"
+				}
+
+			},
+			"sunseeker_work_speed_custom": {
+				"name": "{post_name} Work speed",
+				"state": {
+					"Slow": "Slow",
+					"Normal": "Normal",
+					"Fast": "Fast"
+				}
+
+			},
+
+      "sunseeker_schedule_mode": {
 				"name": "Schedule mode",
 				"state": {
 					"No schedule": "No schedule",
@@ -305,6 +333,12 @@
         }
       },
       "number": {
+			"sunseeker_angle": {
+				"name": "Cutting angle"
+			},
+			"sunseeker_angle_custom": {
+				"name": "{post_name} Cutting angle"
+			},
 			"sunseeker_blade_speed_custom": {
 				"name": "{post_name} Blade speed"
 			},

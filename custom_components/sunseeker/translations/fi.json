@@ -19,6 +19,34 @@
     },
     "entity": {
         "select": {
+			"sunseeker_gap_custom": {
+				"name": "{post_name} Leikkausväli",
+				"state": {
+					"Narrow": "Kapea",
+					"Normal": "Normaali",
+					"Wide": "Leveä"
+				}
+
+			},
+			"sunseeker_cutting_pattern_custom": {
+				"name": "{post_name} Cutting pattern",
+				"state": {
+					"Standard": "Standard",
+					"Change pattern": "Change pattern",
+					"User defined": "User defined"
+				}
+
+			},
+			"sunseeker_work_speed_custom": {
+				"name": "{post_name} Work seed",
+				"state": {
+					"Slow": "Slow",
+					"Normal": "Normal",
+					"Fast": "Fast"
+				}
+
+			},
+
             "sunseeker_schedule_mode": {
                 "name": "Ajastustila",
                 "state": {
@@ -280,6 +308,12 @@
             }
         },
         "number": {
+			"sunseeker_angle": {
+				"name": "Cutting angle"
+			},
+			"sunseeker_angle_custom": {
+				"name": "{post_name} Cutting angle"
+			},
             "sunseeker_blade_speed_custom": {
                 "name": "{post_name} terän nopeus"
             },
