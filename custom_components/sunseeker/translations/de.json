@@ -115,7 +115,7 @@
       "sunseeker_events": {
         "name": "Ereignis"
       },
-      "sunseeker_robot_sig": {
+      "sunseeker_robot_signal": {
         "name": "Robotersignal"
       },
       "sunseeker_blade_speed": {
@@ -204,6 +204,9 @@
       },
       "sunseekerzone4": {
         "name": "Zone 4 Start"
+      },
+      "sunseeker_schedule": {
+        "name": "Arbeitsplan"
       }
     },
     "binary_sensor": {
@@ -223,9 +226,6 @@
       },
       "sunseeker_multizoneauto": {
         "name": "Multizone Auto"
-      },
-      "sunseeker_schedule": {
-        "name": "Arbeitsplan"
       },
       "sunseeker_online": {
         "name": "Online",

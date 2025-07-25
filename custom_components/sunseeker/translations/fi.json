@@ -121,7 +121,7 @@
             "sunseeker_events": {
                 "name": "Tapahtuma"
             },
-            "sunseeker_robot_sig": {
+            "sunseeker_robot_signal": {
                 "name": "Robotin signaali"
             },
             "sunseeker_state_error": {
@@ -192,6 +192,9 @@
             },
             "sunseekerzone4": {
                 "name": "Alue 4 aloitus"
+            },
+            "sunseeker_schedule": {
+                "name": "Ajastus"
             }
         },
         "binary_sensor": {
