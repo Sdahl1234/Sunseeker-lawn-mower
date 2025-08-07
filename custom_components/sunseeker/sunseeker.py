@@ -51,8 +51,8 @@ class Sunseeker_new_schedule:
         self.timezone = None
         self.days: list[Sunseeker_new_schedule_day] = []
         for x in range(1, 8):
-            self.days.append(Sunseeker_new_schedule_day(x, 1))
-            self.days.append(Sunseeker_new_schedule_day(x, 2))
+            self.days.append(Sunseeker_new_schedule_day(x - 1, 1))
+            self.days.append(Sunseeker_new_schedule_day(x - 1, 2))
 
     def GetDay(self, daynumber: int, index: int) -> Sunseeker_new_schedule_day:
         """Get the day."""
@@ -75,7 +75,7 @@ class Sunseeker_new_schedule:
             return "friday"
         if day == 6:
             return "saturday"
-        if day == 7:
+        if day == 0:
             return "sunday"
         return ""
 
@@ -222,7 +222,7 @@ class Sunseeker_new_schedule:
         for day in self.days:
             if day.enabled:
                 daydata = {
-                    "period": [day.day_index],
+                    "period": [day.day],
                     "unlock": day.unlock,
                     "region_id": day.region_id,
                     "start": day.start,
@@ -246,16 +246,31 @@ class Sunseeker_new_schedule:
         """Generate a list of enabled time entries in the required format."""
 
         time_list: list[dict] = []
-        for day, entries in schedule.items():
+        day_order = [
+            "sunday",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+        ]
+        # for day, entries in schedule.items():
+        for day, entries in sorted(
+            schedule.items(),
+            key=lambda x: day_order.index(x[0].lower())
+            if x[0].lower() in day_order
+            else 99,
+        ):
             # Convert day name to period number (Monday=1, ..., Sunday=7)
             day_to_period = {
+                "sunday": 0,
                 "monday": 1,
                 "tuesday": 2,
                 "wednesday": 3,
                 "thursday": 4,
                 "friday": 5,
                 "saturday": 6,
-                "sunday": 7,
             }
             period = (
                 [day_to_period.get(day.lower())]
@@ -1451,7 +1466,7 @@ class SunseekerRoboticmower:
                             for day in device.Schedule_new.days:
                                 day.enabled = False
                             ctime = data.get("data").get("time_custom")
-                            oldperiod = 0
+                            oldperiod = -1
                             index = 1
                             for day in ctime:
                                 period = day.get("period")
@@ -1493,6 +1508,10 @@ class SunseekerRoboticmower:
                                     .get("time_custom")
                                     .get("recommended_time_work")
                                 )
+                            if "time_zone" in data.get("data").get("time_custom"):
+                                device.Schedule_new.timezone = (
+                                    data.get("data").get("time_custom").get("time_zone")
+                                )
                             if "pause" in data.get("data").get("time_custom"):
                                 device.Schedule_new.schedule_pause = (
                                     data.get("data").get("time_custom").get("pause")
@@ -1510,7 +1529,7 @@ class SunseekerRoboticmower:
                                 if ctime:
                                     for day in device.Schedule_new.days:
                                         day.enabled = False
-                                    oldperiod = 0
+                                    oldperiod = -1
                                     index = 1
                                     for day in ctime:
                                         period = day.get("period")
