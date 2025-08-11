@@ -547,6 +547,7 @@ class SunseekerCustomBladeheightNumber(SunseekerEntity, NumberEntity):
             self.zone,
             self._sn,
         )
+        self.async_write_ha_state()
 
     @property
     def native_value(self):
@@ -594,6 +595,7 @@ class SunseekerCustomBladespeedNumber(SunseekerEntity, NumberEntity):
             self.zone,
             self._sn,
         )
+        self.async_write_ha_state()
 
     @property
     def native_value(self):
@@ -641,6 +643,7 @@ class SunseekerCustomPlanangleNumber(SunseekerEntity, NumberEntity):
             self.zone,
             self._sn,
         )
+        self.async_write_ha_state()
 
     @property
     def native_value(self):
