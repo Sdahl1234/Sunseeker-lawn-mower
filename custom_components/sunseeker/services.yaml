@@ -10,7 +10,7 @@ start_mowing:
       required: true
       selector:
         entity:
-          domain: mower
+          domain: lawn_mower
     zones:
       name: Zones
       description: A list of zone names to mow.
@@ -18,6 +18,19 @@ start_mowing:
       example: ["Front yard", "Back yard"]
       selector:
         object: {}
+
+stop_mowing:
+  name: Stop mowing
+  description: >
+    Stops the mower.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity to control.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
 
 set_schedule:
   name: Set schedule

@@ -41,6 +41,7 @@ PLATFORMS = [
 
 SERVICE_SET_SCHEDULE = "set_schedule"
 SERVICE_START_MOWING = "start_mowing"
+SERVICE_STOP_MOWING = "stop_mowing"
 
 SET_SCHEDULE_SCHEMA = vol.Schema(
     {
@@ -48,6 +49,13 @@ SET_SCHEDULE_SCHEMA = vol.Schema(
         vol.Required("schedule"): dict,
     }
 )
+
+STOP_MOWING_SCHEMA = vol.Schema(
+    {
+        vol.Required("entity_id"): cv.entity_id,
+    }
+)
+
 
 START_MOWING_SCHEMA = vol.Schema(
     {
@@ -128,6 +136,33 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: D103
                     return
         raise HomeAssistantError(f"Device for {entity_id} not found")
 
+    async def async_handle_mower_stop(call: ServiceCall):
+        entity_id = call.data["entity_id"]
+
+        # Find the entity and its coordinator
+        ent_reg = er.async_get(hass)
+        entry = ent_reg.async_get(entity_id)
+        if not entry:
+            raise HomeAssistantError(f"Entity {entity_id} not found")
+
+        # Find the coordinator/device for this entity
+        # The entity_id contains the device serial number (dsn)
+        dsn = entry.unique_id.split(".")[
+            2
+        ]  # Example: "Sunseeker_lawnmower.name.CE1234563534545"
+        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
+            robots = data.get(ROBOTS, [])
+            for coordinator_ in robots:
+                coordinator: SunseekerDataCoordinator = coordinator_
+                if coordinator.devicesn == dsn:
+                    device = coordinator.device
+                    await hass.async_add_executor_job(
+                        coordinator.data_handler.stop,
+                        device.devicesn,
+                    )
+                    return
+        raise HomeAssistantError(f"Device for {entity_id} not found")
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_SET_SCHEDULE,
@@ -140,6 +175,13 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: D103
         SERVICE_START_MOWING,
         async_handle_mower_start,
         schema=START_MOWING_SCHEMA,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_STOP_MOWING,
+        async_handle_mower_stop,
+        schema=STOP_MOWING_SCHEMA,
     )
 
     return True
