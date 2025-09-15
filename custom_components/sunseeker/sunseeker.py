@@ -96,9 +96,9 @@ class Sunseeker_new_schedule:
     def GenerateAttributeData(self):
         """Generate att data."""
         schedule = {
-            "recommended_time_work": False,
-            "user_defined": True,
-            "pause": False,
+            "recommended_time_work": self.schedule_recommended,
+            "user_defined": self.schedule_custom,
+            "pause": self.schedule_pause,
             "locations": [],
             "monday": [
                 {
@@ -1519,7 +1519,7 @@ class SunseekerRoboticmower:
                             if "time_custom_flag" in data.get("data").get(
                                 "time_custom"
                             ):
-                                device.Schedule_new.schedule_pause = (
+                                device.Schedule_new.schedule_custom = (
                                     data.get("data")
                                     .get("time_custom")
                                     .get("time_custom_flag")
@@ -1588,6 +1588,67 @@ class SunseekerRoboticmower:
                                                     dayobj.end,
                                                     day.get("end", dayobj.end),
                                                 )
+                    if "time" in data.get("data"):
+                        need_update = True
+                        ctime = data.get("data").get("time")
+                        if ctime:
+                            for day in device.Schedule_new.days:
+                                day.enabled = False
+                            oldperiod = -1
+                            index = 1
+                            for day in ctime:
+                                period = day.get("period")
+                                for pday in period:
+                                    if oldperiod == period:
+                                        index = index + 1
+                                    else:
+                                        index = 1
+                                    oldperiod = period
+
+                                    dayobj = device.Schedule_new.GetDay(pday, index)
+                                    if dayobj:
+                                        dayobj.enabled = True
+                                        dayobj.unlock = update_var_if_changed(
+                                            dayobj.unlock,
+                                            day.get("unlock", dayobj.unlock),
+                                        )
+                                        dayobj.active = update_var_if_changed(
+                                            dayobj.active,
+                                            day.get("active", dayobj.active),
+                                        )
+                                        dayobj.need_fllow_boader = (
+                                            update_var_if_changed(
+                                                dayobj.need_fllow_boader,
+                                                day.get(
+                                                    "need_fllow_boader",
+                                                    dayobj.need_fllow_boader,
+                                                ),
+                                            )
+                                        )
+                                        dayobj.region_id = update_var_if_changed(
+                                            dayobj.region_id,
+                                            day.get(
+                                                "region_id",
+                                                dayobj.region_id,
+                                            ),
+                                        )
+                                        dayobj.need_fllow_boader = (
+                                            update_var_if_changed(
+                                                dayobj.need_fllow_boader,
+                                                day.get(
+                                                    "need_fllow_boader",
+                                                    dayobj.need_fllow_boader,
+                                                ),
+                                            )
+                                        )
+                                        dayobj.start = update_var_if_changed(
+                                            dayobj.start,
+                                            day.get("start", dayobj.start),
+                                        )
+                                        dayobj.end = update_var_if_changed(
+                                            dayobj.end,
+                                            day.get("end", dayobj.end),
+                                        )
 
                     # zones
                     if "custom_flag" in data.get("data"):
@@ -2852,7 +2913,7 @@ class SunseekerRoboticmower:
 
         self.set_property(data, devicesn)
 
-    def set_schedule_data(self, mode: int, devicesn):
+    def set_schedule_data(self, devicesn):
         """Set schedule from own data."""
         device = self.get_device(devicesn)
         data = {
@@ -2873,7 +2934,7 @@ class SunseekerRoboticmower:
         """Set schedule."""
         # 0 = ingen, 1 = recommended, 2 = custom
         if mode == 20:
-            self.set_schedule_data(mode, devicesn)
+            self.set_schedule_data(devicesn)
         mode = 100
         if mode == 10:
             self.get_schedule_data(devicesn)

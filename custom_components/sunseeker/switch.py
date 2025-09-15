@@ -56,6 +56,14 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 for coordinator in robot_coordinators(hass, entry)
             ]
         )
+        async_add_entities(
+            [
+                SunseekerSchedulePauseSwitch(
+                    coordinator, "Pause schedule", "sunseeker_pause_schedule"
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
 
     if not AppNew:
         async_add_entities(
@@ -589,3 +597,63 @@ class SunseekerCustomEnableSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return self._data_handler.get_device(self._sn).custom_zones
+
+
+class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
+    """LawnMower switches."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:account-arrow-right"
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        self._data_handler.get_device(self._sn).Schedule_new.schedule_pause = True
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_schedule_data,
+            self._sn,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        self._data_handler.get_device(self._sn).Schedule_new.schedule_pause = False
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_schedule_data,
+            self._sn,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        self._data_handler.get_device(
+            self._sn
+        ).Schedule_new.schedule_pause = not self._data_handler.get_device(
+            self._sn
+        ).Schedule_new.schedule_pause
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_schedule_data,
+            self._sn,
+        )
+
+    async def async_update(self) -> None:
+        """Fetch new state data for the sensor."""
+        self.is_on = await self._data_handler.get_device(
+            self._sn
+        ).Schedule_new.schedule_pause
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return self._data_handler.get_device(self._sn).Schedule_new.schedule_pause

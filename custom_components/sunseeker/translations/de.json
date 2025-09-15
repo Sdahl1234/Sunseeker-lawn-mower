@@ -300,6 +300,9 @@
       }
     },
     "switch": {
+			"sunseeker_pause_schedule": {
+				"name": "Pausen Arbeitsplan"
+			},
       "sunseeker_custom_enable": {
         "name": "Benutzerdefinierte Zonen"
       },

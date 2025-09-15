@@ -310,6 +310,9 @@
 
 		},
 		"switch": {
+			"sunseeker_pause_schedule": {
+				"name": "Pause tidsstyrring"
+			},
 			"sunseeker_custom_enable": {
 				"name": "Bruger defineret zoner"
 			},

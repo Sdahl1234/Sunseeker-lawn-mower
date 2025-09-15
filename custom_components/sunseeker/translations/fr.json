@@ -299,6 +299,9 @@
             }
         },
         "switch": {
+			"sunseeker_pause_schedule": {
+				"name": "planification des pauses"
+			},
             "sunseeker_custom_enable": {
                 "name": "Zones définies par l'utilisateur"
             },
