@@ -638,17 +638,17 @@ class SunseekerDevice:
 
         draw = ImageDraw.Draw(image)
 
+        for region in data.get("region_channel", []):
+            pts = parse_points(region["points"])
+            transformed_points = [transform(p) for p in pts]
+            draw.polygon(transformed_points, outline="gray", fill="gray")
+
         for work in data.get("region_work", []):
             pts = parse_points(work["points"])
             transformed_points = [transform(p) for p in pts]
             draw.polygon(
                 transformed_points, outline=self.grass_color, fill=self.grass_color
             )
-
-        for region in data.get("region_channel", []):
-            pts = parse_points(region["points"])
-            transformed_points = [transform(p) for p in pts]
-            draw.polygon(transformed_points, outline="gray", fill="gray")
 
         for obstacle in data.get("region_obstacle", []):
             pts = parse_points(obstacle["points"])
