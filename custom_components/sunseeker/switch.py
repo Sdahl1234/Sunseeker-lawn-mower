@@ -617,7 +617,7 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
-        self.icon = "mdi:account-arrow-right"
+        self.icon = "mdi:timer-pause"
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
