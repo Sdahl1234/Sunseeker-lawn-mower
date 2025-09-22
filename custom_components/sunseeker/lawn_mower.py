@@ -20,6 +20,7 @@ from .const import (
     SUNSEEKER_CHARGING_FULL,
     SUNSEEKER_CONTINUE_CUTTING,
     SUNSEEKER_ERROR,
+    SUNSEEKER_FIRMWARE_UPDATE,
     SUNSEEKER_GOING_HOME,
     SUNSEEKER_IDLE,
     SUNSEEKER_LOCATING,
@@ -148,6 +149,8 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
             val = SUNSEEKER_CONTINUE_CUTTING
         elif ival == 15:
             val = SUNSEEKER_LOCATING
+        elif ival == 16:
+            val = SUNSEEKER_FIRMWARE_UPDATE
         elif ival == 17:
             val = SUNSEEKER_STUCK
         elif ival == 18:
