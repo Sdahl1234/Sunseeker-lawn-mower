@@ -712,10 +712,10 @@ class SunseekerDevice:
             transformed_points = [transform(p) for p in pts]
             draw.polygon(transformed_points, outline="blue", fill=None)  # "blue")
 
-        for charger in data.get("region_charger_channel", []):
-            pts = parse_points(charger["points"])
-            transformed_points = [transform(p) for p in pts]
-            draw.polygon(transformed_points, outline="yellow", fill="yellow")
+        # for charger in data.get("region_charger_channel", []):
+        #    pts = parse_points(charger["points"])
+        #    transformed_points = [transform(p) for p in pts]
+        #    draw.polygon(transformed_points, outline="yellow", fill="yellow")
 
         self.image = image
         self.image_state = "Loaded"
