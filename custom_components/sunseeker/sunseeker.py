@@ -377,6 +377,8 @@ class SunseekerDevice:
         self.time_work_repeat = False
         self.plan_mode = 0
         self.plan_angle = 0
+        self.mapurl = ""
+        self.pathurl = ""
         self.eventcode = 0
         self.eventtype = "Event"
         self.avoid_objects = 0
@@ -407,10 +409,14 @@ class SunseekerDevice:
         self.mower_pos_x = 0
         self.mower_pos_y = 0
         self.mower_orientation: float = 0
+        self.charger_pos_x = 0
+        self.charger_pos_y = 0
+        self.charger_orientation: float = 0
         self.robot_image_url = None
         self.map_updated = False
         self.map_phi = 0
         self.robot_image = None
+        self.charger_image = None
         self.mappathdata = None
         self.realPathmapdata = None
         self.livepathpoints = []
@@ -439,6 +445,13 @@ class SunseekerDevice:
             if zone.id == id:
                 return zone
         return None
+
+    def load_charger_image(self) -> Image.Image:
+        """Load robot.png from the integration folder."""
+        with importlib.resources.path(
+            "custom_components.sunseeker", "charger.png"
+        ) as img_path:
+            return Image.open(img_path)
 
     def load_robot_image(self) -> Image.Image:
         """Load robot.png from the integration folder."""
@@ -527,6 +540,37 @@ class SunseekerDevice:
             return
         draw = ImageDraw.Draw(image)
 
+        x_norm = (self.charger_pos_x - self.map_min_x) / (
+            self.map_max_x - self.map_min_x
+        )
+        y_norm = (self.charger_pos_y - self.map_min_y) / (
+            self.map_max_y - self.map_min_y
+        )
+        # Flip Y-axis for image coordinates
+        xx, yy = (
+            int(x_norm * self.canvas_width),
+            int((1 - y_norm) * self.canvas_height),
+        )
+
+        # Draw charger
+        charger_img = self.charger_image.convert("RGBA")
+        w1, h1 = charger_img.size
+        iw, ih = image.size
+        mul = (iw + ih) / 2 / 1000
+        rw = int(w1 * mul)
+        rh = int(h1 * mul)
+        charger_img = charger_img.resize((rw, rh))
+
+        angle = math.degrees(self.charger_orientation)
+        charger_img = charger_img.rotate(angle)
+        w, h = charger_img.size
+        # Center the robot image at (xx, yy)
+        xx_centered = int(xx - w / 2)
+        yy_centered = int(yy - h / 2)
+
+        # Paste the charger image on top of the map, using itself as the mask for transparency
+        image.paste(charger_img, (xx_centered, yy_centered), charger_img)
+
         x_norm = (x - self.map_min_x) / (self.map_max_x - self.map_min_x)
         y_norm = (y - self.map_min_y) / (self.map_max_y - self.map_min_y)
         # Flip Y-axis for image coordinates
@@ -535,6 +579,7 @@ class SunseekerDevice:
             int((1 - y_norm) * self.canvas_height),
         )
 
+        # Draw robot
         robot_img = self.robot_image.convert("RGBA")
         w1, h1 = robot_img.size
         iw, ih = image.size
@@ -755,6 +800,13 @@ class SunseekerDevice:
             rp = json.loads(robotpos)
             self.mower_orientation = rp["angle"]
             self.mower_pos_x, self.mower_pos_y = rp["point"]
+
+            if not self.charger_image:
+                self.charger_image = self.load_charger_image()
+            chargepos = self.settings["data"].get("chargePos")
+            cp = json.loads(chargepos)
+            self.charger_orientation = cp["angle"]
+            self.charger_pos_x, self.charger_pos_y = cp["point"]
 
             self.net_4g_sig = self.settings["data"].get("net4gSig")
             self.taskCoverArea = self.settings["data"].get("taskCoverArea")
@@ -1245,14 +1297,47 @@ class SunseekerRoboticmower:
                                 device.eventcode,
                                 data.get("data").get("event_code", device.eventcode),
                             )
-                            if device.eventcode == 1:
-                                if data.get("data").get("url"):
-                                    device.heatmap_url = data.get("data").get("url")
-                                    heatmap = True
-                            if device.eventcode == 3:
-                                if data.get("data").get("url"):
-                                    device.wifimap_url = data.get("data").get("url")
-                                    wifimap = True
+                            if device.eventtype == "report_event":
+                                if device.eventcode == 7:
+                                    if data.get("data").get("url"):
+                                        code7url = data.get("data").get("url")
+                                        if code7url != device.mapurl:
+                                            device.mapurl = code7url
+                                            need_update = True
+                                            fetch_new_map_data = True
+                                            map_update = True
+                                            livemap_update = True
+                                if device.eventcode == 17:
+                                    if data.get("data").get("url"):
+                                        code17url = data.get("data").get("url")
+                                        if code17url != device.pathurl:
+                                            device.pathurl = code17url
+                                            need_update = True
+                                            fetch_new_map_data = True
+                                            map_update = True
+                                            livemap_update = True
+                                # Starting new schedule run
+                                if device.eventcode == 27:
+                                    need_update = True
+                                    fetch_new_map_data = True
+                                    map_update = True
+                                    livemap_update = True
+
+                            if device.eventtype == "report_notice":
+                                if device.eventcode == 1:
+                                    if data.get("data").get("url"):
+                                        device.heatmap_url = data.get("data").get("url")
+                                        heatmap = True
+                                if device.eventcode == 2:
+                                    need_update = True
+                                    fetch_new_map_data = True
+                                    map_update = True
+                                    livemap_update = True
+
+                                if device.eventcode == 3:
+                                    if data.get("data").get("url"):
+                                        device.wifimap_url = data.get("data").get("url")
+                                        wifimap = True
                     if "recommended_time_flag" in data.get("data"):
                         device.Schedule_new.schedule_recommended = (
                             update_var_if_changed(
@@ -1430,6 +1515,20 @@ class SunseekerRoboticmower:
                                 .get("blade")
                                 .get("height", device.blade_height),
                             )
+                    # "charge_pos":{"angle":-3.127,"point":[-0.018,0.261]}
+                    if "charge_pos" in data.get("data"):
+                        if "angle" in data.get("data").get("charge_pos"):
+                            device.charger_orientation = (
+                                data.get("data")
+                                .get("charge_pos")
+                                .get("angle", device.charger_orientation)
+                            )
+
+                        if "point" in data.get("data").get("charge_pos"):
+                            x, y = data["data"]["charge_pos"]["point"]
+                            device.charger_pos_x = x
+                            device.charger_pos_y = y
+                            live_move_update = True
                     if "robot_pos" in data.get("data"):
                         if "angle" in data.get("data").get("robot_pos"):
                             device.mower_orientation = (
