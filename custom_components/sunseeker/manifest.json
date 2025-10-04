@@ -1,12 +1,12 @@
 {
   "domain": "sunseeker",
   "name": "Sunseeker robotic mower",
-  "documentation": "https://github.com/Sdahl1234/Sunseeker-lawn-mower",
-  "issue_tracker": "https://github.com/Sdahl1234/Sunseeker-lawn-mower/issues",
-  "requirements": ["requests", "paho-mqtt"],
   "codeowners": ["@Sdahl1234"],
+  "config_flow": true,
+  "documentation": "https://github.com/Sdahl1234/Sunseeker-lawn-mower",
   "integration_type": "device",
   "iot_class": "cloud_push",
-  "config_flow": true,
+  "issue_tracker": "https://github.com/Sdahl1234/Sunseeker-lawn-mower/issues",
+  "requirements": ["requests", "paho-mqtt"],
   "version": "1.1.12"
 }
