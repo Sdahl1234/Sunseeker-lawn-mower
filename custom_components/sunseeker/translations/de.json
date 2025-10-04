@@ -22,27 +22,27 @@
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Schnittabstand",
 				"state": {
-					"Narrow": "Schmal",
-					"Normal": "Normal",
-					"Wide": "Breit"
+					"narrow": "Schmal",
+					"normal": "Normal",
+					"wide": "Breit"
 				}
 
 			},
 			"sunseeker_cutting_pattern_custom": {
 				"name": "{post_name} Mähmuster",
 				"state": {
-					"Standard": "Standard",
-					"Change pattern": "Muster wechseln",
-					"User defined": "Benutzerdefiniert"
+					"standard": "Standard",
+					"change_pattern": "Muster wechseln",
+					"user_defined": "Benutzerdefiniert"
 				}
 
 			},
 			"sunseeker_work_speed_custom": {
 				"name": "{post_name} Arbeitsgeschwindigkeit",
 				"state": {
-					"Slow": "Langsam",
-					"Normal": "Normal",
-					"Fast": "Schnell"
+					"slow": "Langsam",
+					"normal": "Normal",
+					"fast": "Schnell"
 				}
 
 			},
@@ -50,9 +50,9 @@
       "sunseeker_schedule_mode": {
         "name": "Zeitplanmodus",
         "state": {
-          "No schedule": "Kein Zeitplan",
-          "Recommended": "Empfohlen",
-          "User defined": "Benutzerdefiniert"
+          "no_schedule": "Kein Zeitplan",
+          "recommended": "Empfohlen",
+          "user_defined": "Benutzerdefiniert"
         }
       },
       "sunseeker_zones": {
@@ -61,47 +61,47 @@
       "sunseeker_cutting_pattern": {
         "name": "Mähmuster",
         "state": {
-          "Standard": "Standard",
-          "Change pattern": "Muster wechseln",
-          "User defined": "Benutzerdefiniert"
+          "standard": "Standard",
+          "change_pattern": "Muster wechseln",
+          "user_defined": "Benutzerdefiniert"
         }
       },
       "sunseeker_avoiding_objects": {
         "name": "Objekte vermeiden",
         "state": {
-          "No touch": "Kein Kontakt",
-          "Slow touch": "Langsamer Kontakt"
+          "no_touch": "Kein Kontakt",
+          "slow_touch": "Langsamer Kontakt"
         }
       },
       "sunseeker_ai_sensitivity": {
         "name": "KI-Empfindlichkeit",
         "state": {
-          "Low": "Niedrig",
-          "High": "Hoch"
+          "low": "Niedrig",
+          "high": "Hoch"
         }
       },
       "sunseeker_edge_freq": {
         "name": "Kantenschnitt-Frequenz",
         "state": {
-          "Every time": "Jedes Mal",
-          "Every 2nd time": "Jedes 2. Mal",
-          "Every 3rd time": "Jedes 3. Mal"
+          "every_time": "Jedes Mal",
+          "every_2nd_time": "Jedes 2. Mal",
+          "every_3rd_time": "Jedes 3. Mal"
         }
       },
       "sunseeker_work_speed": {
         "name": "Arbeitsgeschwindigkeit",
         "state": {
-          "Slow": "Langsam",
-          "Normal": "Normal",
-          "Fast": "Schnell"
+          "slow": "Langsam",
+          "normal": "Normal",
+          "fast": "Schnell"
         }
       },
       "sunseeker_gap": {
         "name": "Schnittabstand",
         "state": {
-          "Narrow": "Schmal",
-          "Normal": "Normal",
-          "Wide": "Breit"
+          "narrow": "Schmal",
+          "normal": "Normal",
+          "wide": "Breit"
         }
       }
     },

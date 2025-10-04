@@ -22,36 +22,36 @@
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Klippeafstand",
 				"state": {
-					"Narrow": "Smal",
-					"Normal": "Normal",
-					"Wide": "Bred"
+					"narrow": "Smal",
+					"normal": "Normal",
+					"wide": "Bred"
 				}
 
 			},
 			"sunseeker_cutting_pattern_custom": {
 				"name": "{post_name} Klippe mønster",
 				"state": {
-					"Standard": "Standard",
-					"Change pattern": "Skift mønster",
-					"User defined": "Bruger defineret"
+					"standard": "Standard",
+					"change_pattern": "Skift mønster",
+					"user_defined": "Bruger defineret"
 				}
 
 			},
 			"sunseeker_work_speed_custom": {
 				"name": "{post_name} Arbejdshastighed",
 				"state": {
-					"Slow": "Langsom",
-					"Normal": "Normal",
-					"Fast": "Hurtig"
+					"slow": "Langsom",
+					"normal": "Normal",
+					"fast": "Hurtig"
 				}
 
 			},
 			"sunseeker_schedule_mode": {
 				"name": "Tidsstyrrings type",
 				"state": {
-					"No schedule": "Ingen",
-					"Recommended": "Foreslået",
-					"User defined": "Bruger defineret"
+					"no_schedule": "Ingen",
+					"recommended": "Foreslået",
+					"user_defined": "Bruger defineret"
 				}
 
 			},
@@ -61,52 +61,52 @@
 			"sunseeker_cutting_pattern": {
 				"name": "Klippe mønster",
 				"state": {
-					"Standard": "Standard",
-					"Change pattern": "Skift mønster",
-					"User defined": "Bruger defineret"
+					"standard": "Standard",
+					"change_pattern": "Skift mønster",
+					"user_defined": "Bruger defineret"
 				}
 
 			},
 			"sunseeker_avoiding_objects": {
 				"name": "Omgåelse af genstande",
 				"state": {
-					"No touch": "Ingen berøring",
-					"Slow touch": "Langsom berøring"
+					"no_touch": "Ingen berøring",
+					"slow_touch": "Langsom berøring"
 				}
 
 			},
 			"sunseeker_ai_sensitivity": {
 				"name": "AI Sensitivity",
 				"state": {
-					"Low": "Lav",
-					"High": "Høj"
+					"low": "Lav",
+					"high": "Høj"
 				}
 
 			},
 			"sunseeker_edge_freq": {
 				"name": "Kantklip frekvens",
 				"state": {
-					"Every time": "Hver gang",
-					"Every 2nd time": "Hver 2. gang",
-					"Every 3rd time": "Hver 3. gang"
+					"every_time": "Hver gang",
+					"every_2nd_time": "Hver 2. gang",
+					"every_3rd_time": "Hver 3. gang"
 				}
 
 			},
 			"sunseeker_work_speed": {
 				"name": "Arbejdshastighed",
 				"state": {
-					"Slow": "Langsom",
-					"Normal": "Normal",
-					"Fast": "Hurtig"
+					"slow": "Langsom",
+					"normal": "Normal",
+					"fast": "Hurtig"
 				}
 
 			},
 			"sunseeker_gap": {
 				"name": "Klippeafstand",
 				"state": {
-					"Narrow": "Smal",
-					"Normal": "Normal",
-					"Wide": "Bred"
+					"narrow": "Smal",
+					"normal": "Normal",
+					"wide": "Bred"
 				}
 
 			}

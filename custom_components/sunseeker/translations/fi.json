@@ -22,27 +22,27 @@
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Leikkausväli",
 				"state": {
-					"Narrow": "Kapea",
-					"Normal": "Normaali",
-					"Wide": "Leveä"
+					"narrow": "Kapea",
+					"normal": "Normaali",
+					"wide": "Leveä"
 				}
 
 			},
 			"sunseeker_cutting_pattern_custom": {
 				"name": "{post_name} Cutting pattern",
 				"state": {
-					"Standard": "Standard",
-					"Change pattern": "Change pattern",
-					"User defined": "User defined"
+					"standard": "Standard",
+					"change_pattern": "Change pattern",
+					"user_defined": "User defined"
 				}
 
 			},
 			"sunseeker_work_speed_custom": {
 				"name": "{post_name} Work seed",
 				"state": {
-					"Slow": "Slow",
-					"Normal": "Normal",
-					"Fast": "Fast"
+					"slow": "Slow",
+					"normal": "Normal",
+					"fast": "Fast"
 				}
 
 			},
@@ -50,9 +50,9 @@
             "sunseeker_schedule_mode": {
                 "name": "Ajastustila",
                 "state": {
-                    "No schedule": "Ei ajastusta",
-                    "Recommended": "Suositeltu",
-                    "User defined": "Käyttäjän määrittämä"
+                    "no_schedule": "Ei ajastusta",
+                    "recommended": "Suositeltu",
+                    "user_defined": "Käyttäjän määrittämä"
                 }
             },
             "sunseeker_zones": {
@@ -61,47 +61,47 @@
             "sunseeker_cutting_pattern": {
                 "name": "Leikkauskuvio",
                 "state": {
-                    "Standard": "Vakio",
-                    "Change pattern": "Vaihda kuviota",
-                    "User defined": "Käyttäjän määrittämä"
+                    "standard": "Vakio",
+                    "change_pattern": "Vaihda kuviota",
+                    "user_defined": "Käyttäjän määrittämä"
                 }
             },
             "sunseeker_avoiding_objects": {
                 "name": "Esteiden välttäminen",
                 "state": {
-                    "No touch": "Ei kosketusta",
-                    "Slow touch": "Hidas kosketus"
+                    "no_touch": "Ei kosketusta",
+                    "slow_touch": "Hidas kosketus"
                 }
             },
             "sunseeker_ai_sensitivity": {
                 "name": "AI-herkkyys",
                 "state": {
-                    "Low": "Matala",
-                    "High": "Korkea"
+                    "low": "Matala",
+                    "high": "Korkea"
                 }
             },
             "sunseeker_edge_freq": {
                 "name": "Reunaleikkauksen tiheys",
                 "state": {
-                    "Every time": "Joka kerta",
-                    "Every 2nd time": "Joka toinen kerta",
-                    "Every 3rd time": "Joka kolmas kerta"
+                    "every_time": "Joka kerta",
+                    "every_2nd_time": "Joka toinen kerta",
+                    "every_3rd_time": "Joka kolmas kerta"
                 }
             },
             "sunseeker_work_speed": {
                 "name": "Työnopeus",
                 "state": {
-                    "Slow": "Hidas",
-                    "Normal": "Normaali",
-                    "Fast": "Nopea"
+                    "slow": "Hidas",
+                    "normal": "Normaali",
+                    "fast": "Nopea"
                 }
             },
             "sunseeker_gap": {
                 "name": "Leikkausväli",
                 "state": {
-                    "Narrow": "Kapea",
-                    "Normal": "Normaali",
-                    "Wide": "Leveä"
+                    "narrow": "Kapea",
+                    "normal": "Normaali",
+                    "wide": "Leveä"
                 }
             }
         },

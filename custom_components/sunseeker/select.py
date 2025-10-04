@@ -159,25 +159,25 @@ class SunseekerSpeedSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["Slow", "Normal", "Fast"]
+        self._attr_options = ["slow", "normal", "fast"]
         self._attr_current_option = self._get_mode_name(self.device.work_speed)
         self._attr_icon = "mdi:earth"
 
     def _get_mode_name(self, mode: int) -> str:
         mapping = {
-            1: "Slow",
-            2: "Normal",
-            3: "Fast",
+            1: "slow",
+            2: "normal",
+            3: "fast",
         }
-        return mapping.get(mode, "Normal")
+        return mapping.get(mode, "normal")
 
     async def async_select_option(self, option: str) -> None:
         """Handle user selecting a new option."""
         # Map option back to mode code and send to device
         reverse_mapping = {
-            "Slow": 1,
-            "Normal": 2,
-            "Fast": 3,
+            "slow": 1,
+            "normal": 2,
+            "fast": 3,
         }
         speed = reverse_mapping.get(option, 1)
         gap = self.device.gap
@@ -213,25 +213,25 @@ class SunseekerGapSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["Narrow", "Normal", "Wide"]
+        self._attr_options = ["narrow", "normal", "wide"]
         self._attr_current_option = self._get_mode_name(self.device.gap)
         self._attr_icon = "mdi:earth"
 
     def _get_mode_name(self, mode: int) -> str:
         mapping = {
-            1: "Narrow",
-            2: "Normal",
-            3: "Wide",
+            1: "narrow",
+            2: "normal",
+            3: "wide",
         }
-        return mapping.get(mode, "Normal")
+        return mapping.get(mode, "normal")
 
     async def async_select_option(self, option: str) -> None:
         """Handle user selecting a new option."""
         # Map option back to mode code and send to device
         reverse_mapping = {
-            "Narrow": 1,
-            "Normal": 2,
-            "Wide": 3,
+            "narrow": 1,
+            "normal": 2,
+            "wide": 3,
         }
         gap = reverse_mapping.get(option, 1)
         speed = self.device.work_speed
@@ -267,25 +267,25 @@ class SunseekerBorderSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["Every time", "Every 2nd time", "Every 3rd time"]
+        self._attr_options = ["every_time", "every_2nd_time", "every_3rd_time"]
         self._attr_current_option = self._get_mode_name(self.device.border_mode)
         self._attr_icon = "mdi:earth"
 
     def _get_mode_name(self, mode: int) -> str:
         mapping = {
-            1: "Every time",
-            2: "Every 2nd time",
-            3: "Every 3rd time",
+            1: "every_time",
+            2: "every_2nd_time",
+            3: "every_3rd_time",
         }
-        return mapping.get(mode, "Every time")
+        return mapping.get(mode, "every_time")
 
     async def async_select_option(self, option: str) -> None:
         """Handle user selecting a new option."""
         # Map option back to mode code and send to device
         reverse_mapping = {
-            "Every time": 1,
-            "Every 2nd time": 2,
-            "Every 3rd time": 3,
+            "every_time": 1,
+            "every_2nd_time": 2,
+            "every_3rd_time": 3,
         }
         freq = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
@@ -320,23 +320,23 @@ class SunseekerAISensSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["Low", "High"]
+        self._attr_options = ["low", "high"]
         self._attr_current_option = self._get_mode_name(self.device.AISens)
         self._attr_icon = "mdi:earth"
 
     def _get_mode_name(self, mode: int) -> str:
         mapping = {
-            0: "Low",
-            1: "High",
+            0: "low",
+            1: "high",
         }
-        return mapping.get(mode, "Low")
+        return mapping.get(mode, "low")
 
     async def async_select_option(self, option: str) -> None:
         """Handle user selecting a new option."""
         # Map option back to mode code and send to device
         reverse_mapping = {
-            "Low": 0,
-            "High": 1,
+            "low": 0,
+            "high": 1,
         }
         AIfreq = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
@@ -371,23 +371,23 @@ class SunseekerAvoidObjectsSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["No touch", "Slow touch"]
+        self._attr_options = ["no_touch", "slow_touch"]
         self._attr_current_option = self._get_mode_name(self.device.avoid_objects)
         self._attr_icon = "mdi:earth"
 
     def _get_mode_name(self, mode: int) -> str:
         mapping = {
-            0: "No touch",
-            1: "Slow touch",
+            0: "no_touch",
+            1: "slow_touch",
         }
-        return mapping.get(mode, "No touch")
+        return mapping.get(mode, "no_touch")
 
     async def async_select_option(self, option: str) -> None:
         """Handle user selecting a new option."""
         # Map option back to mode code and send to device
         reverse_mapping = {
-            "No touch": 0,
-            "Slow touch": 1,
+            "no_touch": 0,
+            "slow_touch": 1,
         }
         touch = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
@@ -422,25 +422,25 @@ class SunseekerPlanModeSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["Standard", "Change pattern", "User defined"]
+        self._attr_options = ["standard", "change_pattern", "user_defined"]
         self._attr_current_option = self._get_mode_name(self.device.plan_mode)
         self._attr_icon = "mdi:earth"
 
     def _get_mode_name(self, mode: int) -> str:
         mapping = {
-            0: "Standard",
-            1: "Change pattern",
-            2: "User defined",
+            0: "standard",
+            1: "change_pattern",
+            2: "user_defined",
         }
-        return mapping.get(mode, "Standard")
+        return mapping.get(mode, "standard")
 
     async def async_select_option(self, option: str) -> None:
         """Handle user selecting a new option."""
         # Map option back to mode code and send to device
         reverse_mapping = {
-            "Standard": 0,
-            "Change pattern": 1,
-            "User defined": 2,
+            "standard": 0,
+            "change_pattern": 1,
+            "user_defined": 2,
         }
         plan_mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
@@ -478,7 +478,7 @@ class SunseekerScheduleModeSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["No schedule", "Recommended", "User defined"]
+        self._attr_options = ["no_schedule", "recommended", "user_defined"]
         self._attr_current_option = self._get_mode_name(self._get_mode())
         self._attr_icon = "mdi:earth"
 
@@ -494,19 +494,19 @@ class SunseekerScheduleModeSelect(SunseekerEntity, SelectEntity):
 
     def _get_mode_name(self, mode: int) -> str:
         mapping = {
-            0: "No schedule",
-            1: "Recommended",
-            2: "User defined",
+            0: "no_schedule",
+            1: "recommended",
+            2: "user_defined",
         }
-        return mapping.get(mode, "No schedule")
+        return mapping.get(mode, "no_schedule")
 
     async def async_select_option(self, option: str) -> None:
         """Handle user selecting a new option."""
         # Map option back to mode code and send to device
         reverse_mapping = {
-            "No schedule": 0,
-            "Recommended": 1,
-            "User definded": 2,
+            "no_schedule": 0,
+            "recommended": 1,
+            "user_definded": 2,
         }
         mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
@@ -600,7 +600,7 @@ class SunseekerCustomPlanModeSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["Standard", "Change pattern", "User defined"]
+        self._attr_options = ["standard", "change_pattern", "user_defined"]
         self.zoneid = zoneid
         self.zonename = zonename
         self.zone = self.device.get_zone(zoneid)
@@ -608,19 +608,19 @@ class SunseekerCustomPlanModeSelect(SunseekerEntity, SelectEntity):
 
     def _get_mode_name(self, mode: int) -> str:
         mapping = {
-            0: "Standard",
-            1: "Change pattern",
-            2: "User defined",
+            0: "standard",
+            1: "change_pattern",
+            2: "user_defined",
         }
-        return mapping.get(mode, "Standard")
+        return mapping.get(mode, "standard")
 
     async def async_select_option(self, option: str) -> None:
         """Handle user selecting a new option."""
         # Map option back to mode code and send to device
         reverse_mapping = {
-            "Standard": 0,
-            "Change pattern": 1,
-            "User definded": 2,
+            "standard": 0,
+            "change_pattern": 1,
+            "user_definded": 2,
         }
         self.zone.plan_mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
@@ -661,7 +661,7 @@ class SunseekerCustomSpeedSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["Slow", "Normal", "Fast"]
+        self._attr_options = ["slow", "normal", "fast"]
         self.zoneid = zoneid
         self.zonename = zonename
         self.zone = self.device.get_zone(zoneid)
@@ -669,19 +669,19 @@ class SunseekerCustomSpeedSelect(SunseekerEntity, SelectEntity):
 
     def _get_mode_name(self, mode: int) -> str:
         mapping = {
-            1: "Slow",
-            2: "Normal",
-            3: "Fast",
+            1: "slow",
+            2: "normal",
+            3: "fast",
         }
-        return mapping.get(mode, "Normal")
+        return mapping.get(mode, "normal")
 
     async def async_select_option(self, option: str) -> None:
         """Handle user selecting a new option."""
         # Map option back to mode code and send to device
         reverse_mapping = {
-            "Slow": 1,
-            "Normal": 2,
-            "Fast": 3,
+            "slow": 1,
+            "normal": 2,
+            "fast": 3,
         }
         self.zone.work_speed = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
@@ -722,7 +722,7 @@ class SunseekerCustomGapSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["Narrow", "Normal", "Wide"]
+        self._attr_options = ["narrow", "normal", "wide"]
         self.zoneid = zoneid
         self.zonename = zonename
         self.zone = self.device.get_zone(zoneid)
@@ -730,19 +730,19 @@ class SunseekerCustomGapSelect(SunseekerEntity, SelectEntity):
 
     def _get_mode_name(self, mode: int) -> str:
         mapping = {
-            1: "Narrow",
-            2: "Normal",
-            3: "Wide",
+            1: "narrow",
+            2: "normal",
+            3: "wide",
         }
-        return mapping.get(mode, "Normal")
+        return mapping.get(mode, "normal")
 
     async def async_select_option(self, option: str) -> None:
         """Handle user selecting a new option."""
         # Map option back to mode code and send to device
         reverse_mapping = {
-            "Narrow": 1,
-            "Normal": 2,
-            "Wide": 3,
+            "narrow": 1,
+            "normal": 2,
+            "wide": 3,
         }
         self.zone.gap = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode

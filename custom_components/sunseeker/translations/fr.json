@@ -22,36 +22,36 @@
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Espacement de coupe",
 				"state": {
-					"Narrow": "Étroit",
-					"Normal": "Normal",
-					"Wide": "Large"
+					"narrow": "Étroit",
+					"normal": "Normal",
+					"wide": "Large"
 				}
 
 			},
 			"sunseeker_cutting_pattern_custom": {
 				"name": "{post_name} Motif de coupe",
 				"state": {
-					"Standard": "Standard",
-					"Change pattern": "Changer de motif",
-					"User defined": "Défini par l'utilisateur"
+					"standard": "Standard",
+					"change_pattern": "Changer de motif",
+					"user_defined": "Défini par l'utilisateur"
 				}
 
 			},
 			"sunseeker_work_speed_custom": {
 				"name": "{post_name} Vitesse de travail",
 				"state": {
-					"Slow": "Lente",
-					"Normal": "Normale",
-					"Fast": "Rapide"
+					"slow": "Lente",
+					"normal": "Normale",
+					"fast": "Rapide"
 				}
 
 			},
             "sunseeker_schedule_mode": {
                 "name": "Mode de planification",
                 "state": {
-                    "No schedule": "Aucun planning",
-                    "Recommended": "Recommandé",
-                    "User defined": "Défini par l'utilisateur"
+                    "no_schedule": "Aucun planning",
+                    "recommended": "Recommandé",
+                    "user_defined": "Défini par l'utilisateur"
                 }
             },
             "sunseeker_zones": {
@@ -60,47 +60,47 @@
             "sunseeker_cutting_pattern": {
                 "name": "Motif de coupe",
                 "state": {
-                    "Standard": "Standard",
-                    "Change pattern": "Changer de motif",
-                    "User defined": "Défini par l'utilisateur"
+                    "standard": "Standard",
+                    "change_pattern": "Changer de motif",
+                    "user_defined": "Défini par l'utilisateur"
                 }
             },
             "sunseeker_avoiding_objects": {
                 "name": "Évitement d'obstacles",
                 "state": {
-                    "No touch": "Sans contact",
-                    "Slow touch": "Contact lent"
+                    "no_touch": "Sans contact",
+                    "slow_touch": "Contact lent"
                 }
             },
             "sunseeker_ai_sensitivity": {
                 "name": "Sensibilité de l'IA",
                 "state": {
-                    "Low": "Faible",
-                    "High": "Élevée"
+                    "low": "Faible",
+                    "high": "Élevée"
                 }
             },
             "sunseeker_edge_freq": {
                 "name": "Fréquence de coupe des bords",
                 "state": {
-                    "Every time": "À chaque fois",
-                    "Every 2nd time": "Une fois sur deux",
-                    "Every 3rd time": "Une fois sur trois"
+                    "every_time": "À chaque fois",
+                    "every_2nd_time": "Une fois sur deux",
+                    "every_3rd_time": "Une fois sur trois"
                 }
             },
             "sunseeker_work_speed": {
                 "name": "Vitesse de travail",
                 "state": {
-                    "Slow": "Lente",
-                    "Normal": "Normale",
-                    "Fast": "Rapide"
+                    "slow": "Lente",
+                    "normal": "Normale",
+                    "fast": "Rapide"
                 }
             },
             "sunseeker_gap": {
                 "name": "Espacement de coupe",
                 "state": {
-                    "Narrow": "Étroit",
-                    "Normal": "Normal",
-                    "Wide": "Large"
+                    "narrow": "Étroit",
+                    "normal": "Normal",
+                    "wide": "Large"
                 }
             }
         },

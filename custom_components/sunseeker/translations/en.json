@@ -22,27 +22,27 @@
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Cutting gap",
 				"state": {
-					"Narrow": "Narrow",
-					"Normal": "Normal",
-					"Wide": "Wide"
+					"narrow": "Narrow",
+					"normal": "Normal",
+					"wide": "Wide"
 				}
 
 			},
 			"sunseeker_cutting_pattern_custom": {
 				"name": "{post_name} Cutting pattern",
 				"state": {
-					"Standard": "Standard",
-					"Change pattern": "Change pattern",
-					"User defined": "User defined"
+					"standard": "Standard",
+					"change_pattern": "Change pattern",
+					"user_defined": "User defined"
 				}
 
 			},
 			"sunseeker_work_speed_custom": {
 				"name": "{post_name} Work speed",
 				"state": {
-					"Slow": "Slow",
-					"Normal": "Normal",
-					"Fast": "Fast"
+					"slow": "Slow",
+					"normal": "Normal",
+					"fast": "Fast"
 				}
 
 			},
@@ -50,9 +50,9 @@
       "sunseeker_schedule_mode": {
 				"name": "Schedule mode",
 				"state": {
-					"No schedule": "No schedule",
-					"Recommended": "Recommended",
-					"User defined": "User defined"
+					"no_schedule": "No schedule",
+					"recommended": "Recommended",
+					"user_defined": "User defined"
 				}
 
 			},
@@ -62,52 +62,52 @@
 			"sunseeker_cutting_pattern": {
 				"name": "Cutting pattern",
 				"state": {
-					"Standard": "Standard",
-					"Change pattern": "Change pattern",
-					"User defined": "User defined"
+					"standard": "Standard",
+					"change_pattern": "Change pattern",
+					"user_defined": "User defined"
 				}
 
 			},
 			"sunseeker_avoiding_objects": {
 				"name": "Avoiding objects",
 				"state": {
-					"No touch": "No touch",
-					"Slow touch": "Slow touch"
+					"no_touch": "No touch",
+					"slow_touch": "Slow touch"
 				}
 
 			},
 			"sunseeker_ai_sensitivity": {
 				"name": "AI Sensitivity",
 				"state": {
-					"Low": "Low",
-					"High": "High"
+					"low": "Low",
+					"high": "High"
 				}
 
 			},
 			"sunseeker_edge_freq": {
 				"name": "Edge trim frequency",
 				"state": {
-					"Every time": "Every time",
-					"Every 2nd time": "Every 2nd time",
-					"Every 3rd time": "Every 3rd time"
+					"every_time": "Every time",
+					"every_2nd_time": "Every 2nd time",
+					"every_3rd_time": "Every 3rd time"
 				}
 
 			},
 			"sunseeker_work_speed": {
 				"name": "Work speed",
 				"state": {
-					"Slow": "Slow",
-					"Normal": "Normal",
-					"Fast": "Fast"
+					"slow": "Slow",
+					"normal": "Normal",
+					"fast": "Fast"
 				}
 
 			},
 			"sunseeker_gap": {
 				"name": "Cutting gap",
 				"state": {
-					"Narrow": "Narrow",
-					"Normal": "Normal",
-					"Wide": "Wide"
+					"narrow": "Narrow",
+					"normal": "Normal",
+					"wide": "Wide"
 				}
 
 			}
