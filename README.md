@@ -35,100 +35,140 @@ English, Danish, German, Finnish and French
 - Mower zones card: https://github.com/Sdahl1234/sunseeker-zone-card
 
 # Entities new models (wireless)
-
+## Lawn mower
+#### States
+- Going home
+- Charging
+- Standby
+- Working
+- Pause
+- Error
+- Returning
+- Returning paused
+- Charged
+- Offline
+- Locating
+- Stoped
+- Continue mowing
+- Stuck
+- Updating firmware
+#### Actions
+- **Start** - Starts the mower
+- **Pause** - Pause the mower
+- **Stop** - Stops the mower
+- **Home**  - Sending the mower home
+## Buttons
+- **Start** - Starts the mower
+- **Home** - Sending the mower home
+- **Pause** - Pause the mower
+- **Stop** - Stops the mower
+## Rain sensor and controls
+- **Switches**
+  - **Rain sensor** - Turn on/off the rain sensor
+- **Numbers**
+  - **Rain delay** - Minutes from when the rain sensor is dry to start mowing again
+- **Binary sensors**
+  - **Rain sensor active** - on/off
+- **Sensors**
+  - **Rain sensor status** - Dry, Dry countdown, Wet
+  - **Rain sensor delay** - Same as the number entity
+  - **Rain sensor countdown** - The time left before starting mowing again
+## Global sensors
+- **Progress** - progress of the current mowing cycle
+- **Total area** - Total area of your map
+- **Coverd area** - The amount of area covered
+- **Battery** - Battery percentage
+- **Actual mowingtime** - Time the mower has mowed
+- **Online** - Connected or Disconnected
+- **Wifi strength** - The strength of the wifi signal
+- **Event** - Events and codes (todo: Map events to real text)
+- **Robot signal** - Signalstrength to mower
+- **4G Net strength** - 4G network strength if you have a sim module
+## Global settings
+- **Settings**
+  - **Cutting gap** - Narrow, Normal, Wide
+  - **Cutting pattern** - Standard, Change pattern, User defined
+  - **Work speed** - Slow, Normal, Fast
+  - **Cutting angle** - Setting the cutting angle if Cutting pattern is User defined
+  - **Blade speed** - Speed of the blades
+  - **Blade height** - Height of the blades
+  - **User defined zones** - If enabled the zone settings will be used
+    
+## Zones - for each zone on your map you will have the following enteties
+- **Sensors**
+  - **{zonename}Estimated time** - Estimated time to mowe the area
+  - **{zonename}Area** - Area size
+- **Settings**
+  - **{zonename}Cutting gap** - Narrow, Normal, Wide
+  - **{zonename}Cutting pattern** - Standard, Change pattern, User defined
+  - **{zonename}Work speed** - Slow, Normal, Fast
+  - **{zonename}Cutting angle** - Setting the cutting angle if Cutting pattern is User defined
+  - **{zonename}Blade speed** - Speed of the blades
+  - **{zonename}Blade height** - Height of the blades
 
 # Entities old models
-## lawn mower
+## Lawn mower
 #### states
-Standby, Mowing, Going home, Charging, Border, Error
-
-***Note*** The state is **NOT** following the standard states for lawnmower entity. The standar has only: START_MOWING, PAUSE and DOCK
+- Standby
+- Mowing
+- Going home
+- Charging
+- Border
+- Error
 #### Actions
-**Start** - Starts the mower
+- **Start** - Starts the mower
+- **Pause** - Pause the mower
+- **Home**  - Sending the mower home
 
-**Pause** - Pause the mower
-
-**Home**  - Sending the mower home
-
-## buttons
-**Start** - Starts the mower
-
-**Home** - Sending the mower home
-
-**Pause** - Pause the mower
-
-**Border** - If the mower is in the dock it will mowe the border
+## Buttons
+- **Start** - Starts the mower
+- **Home** - Sending the mower home
+- **Pause** - Pause the mower
+- **Border** - If the mower is in the dock it will mowe the border
 
 ## Switches
-**Rain sensor** - Turn on/off the rain sensor
-
-**Multizone** - Turn on/off using zones
-
-**Multizone auto** - Turn on/off auto multizone
+- **Rain sensor** - Turn on/off the rain sensor
+- **Multizone** - Turn on/off using zones
+- **Multizone auto** - Turn on/off auto multizone
 
 ## Numbers
-**Rain delay** - Minutes from when the rain sensor is dry to start mowing again
-
-**Zone 1** - percentage of the start of zone 1
-
-**Zone 2** - percentage of the start of zone 2
-
-**Zone 3** - percentage of the start of zone 3
-
-**Zone 4** - percentage of the start of zone 4
+- **Rain delay** - Minutes from when the rain sensor is dry to start mowing again
+- **Zone 1** - percentage of the start of zone 1
+- **Zone 2** - percentage of the start of zone 2
+- **Zone 3** - percentage of the start of zone 3
+- **Zone 4** - percentage of the start of zone 4
 
 ## Text
 *Format of the text fields: Start and end time format HH:MM. Add Trim to mowe the border. ex. "06:15 - 17:00 Trim", "06:15 - 17:00", "08:00 - 24:00" or whole day "00:00 - 24:00"*
 
-**Schedule Monday** - Text field to update the moday schedule. 
-
-**Schedule Tuesday** - Text field to update the moday schedule. 
-
-**Schedule Wednesday** - Text field to update the moday schedule. 
-
-**Schedule Thursday** - Text field to update the moday schedule. 
-
-**Schedule Friday** - Text field to update the moday schedule. 
-
-**Schedule Saturday** - Text field to update the moday schedule. 
-
-**Schedule Sunday** - Text field to update the moday schedule. 
+- **Schedule Monday** - Text field to update the moday schedule. 
+- **Schedule Tuesday** - Text field to update the moday schedule. 
+- **Schedule Wednesday** - Text field to update the moday schedule. 
+- **Schedule Thursday** - Text field to update the moday schedule. 
+- **Schedule Friday** - Text field to update the moday schedule. 
+- **Schedule Saturday** - Text field to update the moday schedule. 
+- **Schedule Sunday** - Text field to update the moday schedule. 
 
 ## Binary sensors
-**Dock** - states: home or away
-
-**Rain sensor active** - on/off
-
-**Multizone** - on/off
-
-**Multizone auto** - on/off
-
-**Online** - Connected (the robot is turn on an conneced to wifi) / Disconnected
+- **Dock** - states: home or away
+- **Rain sensor active** - on/off
+- **Multizone** - on/off
+- **Multizone auto** - on/off
+- **Online** - Connected (the robot is turn on an conneced to wifi) / Disconnected
 
 ## Sensors
-**Battery** - Percentage of the battery
-
-**Mower** state - Same state af the mower entity
-
-**Wifi level** - 0, 1, 2 or 3
-
-**State change error** - Return the error message if any, whene changing the settings. ex. "The mower is offline" 
-
-**Rain sensor status** - Dry, Dry countdown, Wet
-
-**Rain sensor delay** - Same as the number entity
-
-**Rain sensor countdown** - The time left before starting mowing again
-
-**Actual mowingtime** - The time the mower has been mowing since last charge
-
-**Zone1,2,3,4** - Same as the number entity
-
-**Error** - error text returned for the mower
-
-**Errorcode** - The errorcode returned for the mower
-
-**Schedule** - The state is always schedule, and contains the schedule settings as attributes.
+- **Battery** - Percentage of the battery
+- **Mower** state - Same state af the mower entity
+- **Wifi level** - 0, 1, 2 or 3
+- **State change error** - Return the error message if any, whene changing the settings. ex. "The mower is offline" 
+- **Rain sensor status** - Dry, Dry countdown, Wet
+- **Rain sensor delay** - Same as the number entity
+- **Rain sensor countdown** - The time left before starting mowing again
+- **Actual mowingtime** - The time the mower has been mowing since last charge
+- **Zone1,2,3,4** - Same as the number entity
+- **Error** - error text returned for the mower
+- **Errorcode** - The errorcode returned for the mower
+- **Schedule** - The state is always schedule, and contains the schedule settings as attributes.
 
 ## Device tracker
-**Robot location** - Some kind of anti theft thing. Returns the latitude and longitude coordinates of the device.
+- **Robot location** - Some kind of anti theft thing. Returns the latitude and longitude coordinates of the device.
