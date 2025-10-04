@@ -1,21 +1,10 @@
-# I need to update this page with information about the wireless models
-
-# The tree new lovelace card that works with v.1.1.0
-## Schedule card:
-### https://github.com/Sdahl1234/sunseeker-schedule-card
-## Mower control card:
-### https://github.com/Sdahl1234/sunseeker-mower-control-card
-## Mower zones card
-### https://github.com/Sdahl1234/sunseeker-zone-card
-
-Add them to hacs and install.
-
 # Sunseeker lawn mower integration for Home Assistant
-Home assistant integration from lawnmower using the robotic-mower connect APP.
+Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
 ## Tested models
   - Adano RM6
   - Brücke RM501
+  - Sunseeker X3, X5, X7
 
 ## Install
 #### Manually
@@ -29,12 +18,26 @@ Restart Home Assistant and go to *Devices and Services* and press *+Add integrat
 Search for *Sunseeker robotic mower* and add it.
 
 ## Configuration
-You must now choose a barnd and a name for the device. Email and password for the robotic-mower connect APP.
+- Producent: If your mower is not on the list, just select sunseeker
+- Model_id: New if your mower is wireless
+- Region: EU or US. Only used in wireless mowers
+- Name: Any name you want to call your account.
+- Email and Password: Your loging credentials to the app.
+<img width="340" height="579" alt="image" src="https://github.com/user-attachments/assets/ce71f60a-338c-41f6-b3ff-6789bcb44810" />
+
 
 ## Translation
 English, Danish, German, Finnish and French
 
-# Entities
+# Lovelace cards (Only working with wireless models)
+- Schedule card: https://github.com/Sdahl1234/sunseeker-schedule-card
+- Mower control card: https://github.com/Sdahl1234/sunseeker-mower-control-card
+- Mower zones card: https://github.com/Sdahl1234/sunseeker-zone-card
+
+# Entities new models (wireless)
+
+
+# Entities old models
 ## lawn mower
 #### states
 Standby, Mowing, Going home, Charging, Border, Error
