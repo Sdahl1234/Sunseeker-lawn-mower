@@ -123,13 +123,13 @@
             "sunseeker_blade_height": {
                 "name": "Hauteur de la coupe"
             },
-            "sunseeker_taskProgress": {
+            "sunseeker_taskprogress": {
                 "name": "Avancement"
             },
-            "sunseeker_taskTotalArea": {
+            "sunseeker_tasktotalarea": {
                 "name": "Surface à tondre"
             },
-            "sunseeker_taskCoverArea": {
+            "sunseeker_taskcoverarea": {
                 "name": "Surface tondue"
             },
             "sunseeker_net4g_level": {

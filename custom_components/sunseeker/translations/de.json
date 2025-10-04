@@ -124,13 +124,13 @@
       "sunseeker_blade_height": {
         "name": "Messerhöhe"
       },
-      "sunseeker_taskProgress": {
+      "sunseeker_taskprogress": {
         "name": "Mähfortschritt"
       },
-      "sunseeker_taskTotalArea": {
+      "sunseeker_tasktotalarea": {
         "name": "Gesamtfläche"
       },
-      "sunseeker_taskCoverArea": {
+      "sunseeker_taskcoverarea": {
         "name": "Gemähte Fläche"
       },
       "sunseeker_net4g_level": {

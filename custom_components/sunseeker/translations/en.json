@@ -132,13 +132,13 @@
 		  	"sunseeker_blade_height": {
 				"name": "Blade height"
 },
-        "sunseeker_taskProgress": {
+        "sunseeker_taskprogress": {
 				"name": "Progress"
 			  },
-        "sunseeker_taskTotalArea": {
+        "sunseeker_tasktotalarea": {
 				"name": "Total area"
 			  },
-			  "sunseeker_taskCoverArea": {
+			  "sunseeker_taskcoverarea": {
 				"name": "Coverd area"
 			  },
 			  "sunseeker_net4g_level": {

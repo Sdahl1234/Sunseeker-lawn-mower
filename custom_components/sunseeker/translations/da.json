@@ -131,13 +131,13 @@
 			"sunseeker_blade_height": {
 				"name": "Kniv højde"
 			},
-			"sunseeker_taskProgress": {
+			"sunseeker_taskprogress": {
 				"name": "Progress"
 			},
-			"sunseeker_taskTotalArea": {
+			"sunseeker_tasktotalarea": {
 				"name": "Total område"
 			},
-			"sunseeker_taskCoverArea": {
+			"sunseeker_taskcoverarea": {
 				"name": "Klippet område"
 			},
 			"sunseeker_net4g_level": {

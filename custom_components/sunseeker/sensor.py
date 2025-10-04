@@ -212,7 +212,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     "taskCoverArea",
                     "",
                     "mdi:texture-box",
-                    "sunseeker_taskCoverArea",
+                    "sunseeker_taskcoverarea",
                 )
                 for coordinator in robot_coordinators(hass, entry)
             ]
@@ -227,7 +227,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     "taskTotalArea",
                     "",
                     "mdi:texture-box",
-                    "sunseeker_taskTotalArea",
+                    "sunseeker_tasktotalarea",
                 )
                 for coordinator in robot_coordinators(hass, entry)
             ]
@@ -242,7 +242,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     "taskProgress",
                     "",
                     "",
-                    "sunseeker_taskProgress",
+                    "sunseeker_taskprogress",
                 )
                 for coordinator in robot_coordinators(hass, entry)
             ]
