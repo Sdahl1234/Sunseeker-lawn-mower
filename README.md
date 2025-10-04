@@ -84,8 +84,13 @@ English, Danish, German, Finnish and French
 - **Event** - Events and codes (todo: Map events to real text)
 - **Robot signal** - Signalstrength to mower
 - **4G Net strength** - 4G network strength if you have a sim module
+- **Zones** - Dropdown with all zones
 ## Global settings
 - **Settings**
+  - **Avoiding objects** - No touch, Slow touch
+  - **AI Sensitivity** - Low, High
+  - **Edge trim frequency** - Everytime, Every 2nd time, Every 3rd time
+  - **Edge first** - Cut edge first or last
   - **Cutting gap** - Narrow, Normal, Wide
   - **Cutting pattern** - Standard, Change pattern, User defined
   - **Work speed** - Slow, Normal, Fast
@@ -105,6 +110,25 @@ English, Danish, German, Finnish and French
   - **{zonename}Cutting angle** - Setting the cutting angle if Cutting pattern is User defined
   - **{zonename}Blade speed** - Speed of the blades
   - **{zonename}Blade height** - Height of the blades
+- Easy way to control the zones is using the zone card https://github.com/Sdahl1234/sunseeker-zone-card
+<img width="422" height="603" alt="image" src="https://github.com/user-attachments/assets/28b69571-d458-4d1a-929e-d5d2830d8228" />
+
+## Schedule
+- **Pause schedule** - Turns off the schedule
+- **Repeat time work** - If enabled the mower continues mowing after end cycle
+- **Schedule** - Sensor with attribues containing the schedule. This is the one you must use in the schedule card https://github.com/Sdahl1234/sunseeker-schedule-card
+<img width="421" height="784" alt="image" src="https://github.com/user-attachments/assets/b472987a-10dd-4673-ab17-e073bcc7001d" />
+
+
+## Map
+- **map** - Image of the map
+- **Live map** - Camera entity of Live Map with mower movments
+- **Heat map** - image of the heat map
+- **Wifi map** - Image of the wifimap
+
+## Mower control card
+<img width="425" height="457" alt="image" src="https://github.com/user-attachments/assets/22a139e3-ac74-44f8-8d68-18bc11fcc60f" />
+
 
 # Entities old models
 ## Lawn mower
