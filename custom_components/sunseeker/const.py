@@ -26,9 +26,9 @@ SUNSEEKER_STOP = "stop"
 SUNSEEKER_FIRMWARE_UPDATE = "updating_firmware"
 SUNSEEKER_CONTINUE_CUTTING = "continue_mowing"
 SUNSEEKER_STUCK = "stuck"
-SUNSEEKER_DRY = "Dry"
-SUNSEEKER_WET = "Wet"
-SUNSEEKER_DRY_COUNTDOWN = "Dry countdown"
+SUNSEEKER_DRY = "dry"
+SUNSEEKER_WET = "wet"
+SUNSEEKER_DRY_COUNTDOWN = "dry_countdown"
 
 # Max retries
 MAX_LOGIN_RETRIES = 1

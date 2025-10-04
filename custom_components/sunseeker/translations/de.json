@@ -189,10 +189,10 @@
       "sunseeker_rain_status": {
         "name": "Regensensor",
         "state": {
-          "Dry": "Trocken",
-          "Dry countdown": "Trocken Countdown",
-          "Wet": "Nass",
-          "Unknown": "Unbekannt"
+          "dry": "Trocken",
+          "dry_countdown": "Trocken Countdown",
+          "wet": "Nass",
+          "unknown": "Unbekannt"
         }
       },
       "sunseekerzone1": {

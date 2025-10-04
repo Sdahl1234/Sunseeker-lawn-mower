@@ -187,10 +187,10 @@
             "sunseeker_rain_status": {
                 "name": "Capteur de pluie",
                 "state": {
-                    "Dry": "Pas de pluie",
-                    "Dry countdown": "Durée restante en cas de pluie",
-                    "Wet": "Mouillé",
-                    "Unknown": "Inconnu"
+                    "dry": "Pas de pluie",
+                    "dry_countdown": "Durée restante en cas de pluie",
+                    "wet": "Mouillé",
+                    "unknown": "Inconnu"
                 }
             },
             "sunseekerzone1": {

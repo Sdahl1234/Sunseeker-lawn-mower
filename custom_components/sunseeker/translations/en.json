@@ -196,10 +196,10 @@
         "sunseeker_rain_status": {
           "name": "Rain sensor",
           "state": {
-            "Dry": "Dry",
-            "Dry countdown": "Dry countdown",
-            "Wet": "Wet",
-            "Unknown": "Unknown"
+            "dry": "Dry",
+            "dry_countdown": "Dry countdown",
+            "wet": "Wet",
+            "unknown": "Unknown"
           }
         },
         "sunseekerzone1": {

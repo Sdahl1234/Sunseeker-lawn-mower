@@ -176,10 +176,10 @@
             "sunseeker_rain_status": {
                 "name": "Sadetunnistin",
                 "state": {
-                    "Dry": "Kuivaa",
-                    "Dry countdown": "Odottaa kuivumista",
-                    "Wet": "Märkää",
-                    "Unknown": "Tuntematon"
+                    "dry": "Kuivaa",
+                    "dry_countdown": "Odottaa kuivumista",
+                    "wet": "Märkää",
+                    "unknown": "Tuntematon"
                 }
             },
             "sunseekerzone1": {

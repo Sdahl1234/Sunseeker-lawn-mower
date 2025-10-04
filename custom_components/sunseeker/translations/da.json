@@ -195,10 +195,10 @@
             "sunseeker_rain_status": {
 				"name": "Regn sensor",
 				"state": {
-					"Dry": "Tør",
-					"Dry countdown": "Tør nedtæller",
-					"Wet": "Våd",
-					"Unknown": "Ukendt"
+					"dry": "Tør",
+					"dry_countdown": "Tør nedtæller",
+					"wet": "Våd",
+					"unknown": "Ukendt"
 				}
 			},
 			"sunseekerzone1": {
