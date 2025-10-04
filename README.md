@@ -129,7 +129,14 @@ English, Danish, German, Finnish and French
 ## Mower control card
 <img width="425" height="457" alt="image" src="https://github.com/user-attachments/assets/22a139e3-ac74-44f8-8d68-18bc11fcc60f" />
 
+## Device tracker
+- **Mower location** - Anti theft location. Returns the latitude and longitude coordinates of the device.
 
+
+#
+**This section is for the old wired models.**
+**I'm not going to add new features, but i will do my best to keep it working**
+****
 # Entities old models
 ## Lawn mower
 #### states
