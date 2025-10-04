@@ -212,9 +212,9 @@
             "sunseeker_dock": {
                 "name": "Station de recharge",
                 "state": {
-                    "Away": "Absent",
-                    "Home": "Dans la station",
-                    "Unknown": "Inconnu"
+                    "away": "Absent",
+                    "home": "Dans la station",
+                    "unknown": "Inconnu"
                 }
             },
             "sunseeker_rain_sensor_active": {
@@ -229,9 +229,9 @@
             "sunseeker_online": {
                 "name": "En ligne",
                 "state": {
-                    "Connected": "Connecté",
-                    "Disconnected": "Déconnecté",
-                    "Unknown": "Inconnu"
+                    "connected": "Connecté",
+                    "disconnected": "Déconnecté",
+                    "unknown": "Inconnu"
                 }
             }
         },

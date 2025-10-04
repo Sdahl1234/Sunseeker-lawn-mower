@@ -220,9 +220,9 @@
 			"sunseeker_dock": {
 				"name": "Dock",
 				"state": {
-					"Away": "Ude",
-					"Home": "Hjemme",
-					"Unknown": "Ukendt"
+					"away": "Ude",
+					"home": "Hjemme",
+					"unknown": "Ukendt"
 				}
 			},
 			"sunseeker_rain_sensor_active": {
@@ -237,9 +237,9 @@
 			"sunseeker_online": {
 				"name": "Online",
 				"state": {
-					"Connected": "Forbundet",
-					"Disconnected": "Frakoblet",
-					"Unknown": "Ukendt"
+					"connected": "Forbundet",
+					"disconnected": "Frakoblet",
+					"unknown": "Ukendt"
 				}
 			}
 		},

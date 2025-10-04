@@ -201,9 +201,9 @@
             "sunseeker_dock": {
                 "name": "Telakka",
                 "state": {
-                    "Away": "Poissa",
-                    "Home": "Kotona",
-                    "Unknown": "Tuntematon"
+                    "away": "Poissa",
+                    "home": "Kotona",
+                    "unknown": "Tuntematon"
                 }
             },
             "sunseeker_rain_sensor_active": {
@@ -221,9 +221,9 @@
             "sunseeker_online": {
                 "name": "Yhteys",
                 "state": {
-                    "Connected": "Yhdistetty",
-                    "Disconnected": "Yhteys katkennut",
-                    "Unknown": "Tuntematon"
+                    "connected": "Yhdistetty",
+                    "disconnected": "Yhteys katkennut",
+                    "unknown": "Tuntematon"
                 }
             }
         },

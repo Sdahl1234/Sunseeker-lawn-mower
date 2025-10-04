@@ -221,9 +221,9 @@
         "sunseeker_dock": {
           "name": "Dock",
           "state": {
-            "Away": "Away",
-            "Home": "Home",
-            "Unknown": "Unknown"
+            "away": "Away",
+            "home": "Home",
+            "unknown": "Unknown"
           }
         },
         "sunseeker_rain_sensor_active": {
@@ -238,9 +238,9 @@
         "sunseeker_online": {
           "name": "Online",
           "state": {
-            "Connected": "Connected",
-            "Disconnected": "Disconnected",
-            "Unknown": "Unknown"
+            "connected": "Connected",
+            "disconnected": "Disconnected",
+            "unknown": "Unknown"
           }
         }
       },
