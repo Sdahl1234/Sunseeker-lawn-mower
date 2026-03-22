@@ -23,13 +23,15 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
     AppNew = False
+    SubApp = ""
     for coordinator in robot_coordinators(hass, entry):
+        SubApp = coordinator.data_handler.sub_apptype
         if coordinator.data_handler.apptype == "New":
             # Skip if the app type is New, as these sensors are not supported
             AppNew = True
             break
 
-    if AppNew:
+    if AppNew and SubApp == "":
         async_add_entities(
             [
                 MowerImage(

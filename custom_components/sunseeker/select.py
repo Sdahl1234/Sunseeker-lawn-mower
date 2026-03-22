@@ -18,7 +18,12 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
             AppNew = True
             break
 
-    if AppNew:
+    SubApp = ""
+    for coordinator in robot_coordinators(hass, entry):
+        SubApp = coordinator.data_handler.sub_apptype
+        break
+
+    if AppNew and SubApp == "":
         plan_mode = []
         speed = []
         gap = []
@@ -138,6 +143,255 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                 for coordinator in robot_coordinators(hass, entry)
             ]
         )
+    if SubApp == "V models":
+        async_add_entities(
+            [
+                SunseekerBorderDistanceSelect(
+                    coordinator,
+                    "Border distance",
+                    "sunseeker_border_distance",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerReturnModeSelect(
+                    coordinator,
+                    "Docking mode",
+                    "sunseeker_docking_mode",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerBorderFirstSelect(
+                    coordinator,
+                    "Ride on edge",
+                    "sunseeker_ride_on_edge",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_entities(
+            [
+                SunseekerScreenTimeoutSelect(
+                    coordinator,
+                    "Automatic screen timeout",
+                    "sunseeker_screen_timeout",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+
+
+class SunseekerScreenTimeoutSelect(SunseekerEntity, SelectEntity):
+    """Select entity for Sunseeker mower mode."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(
+        self, coordinator: SunseekerDataCoordinator, name: str, translationkey: str
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.data_coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self._attr_options = ["off", "30", "60", "90"]
+        self._attr_current_option = self._get_mode_name(self.device.screen_lock)
+        self._attr_icon = "mdi:earth"
+
+    def _get_mode_name(self, mode: int) -> str:
+        mapping = {
+            0: "off",
+            30: "30",
+            60: "60",
+            90: "90",
+        }
+        return mapping.get(mode, "off")
+
+    async def async_select_option(self, option: str) -> None:
+        """Handle user selecting a new option."""
+        # Map option back to mode code and send to device
+        reverse_mapping = {
+            "off": 0,
+            "30": 30,
+            "60": 60,
+            "90": 90,
+        }
+        value = reverse_mapping.get(option, 0)
+        # Call your integration's method to set the mode
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_screen_durration_V1, value, self._sn
+        )
+        self._attr_current_option = option
+        self.async_write_ha_state()
+
+    @property
+    def current_option(self) -> str:
+        """Co."""
+        return self._get_mode_name(self.device.screen_lock)
+
+
+class SunseekerBorderFirstSelect(SunseekerEntity, SelectEntity):
+    """Select entity for Sunseeker mower mode."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(
+        self, coordinator: SunseekerDataCoordinator, name: str, translationkey: str
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.data_coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self._attr_options = ["off", "on"]
+        self._attr_current_option = self._get_mode_name(self.device.border_first)
+        self._attr_icon = "mdi:earth"
+
+    def _get_mode_name(self, mode: int) -> str:
+        mapping = {
+            0: "off",
+            1: "on",
+        }
+        return mapping.get(mode, "off")
+
+    async def async_select_option(self, option: str) -> None:
+        """Handle user selecting a new option."""
+        # Map option back to mode code and send to device
+        reverse_mapping = {
+            "off": 0,
+            "on": 1,
+        }
+        value = reverse_mapping.get(option, 0)
+        # Call your integration's method to set the mode
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_border_first_V1, value, self._sn
+        )
+        self._attr_current_option = option
+        self.async_write_ha_state()
+
+    @property
+    def current_option(self) -> str:
+        """Co."""
+        return self._get_mode_name(self.device.border_first)
+
+
+class SunseekerReturnModeSelect(SunseekerEntity, SelectEntity):
+    """Select entity for Sunseeker mower mode."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(
+        self, coordinator: SunseekerDataCoordinator, name: str, translationkey: str
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.data_coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self._attr_options = ["smart", "notrace"]
+        self._attr_current_option = self._get_mode_name(self.device.docking_path)
+        self._attr_icon = "mdi:earth"
+
+    def _get_mode_name(self, mode: int) -> str:
+        mapping = {
+            1: "smart",
+            0: "notrace",
+        }
+        return mapping.get(mode, "notrace")
+
+    async def async_select_option(self, option: str) -> None:
+        """Handle user selecting a new option."""
+        # Map option back to mode code and send to device
+        reverse_mapping = {
+            "smart": 1,
+            "notrace": 0,
+        }
+        value = reverse_mapping.get(option, 0)
+        # Call your integration's method to set the mode
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_return_path_V1, value, self._sn
+        )
+        self._attr_current_option = option
+        self.async_write_ha_state()
+
+    @property
+    def current_option(self) -> str:
+        """Co."""
+        return self._get_mode_name(self.device.docking_path)
+
+
+class SunseekerBorderDistanceSelect(SunseekerEntity, SelectEntity):
+    """Select entity for Sunseeker mower distance V models."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(
+        self, coordinator: SunseekerDataCoordinator, name: str, translationkey: str
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.data_coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self._attr_options = ["close", "far"]
+        self._attr_current_option = self._get_mode_name(self.device.border_distance)
+        self._attr_icon = "mdi:earth"
+
+    def _get_mode_name(self, mode: int) -> str:
+        mapping = {
+            0: "far",
+            1: "close",
+        }
+        return mapping.get(mode, "close")
+
+    async def async_select_option(self, option: str) -> None:
+        """Handle user selecting a new option."""
+        # Map option back to mode code and send to device
+        reverse_mapping = {
+            "close": 1,
+            "far": 0,
+        }
+        value = reverse_mapping.get(option, 0)
+        # Call your integration's method to set the mode
+        await self.hass.async_add_executor_job(
+            self._data_handler.set_border_distance_V1, value, self._sn
+        )
+        self._attr_current_option = option
+        self.async_write_ha_state()
+
+    @property
+    def current_option(self) -> str:
+        """Co."""
+        return self._get_mode_name(self.device.border_distance)
 
 
 class SunseekerSpeedSelect(SunseekerEntity, SelectEntity):

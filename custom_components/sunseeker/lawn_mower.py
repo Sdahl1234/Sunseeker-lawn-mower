@@ -109,22 +109,34 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
         ival = self._data_handler.get_device(self._sn).mode
 
         if ival == 0:
-            if self._data_handler.apptype == "New":
+            if (
+                self._data_handler.apptype == "New"
+                and self._data_handler.sub_apptype == ""
+            ):
                 val = SUNSEEKER_UNKNOWN
             else:
                 val = SUNSEEKER_STANDBY
         elif ival == 1:
-            if self._data_handler.apptype == "New":
+            if (
+                self._data_handler.apptype == "New"
+                and self._data_handler.sub_apptype == ""
+            ):
                 val = SUNSEEKER_IDLE
             else:
                 val = SUNSEEKER_MOWING
         elif ival == 2:
-            if self._data_handler.apptype == "New":
+            if (
+                self._data_handler.apptype == "New"
+                and self._data_handler.sub_apptype == ""
+            ):
                 val = SUNSEEKER_WORKING
             else:
                 val = SUNSEEKER_GOING_HOME
         elif ival == 3:
-            if self._data_handler.apptype == "New":
+            if (
+                self._data_handler.apptype == "New"
+                and self._data_handler.sub_apptype == ""
+            ):
                 val = SUNSEEKER_PAUSE
             else:
                 val = SUNSEEKER_CHARGING

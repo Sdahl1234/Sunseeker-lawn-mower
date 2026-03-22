@@ -19,6 +19,36 @@
     },
     "entity": {
         "select": {
+			"sunseeker_screen_timeout": {
+				"name": "Automatic screen timeout",
+				"state": {
+					"off": "Off",
+					"30": "30",
+					"60": "60",
+					"90": "90"
+				}
+			},
+			"sunseeker_ride_on_edge": {
+				"name": "Ride on edge",
+				"state": {
+					"off": "Off",
+					"on": "On"
+				}
+			},
+			"sunseeker_docking_mode": {
+				"name": "Docking mode",
+				"state": {
+					"smart": "Smart",
+					"notrace": "Traceless"
+				}
+			},
+			"sunseeker_border_distance": {
+				"name": "Edge distance",
+				"state": {
+					"close": "Close",
+					"far": "Far"
+				}
+			},
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Espacement de coupe",
 				"state": {

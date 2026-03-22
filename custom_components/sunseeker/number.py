@@ -16,7 +16,9 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
     AppNew = False
+    SubApp = ""
     for coordinator in robot_coordinators(hass, entry):
+        SubApp = coordinator.data_handler.sub_apptype
         if coordinator.data_handler.apptype == "New":
             # Skip if the app type is New, as these sensors are not supported
             AppNew = True
@@ -28,7 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    if AppNew:
+    if AppNew and SubApp == "":
         blade_speed = []
         blade_height = []
         plan_angle = []

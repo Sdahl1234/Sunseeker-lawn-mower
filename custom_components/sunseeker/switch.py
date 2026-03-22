@@ -18,11 +18,16 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     """Do setup entry."""
 
     AppNew = False
+    SubApp = ""
     for coordinator in robot_coordinators(hass, entry):
         if coordinator.data_handler.apptype == "New":
             # Skip if the app type is New, as these sensors are not supported
             AppNew = True
             break
+
+    for coordinator in robot_coordinators(hass, entry):
+        SubApp = coordinator.data_handler.sub_apptype
+        break
 
     async_add_entities(
         [
@@ -31,7 +36,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
         ]
     )
 
-    if AppNew:
+    if AppNew and SubApp == "":
         async_add_entities(
             [
                 SunseekerCustomEnableSwitch(

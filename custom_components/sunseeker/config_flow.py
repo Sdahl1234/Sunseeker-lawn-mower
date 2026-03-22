@@ -31,8 +31,9 @@ brands = [
 ]
 
 apptypes = [
-    "Old",
-    "New",
+    "Old models",
+    "X models",
+    "V models",
 ]
 
 regions = [

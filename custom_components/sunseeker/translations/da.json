@@ -19,6 +19,36 @@
 	},
 	"entity": {
 		"select": {
+			"sunseeker_screen_timeout": {
+				"name": "Auto skrærm sluk",
+				"state": {
+					"off": "Fra",
+					"30": "30",
+					"60": "60",
+					"90": "90"
+				}
+			},
+			"sunseeker_ride_on_edge": {
+				"name": "Kantklip",
+				"state": {
+					"off": "Fra",
+					"on": "Til"
+				}
+			},
+			"sunseeker_docking_mode": {
+				"name": "Docking mode",
+				"state": {
+					"smart": "Smart",
+					"notrace": "Sporingsfri"
+				}
+			},
+			"sunseeker_border_distance": {
+				"name": "Klippeafstand",
+				"state": {
+					"close": "Tæt",
+					"far": "Fjern"
+				}
+			},
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Klippeafstand",
 				"state": {

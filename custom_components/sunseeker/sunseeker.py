@@ -258,9 +258,9 @@ class Sunseeker_new_schedule:
         # for day, entries in schedule.items():
         for day, entries in sorted(
             schedule.items(),
-            key=lambda x: day_order.index(x[0].lower())
-            if x[0].lower() in day_order
-            else 99,
+            key=lambda x: (
+                day_order.index(x[0].lower()) if x[0].lower() in day_order else 99
+            ),
         ):
             # Convert day name to period number (Monday=1, ..., Sunday=7)
             day_to_period = {
@@ -322,6 +322,7 @@ class SunseekerDevice:
         """Init."""
 
         self.apptype = "Old"  # Default app type
+        self.sub_apptype = ""
         self.devicesn = Devicesn
         self.deviceId = None
         self.devicedata = {}
@@ -438,6 +439,12 @@ class SunseekerDevice:
         self.work_color = (124, 252, 0)
         self.grass_color = (34, 139, 34)
         self.alert_color = (240, 128, 128)
+
+        # V1
+        self.border_distance = 0
+        self.docking_path = 0
+        # self.border_first
+        self.screen_lock = 60
 
     def get_zone(self, id) -> SunseekerZone:
         """Get the zone obj."""
@@ -797,16 +804,18 @@ class SunseekerDevice:
             if not self.robot_image:
                 self.robot_image = self.load_robot_image()
             robotpos = self.settings["data"].get("robotPos")
-            rp = json.loads(robotpos)
-            self.mower_orientation = rp["angle"]
-            self.mower_pos_x, self.mower_pos_y = rp["point"]
+            if robotpos:
+                rp = json.loads(robotpos)
+                self.mower_orientation = rp["angle"]
+                self.mower_pos_x, self.mower_pos_y = rp["point"]
 
             if not self.charger_image:
                 self.charger_image = self.load_charger_image()
             chargepos = self.settings["data"].get("chargePos")
-            cp = json.loads(chargepos)
-            self.charger_orientation = cp["angle"]
-            self.charger_pos_x, self.charger_pos_y = cp["point"]
+            if chargepos:
+                cp = json.loads(chargepos)
+                self.charger_orientation = cp["angle"]
+                self.charger_pos_x, self.charger_pos_y = cp["point"]
 
             self.net_4g_sig = self.settings["data"].get("net4gSig")
             self.taskCoverArea = self.settings["data"].get("taskCoverArea")
@@ -834,6 +843,11 @@ class SunseekerDevice:
                         zone.work_speed = z.get("work_speed", zone.work_speed)
                         zone.setting = z.get("setting", zone.setting)
                         zone.plan_angle = z.get("plan_angle", zone.plan_angle)
+        if self.sub_apptype == "V models":
+            self.docking_path = self.settings["data"].get("returnMode")
+            self.screen_lock = self.settings["data"].get("durationTime")
+            self.border_first = self.settings["data"].get("rideMode")  # ok
+            self.border_distance = self.settings["data"].get("lv")
 
 
 class SunseekerScheduleDay:
@@ -925,7 +939,18 @@ class SunseekerRoboticmower:
 
         self.language = language
         self.brand = brand
+        #    "Old models", "Old"
+        #    "X models", "New"
+        #    "V models", "V1"
+        self.sub_apptype = ""
+        if apptype == "Old models":
+            apptype = "Old"
+        if apptype == "X models":
+            apptype = "New"
         self.apptype = apptype
+        if apptype in {"V models", "V1"}:
+            self.apptype = "New"
+            self.sub_apptype = "V models"
         self.username = email
         self.password = password
         self.deviceArray = []
@@ -950,13 +975,18 @@ class SunseekerRoboticmower:
             elif region == "US":
                 self.url = "https://wirefree-specific-us.sk-robot.com/api"
                 self.host = "wirefree-specific-us.sk-robot.com"
+        if self.apptype == "New":
+            if self.sub_apptype == "V models":
+                self.cmdurl = "/app_wirelessv1_mower/wirelessv1/device/"
+            else:
+                self.cmdurl = "/iot_mower/wireless/device/"
 
         self.appId = "0123456789abcdef"
         self.mqtt_passwd = str(uuid.uuid4()).replace("-", "")[:24]
         self.public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u\n7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg\n2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeu\nCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrC\nftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWB\nSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4\nXwIDAQAB\n-----END PUBLIC KEY-----"
-        self.firstMQTTmessage = False
+        self.firstMQTTmessage = True
 
-    def get_device(self, devicesn) -> SunseekerDevice:
+    def get_device(self, devicesn) -> SunseekerDevice | None:
         """Get the device object."""
 
         for device in self.robotList:
@@ -988,6 +1018,7 @@ class SunseekerRoboticmower:
                         ad.robot_image_url = device["picUrlDetail"]
                     ad.DeviceName = device["deviceName"]
                     ad.apptype = self.apptype
+                    ad.sub_apptype = self.sub_apptype
                     if self.apptype == "New":
                         ad.DeviceWifiAddress = device["ipAddr"]
                     else:
@@ -1012,6 +1043,8 @@ class SunseekerRoboticmower:
                                 ad.Schedule_new.zones.append([zoneid, zonename])
                         self.get_heat_map_data(device_sn)
                     self.get_device(device_sn).InitValues()
+                if self.sub_apptype == "V models":
+                    self.get_schedule_data(device_sn)
                 if self.apptype == "New":
                     self.connect_mqtt_new()
                 else:
@@ -1096,9 +1129,15 @@ class SunseekerRoboticmower:
         )
         self.mqtt_client_new.tls_set()
         if self.region == "EU":
-            host = "wfsmqtt-specific.sk-robot.com"
+            if self.sub_apptype == "V models":
+                host = "app.mqttv1-eu.sk-robot.com"
+            else:
+                host = "wfsmqtt-specific.sk-robot.com"
         elif self.region == "US":
-            host = "wfsmqtt-specific-us.sk-robot.com"
+            if self.sub_apptype == "V models":
+                host = "app.mqttv1-us.sk-robot.com"
+            else:
+                host = "wfsmqtt-specific-us.sk-robot.com"
         _LOGGER.debug("MQTT host: " + host)  # noqa: G003
         _LOGGER.debug("MQTT username: " + self.session["username"] + self.appId)  # noqa: G003
         _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
@@ -1106,7 +1145,7 @@ class SunseekerRoboticmower:
             self.mqtt_client_new.connect(
                 host=host,
                 keepalive=60,
-                port=1884,
+                port=32884,  # 1884,
             )
             _LOGGER.debug("MQTT starting loop")
             self.mqtt_client_new.loop_start()
@@ -1161,11 +1200,13 @@ class SunseekerRoboticmower:
     def on_mqtt_connect_new(self, client, userdata, flags, rc):
         """On mqtt connect."""
         _LOGGER.debug("MQTT new connected event")
-        ep = "wirelessdevice"
+        # v1
+        ep = "wirelessmower"
+        # ep = "wirelessdevice"
 
         sub = f"/{ep}/" + str(self.session["user_id"]) + "/get"
         _LOGGER.debug(
-            f"MQTT mew subscribe to: {sub}"  # noqa: G004
+            f"MQTT new subscribe to: {sub}"  # noqa: G004
         )
         self.mqtt_client_new.subscribe(sub, qos=0)
         _LOGGER.debug("MQTT new subscribe ok")
@@ -1176,22 +1217,6 @@ class SunseekerRoboticmower:
 
     def handle_mqtt_message(self, message):  # noqa: C901
         """Thread to handle the messages."""
-        need_update = False
-        if (not self.firstMQTTmessage) and self.apptype == "New":
-            _LOGGER.debug("First MQTT message")
-            self.firstMQTTmessage = True
-            for device_ in self.robotList:
-                device: SunseekerDevice = device_
-                thread = Thread(
-                    target=self.get_dev_all_properties,
-                    args=(device.devicesn, self.session["user_id"]),
-                )
-                thread.start()
-                thread2 = Thread(
-                    target=self.get_schedule_data,
-                    args=(device.devicesn,),
-                )
-                thread2.start()
 
         def update_var_if_changed(old_value: Any, new_value: Any) -> Any:
             """Update a variable if the new value is different."""
@@ -1218,6 +1243,28 @@ class SunseekerRoboticmower:
                 return new_value
             return old_value
 
+        need_update = False
+        if (self.firstMQTTmessage) and self.apptype == "New":
+            _LOGGER.debug("First MQTT message")
+            self.firstMQTTmessage = False
+            for device_ in self.robotList:
+                device: SunseekerDevice = device_
+                thread = Thread(
+                    target=self.get_dev_all_properties,
+                    args=(device.devicesn, self.session["user_id"]),
+                )
+                thread.start()
+                thread2 = Thread(
+                    target=self.get_schedule_data,
+                    args=(device.devicesn,),
+                )
+                thread2.start()
+
+        def setvalue(s: str, a1, a2):
+            if s in a1:
+                return update_var_if_changed(a2, a1.get(s, a2))
+            return a2
+
         _LOGGER.debug("MQTT message: " + message.topic + " " + message.payload.decode())  # noqa: G003
         try:
             schedule: bool = False
@@ -1230,8 +1277,7 @@ class SunseekerRoboticmower:
             data = json.loads(message.payload.decode())
             if "deviceSn" in data:
                 devicesn = data.get("deviceSn")
-                device = self.get_device(devicesn)
-
+                device: SunseekerDevice = self.get_device(devicesn)
                 if "power" in data:
                     device.power = update_var_if_changed(
                         device.power, data.get("power", device.power)
@@ -1491,7 +1537,6 @@ class SunseekerRoboticmower:
                             device.plan_angle = update_var_if_changed(
                                 device.plan_angle,
                                 data.get("data").get("plan_angle").get("plan_value"),
-                                device.plan_angle,
                             )
                         if "plan_mode" in data.get("data").get("plan_angle"):
                             device.plan_mode = update_var_if_changed(
@@ -1878,27 +1923,63 @@ class SunseekerRoboticmower:
                     device.mulpro_zon4 = update_var_if_changed(
                         device.mulpro_zon4, data.get("mul_pro4", device.mulpro_zon4)
                     )
-                if "Mon" in data:
-                    device.Schedule.UpdateFromMqtt(data.get("Mon"), 1)
-                    schedule = True
-                if "Tue" in data:
-                    device.Schedule.UpdateFromMqtt(data.get("Tue"), 2)
-                    schedule = True
-                if "Wed" in data:
-                    device.Schedule.UpdateFromMqtt(data.get("Wed"), 3)
-                    schedule = True
-                if "Thu" in data:
-                    device.Schedule.UpdateFromMqtt(data.get("Thu"), 4)
-                    schedule = True
-                if "Fri" in data:
-                    device.Schedule.UpdateFromMqtt(data.get("Fri"), 5)
-                    schedule = True
-                if "Sat" in data:
-                    device.Schedule.UpdateFromMqtt(data.get("Sat"), 6)
-                    schedule = True
-                if "Sun" in data:
-                    device.Schedule.UpdateFromMqtt(data.get("Sun"), 7)
-                    schedule = True
+                if self.apptype == "Old":
+                    if "Mon" in data:
+                        device.Schedule.UpdateFromMqtt(data.get("Mon"), 1)
+                        schedule = True
+                    if "Tue" in data:
+                        device.Schedule.UpdateFromMqtt(data.get("Tue"), 2)
+                        schedule = True
+                    if "Wed" in data:
+                        device.Schedule.UpdateFromMqtt(data.get("Wed"), 3)
+                        schedule = True
+                    if "Thu" in data:
+                        device.Schedule.UpdateFromMqtt(data.get("Thu"), 4)
+                        schedule = True
+                    if "Fri" in data:
+                        device.Schedule.UpdateFromMqtt(data.get("Fri"), 5)
+                        schedule = True
+                    if "Sat" in data:
+                        device.Schedule.UpdateFromMqtt(data.get("Sat"), 6)
+                        schedule = True
+                    if "Sun" in data:
+                        device.Schedule.UpdateFromMqtt(data.get("Sun"), 7)
+                        schedule = True
+                if self.sub_apptype == "V models":
+                    # V models
+                    if "wifi_rssi" in data:
+                        device.robotsignal = update_var_if_changed(
+                            device.robotsignal,
+                            data.get("wifi_rssi", device.robotsignal),
+                        )
+                    device.screen_lock = setvalue("duration", data, device.screen_lock)
+                    # if "duration" in data:
+                    #    device.screen_lock = update_var_if_changed(
+                    #        device.screen_lock, data.get("duration", device.screen_lock)
+                    #    )
+                    if "lv" in data:
+                        device.border_distance = update_var_if_changed(
+                            device.border_distance,
+                            data.get("lv", device.border_distance),
+                        )
+                    if "ride_en" in data:
+                        device.border_first = update_var_if_changed(
+                            device.border_first,
+                            data.get("ride_en", device.border_first),
+                        )
+                    # "cmd":536,"type":0 = sporingsfrit / "cmd":536,"type":1 = smart
+                    if "cmd" in data:
+                        if data.get("cmd") == 536:
+                            if "type" in data:
+                                if data.get("type") == 0:
+                                    device.docking_path = update_var_if_changed(
+                                        device.docking_path, 0
+                                    )
+                                if data.get("type") == 1:
+                                    device.docking_path = update_var_if_changed(
+                                        device.docking_path, 1
+                                    )
+
                 if device.dataupdated is not None:
                     device.dataupdated(
                         device.devicesn,
@@ -1927,7 +2008,10 @@ class SunseekerRoboticmower:
         """Get device."""
         endpoint = "/mower/device-user/list"
         if self.apptype == "New":
-            endpoint = "/app_wireless_mower/device-user/allDevice"
+            if self.sub_apptype == "V models":
+                endpoint = "/app_wireless_mower/device-user/getCustomDevice?all=true"
+            else:
+                endpoint = "/app_wireless_mower/device-user/allDevice"
         attempt = 0
         while attempt < MAX_LOGIN_RETRIES:
             if attempt > 0:
@@ -2429,16 +2513,26 @@ class SunseekerRoboticmower:
             attempt = attempt + 1
             try:
                 if self.apptype == "New":
-                    url = self.url + "/iot_mower/wireless/device/set_property"
-                    data = {
-                        "appId": self.session["user_id"],
-                        "delay": int(delaymin),
-                        "deviceSn": devicesn,
-                        "id": "setDevRain",
-                        "key": "rain",
-                        "method": "set_property",
-                        "rain_flag": state,
-                    }
+                    if self.sub_apptype:
+                        url = self.url + self.cmdurl + "setProperty"
+                        data = {
+                            "appId": self.session["user_id"],
+                            "deviceSn": devicesn,
+                            "method": "setRain",
+                            "rainDelayDuration": int(delaymin),
+                            "rainFlag": state,
+                        }
+                    else:
+                        url = self.url + self.cmdurl + "set_property"
+                        data = {
+                            "appId": self.session["user_id"],
+                            "delay": int(delaymin),
+                            "deviceSn": devicesn,
+                            "id": "setDevRain",
+                            "key": "rain",
+                            "method": "set_property",
+                            "rain_flag": state,
+                        }
                 else:
                     url = self.url + "/app_mower/device/setRain"
                     data = {
@@ -2502,10 +2596,14 @@ class SunseekerRoboticmower:
     def set_state_change(self, command, state, devicesn, zone=None):
         """Old Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Border."""
         # New Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Stop.
+        # V models state 4=start
         # device_id = self.DeviceSn  # self.devicedata["data"].get("id")
+        if self.sub_apptype == "V models":
+            self.set_workmode_V1(state, devicesn)
+            return
         endpoint = "/app_mower/device/setWorkStatus"
         if self.apptype == "New":
-            endpoint = "/iot_mower/wireless/device/action"
+            endpoint = self.cmdurl + "action"
 
         attempt = 0
         while attempt < MAX_SET_CONFIG_RETRIES:
@@ -2815,7 +2913,11 @@ class SunseekerRoboticmower:
 
     def get_dev_all_properties(self, snr, userid):
         """Get devAllProperties."""
-        endpoint = "/iot_mower/wireless/device/get_property"
+        if self.sub_apptype == "V models":
+            return
+            # endpoint = self.cmdurl + "getProperty"
+        # else:
+        endpoint = self.cmdurl + "get_property"
         attempt = 0
         while attempt < MAX_SET_CONFIG_RETRIES:
             if attempt > 0:
@@ -2824,13 +2926,22 @@ class SunseekerRoboticmower:
 
             try:
                 url_ = self.url + endpoint
-                data_ = {
-                    "appId": self.session["user_id"],
-                    "deviceSn": snr,
-                    "id": "getDevAllProperty",
-                    "key": "all",
-                    "method": "get_property",
-                }
+                if self.sub_apptype == "V models":
+                    data_ = {
+                        "appId": self.session["user_id"],
+                        "deviceSn": snr,
+                        # "key": "all",
+                        # "method": "getProperty",
+                        "method": "all",
+                    }
+                else:
+                    data_ = {
+                        "appId": self.session["user_id"],
+                        "deviceSn": snr,
+                        "id": "getDevAllProperty",
+                        "key": "all",
+                        "method": "get_property",
+                    }
                 headers_ = {
                     # "Accept-Language": self.language,
                     "Authorization": "bearer " + self.session["access_token"],
@@ -3108,8 +3219,138 @@ class SunseekerRoboticmower:
         }
         self.set_property(data, devicesn)
 
+    def parse_schedule_data_V1(self, data, devicesn):
+        """Parsing schedule data V model."""
+        need_update = False
+
+        def hms_to_seconds(value: str) -> int:
+            hours, minutes, seconds = map(int, value.split(":"))
+            return hours * 3600 + minutes * 60 + seconds
+
+        def update_var_if_changed(old_value: Any, new_value: Any) -> Any:
+            """Update a variable if the new value is different."""
+            nonlocal need_update
+            if isinstance(old_value, dict) and isinstance(new_value, dict):
+                if old_value != new_value:
+                    _LOGGER.debug(
+                        f"dict - Old_value: {old_value} New_value: {new_value}"  # noqa: G004
+                    )
+                    need_update = True
+                    return new_value.copy()
+                return old_value
+            if isinstance(old_value, list) and isinstance(new_value, list):
+                if old_value != new_value:
+                    _LOGGER.debug(
+                        f"list - Old_value: {old_value} New_value: {new_value}"  # noqa: G004
+                    )
+                    need_update = True
+                    return new_value.copy()
+                return old_value
+            if old_value != new_value:
+                _LOGGER.debug(f"simple - Old_value: {old_value} New_value: {new_value}")  # noqa: G004
+                need_update = True
+                return new_value
+            return old_value
+
+        device = self.get_device(devicesn)
+        if "deviceSchedules" in data["data"]:
+            ctime = data.get("data").get("deviceSchedules")
+            if ctime:
+                for day in device.Schedule_new.days:
+                    day.enabled = False
+                oldday = -1
+                index = 1
+                for day in ctime:
+                    day_of_week = day.get("dayOfWeek")
+                    if oldday == day_of_week:
+                        index = index + 1
+                    else:
+                        index = 1
+                    oldday = day_of_week
+
+                    dayobj = device.Schedule_new.GetDay(day_of_week, index)
+                    if dayobj:
+                        dayobj.enabled = True
+                        dayobj.need_fllow_boader = update_var_if_changed(
+                            dayobj.need_fllow_boader,
+                            day.get(
+                                "trimFlag",
+                                dayobj.need_fllow_boader,
+                            ),
+                        )
+                        start = hms_to_seconds(day.get("startAt"))
+                        dayobj.start = update_var_if_changed(
+                            dayobj.start,
+                            start,
+                        )
+                        end = hms_to_seconds(day.get("endAt"))
+                        dayobj.end = update_var_if_changed(
+                            dayobj.end,
+                            end,
+                        )
+        if need_update:
+            return
+
+    def Get_schedule_data_V1(self, devicesn):
+        """Get schedule data for V1."""
+        # self.url + self.cmdurl + f"device-schedule/{deviceId}"
+        deviceId = self.get_device(devicesn).deviceId
+        endpoint = f"/app_wirelessv1_mower/wirelessv1/device-schedule/{deviceId}"
+        attempt = 0
+        while attempt < MAX_LOGIN_RETRIES:
+            if attempt > 0:
+                time.sleep(1)
+            attempt = attempt + 1
+
+            try:
+                url_ = self.url + endpoint
+                headers_ = {
+                    "Content-Type": "application/json",
+                    "Accept-Language": self.language,
+                    "Authorization": "bearer " + self.session["access_token"],
+                    "Host": self.host,
+                    "Connection": "Keep-Alive",
+                    "User-Agent": "okhttp/4.4.1",
+                }
+                _LOGGER.debug(f"Get schedule data header: {headers_} url: {url_}")  # noqa: G004
+                response = requests.get(
+                    url=url_,
+                    headers=headers_,
+                    timeout=10,
+                )
+                response_data = response.json()
+                self.parse_schedule_data_V1(response_data, devicesn)
+                _LOGGER.debug(json.dumps(response_data))
+
+                if response_data["code"] != 0:
+                    _LOGGER.debug("Error getting device schedule")
+                    _LOGGER.debug(json.dumps(response_data))
+                    return
+                return  # noqa: TRY300
+
+            except requests.exceptions.HTTPError as errh:
+                _LOGGER.debug(
+                    f"Get device schedule attempt {attempt}: Http Error:  {errh}"  # noqa: G004
+                )
+            except requests.exceptions.ConnectionError as errc:
+                _LOGGER.debug(
+                    f"Get device schedule attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
+                )
+            except requests.exceptions.Timeout as errt:
+                _LOGGER.debug(
+                    f"Get device schedule attempt {attempt}: Timeout Error: {errt}"  # noqa: G004
+                )
+            except requests.exceptions.RequestException as err:
+                _LOGGER.debug(f"Get device schedule attempt {attempt}: Error: {err}")  # noqa: G004
+            except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+                _LOGGER.debug(f"Get device schedule attempt {attempt}: failed {error}")  # noqa: G004
+
     def get_schedule_data(self, devicesn):
         """Get schedule property."""
+        if self.sub_apptype == "V models":
+            # self.url + self.cmdurl + f"device-schedule/{deviceId}"
+            self.Get_schedule_data_V1(devicesn)
+            return
         data = {
             "appId": self.session["user_id"],
             "deviceSn": devicesn,
@@ -3127,7 +3368,11 @@ class SunseekerRoboticmower:
                 time.sleep(1)
             attempt = attempt + 1
             try:
-                url = self.url + "/iot_mower/wireless/device/set_property"
+                if self.sub_apptype == "V models":
+                    cmd = "setProperty"
+                else:
+                    cmd = "set_property"
+                url = self.url + self.cmdurl + cmd
                 headers = {
                     "Accept-Language": self.language,
                     "Authorization": "bearer " + self.session["access_token"],
@@ -3206,7 +3451,7 @@ class SunseekerRoboticmower:
                         }
                     ],
                 }
-                url = self.url + "/iot_mower/wireless/device/set_property"
+                url = self.url + self.cmdurl + "set_property"
                 headers = {
                     "Accept-Language": self.language,
                     "Authorization": "bearer " + self.session["access_token"],
@@ -3258,3 +3503,85 @@ class SunseekerRoboticmower:
                 self.get_device(devicesn).error_text = error
                 self.get_device(devicesn).dataupdated(devicesn)
                 _LOGGER.debug(f"Set property attempt {attempt}: failed {error}")  # noqa: G004
+
+    def set_return_path_V1(self, value: int, devicesn):
+        """Set return path V1."""
+        data = {
+            "appId": self.session["user_id"],
+            "deviceSn": devicesn,
+            "method": "setReturnMode",
+            "returnMode": int(value),
+        }
+        self.set_property(data, devicesn)
+
+    def set_screen_durration_V1(self, value: int, devicesn):
+        """Set screen timeout path V1."""
+        data = {
+            "appId": self.session["user_id"],
+            "deviceSn": devicesn,
+            "method": "setDuration",
+            "duration": int(value),
+        }
+        self.set_property(data, devicesn)
+
+    def set_border_first_V1(self, value: int, devicesn):
+        """Set border first V1."""
+        data = {
+            "appId": self.session["user_id"],
+            "deviceSn": devicesn,
+            "method": "setRideMode",
+            "rideMode": int(value),
+        }
+        self.set_property(data, devicesn)
+
+    def set_border_distance_V1(self, value: int, devicesn):
+        """Set border distance V1."""
+        data = {
+            "appId": self.session["user_id"],
+            "deviceSn": devicesn,
+            "method": "setLv",
+            "lv": int(value),
+        }
+        self.set_property(data, devicesn)
+
+    def set_workmode_V1(self, value: int, devicesn):
+        """Set workmode V1."""
+        data = {
+            "appId": self.session["user_id"],
+            "deviceSn": devicesn,
+            "method": "setWorkStatus",
+            "mode": int(value),
+        }
+        self.set_property(data, devicesn)
+
+    def set_schedule_on_off_V1(self, value: int, devicesn):
+        """Set workmode V1."""
+        data = {
+            "appId": self.session["user_id"],
+            "deviceSn": devicesn,
+            "method": "setWorkStatus",
+            "mode": int(value),
+        }
+        self.set_property(data, devicesn)
+
+
+# workmode
+# method: setWorkStatus
+# mode: 4
+
+# ok
+# Kantklip //mqtt ride_en:0/1
+# method: setRideMode
+# rideMode: 0/1 (on/off)
+
+# Dockingsti: mqtt: "cmd":536,"type":0 / "cmd":536,"type":0
+# method: setReturnMode
+# returnMode: 0/1 (Smart/Sporingsfri)
+
+# Afstand på kantklipningen
+# method: setLv
+# lv: 0/1 (Fjern/Nær)
+
+# Automatisk skærm slukning
+# method: setDuration
+# duration: 30/60/90
