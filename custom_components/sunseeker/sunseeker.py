@@ -242,6 +242,38 @@ class Sunseeker_new_schedule:
             # raise ValueError(f"Invalid time format '{hhmm}': {err}") from
             return 0
 
+    def generate_enabled_time_list_V1(self, schedule: dict) -> list[dict]:
+        """Generate a list of enabled time entries in the required V1 format."""
+
+        def to_hms(value: str) -> str:
+            # "09:00" -> "09:00:00", keeps "HH:MM:SS" unchanged
+            return value if value.count(":") == 2 else f"{value}:00"
+
+        days = [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ]
+
+        out: list[dict] = []
+
+        for day_index, day_name in enumerate(days, start=1):
+            for entry in schedule.get(day_name, []):
+                if entry.get("enabled") is True:
+                    out.append(  # noqa: PERF401
+                        {
+                            "dayOfWeek": day_index,  # Monday=1
+                            "startAt": to_hms(entry["starttime"]),
+                            "endAt": to_hms(entry["endtime"]),
+                            "trimFlag": True,
+                        }
+                    )
+        return out
+
     def generate_enabled_time_list(self, schedule: dict) -> list[dict]:
         """Generate a list of enabled time entries in the required format."""
 
@@ -1689,48 +1721,25 @@ class SunseekerRoboticmower:
                                             )
                                             if dayobj:
                                                 dayobj.enabled = True
-                                                dayobj.unlock = update_var_if_changed(
-                                                    dayobj.unlock,
-                                                    day.get("unlock", dayobj.unlock),
+                                                dayobj.unlock = setvalue(
+                                                    "unlock", day, dayobj.unlock
                                                 )
-                                                dayobj.active = update_var_if_changed(
-                                                    dayobj.active,
-                                                    day.get("active", dayobj.active),
+                                                dayobj.active = setvalue(
+                                                    "active", day, dayobj.active
                                                 )
-                                                dayobj.need_fllow_boader = (
-                                                    update_var_if_changed(
-                                                        dayobj.need_fllow_boader,
-                                                        day.get(
-                                                            "need_fllow_boader",
-                                                            dayobj.need_fllow_boader,
-                                                        ),
-                                                    )
+                                                dayobj.region_id = setvalue(
+                                                    "region_id", day, dayobj.region_id
                                                 )
-                                                dayobj.region_id = (
-                                                    update_var_if_changed(
-                                                        dayobj.region_id,
-                                                        day.get(
-                                                            "region_id",
-                                                            dayobj.region_id,
-                                                        ),
-                                                    )
+                                                dayobj.need_fllow_boader = setvalue(
+                                                    "need_fllow_boader",
+                                                    day,
+                                                    dayobj.need_fllow_boader,
                                                 )
-                                                dayobj.need_fllow_boader = (
-                                                    update_var_if_changed(
-                                                        dayobj.need_fllow_boader,
-                                                        day.get(
-                                                            "need_fllow_boader",
-                                                            dayobj.need_fllow_boader,
-                                                        ),
-                                                    )
+                                                dayobj.start = setvalue(
+                                                    "start", day, dayobj.start
                                                 )
-                                                dayobj.start = update_var_if_changed(
-                                                    dayobj.start,
-                                                    day.get("start", dayobj.start),
-                                                )
-                                                dayobj.end = update_var_if_changed(
-                                                    dayobj.end,
-                                                    day.get("end", dayobj.end),
+                                                dayobj.end = setvalue(
+                                                    "end", day, dayobj.end
                                                 )
                     if "time" in data.get("data"):
                         need_update = True
@@ -1752,53 +1761,29 @@ class SunseekerRoboticmower:
                                     dayobj = device.Schedule_new.GetDay(pday, index)
                                     if dayobj:
                                         dayobj.enabled = True
-                                        dayobj.unlock = update_var_if_changed(
-                                            dayobj.unlock,
-                                            day.get("unlock", dayobj.unlock),
+                                        dayobj.unlock = setvalue(
+                                            "unlock", day, dayobj.unlock
                                         )
-                                        dayobj.active = update_var_if_changed(
-                                            dayobj.active,
-                                            day.get("active", dayobj.active),
+                                        dayobj.active = setvalue(
+                                            "active", day, dayobj.active
                                         )
-                                        dayobj.need_fllow_boader = (
-                                            update_var_if_changed(
-                                                dayobj.need_fllow_boader,
-                                                day.get(
-                                                    "need_fllow_boader",
-                                                    dayobj.need_fllow_boader,
-                                                ),
-                                            )
+                                        dayobj.region_id = setvalue(
+                                            "region_id", day, dayobj.region_id
                                         )
-                                        dayobj.region_id = update_var_if_changed(
-                                            dayobj.region_id,
-                                            day.get(
-                                                "region_id",
-                                                dayobj.region_id,
-                                            ),
+                                        dayobj.need_fllow_boader = setvalue(
+                                            "need_fllow_boader",
+                                            day,
+                                            dayobj.need_fllow_boader,
                                         )
-                                        dayobj.need_fllow_boader = (
-                                            update_var_if_changed(
-                                                dayobj.need_fllow_boader,
-                                                day.get(
-                                                    "need_fllow_boader",
-                                                    dayobj.need_fllow_boader,
-                                                ),
-                                            )
+                                        dayobj.start = setvalue(
+                                            "start", day, dayobj.start
                                         )
-                                        dayobj.start = update_var_if_changed(
-                                            dayobj.start,
-                                            day.get("start", dayobj.start),
-                                        )
-                                        dayobj.end = update_var_if_changed(
-                                            dayobj.end,
-                                            day.get("end", dayobj.end),
-                                        )
+                                        dayobj.end = setvalue("end", day, dayobj.end)
 
                     # zones
                     if "custom_flag" in data.get("data"):
-                        device.custom_zones = update_var_if_changed(
-                            device.custom_zones,
-                            data.get("data").get("custom_flag", device.custom_zones),
+                        device.custom_zones = setvalue(
+                            "custom_flag", data.get("data"), device.custom_zones
                         )
                     if "custom" in data.get("data"):
                         customdata = data.get("data").get("custom")
@@ -1807,122 +1792,59 @@ class SunseekerRoboticmower:
                             zoneid = z["region_id"]
                             zone = device.get_zone(zoneid)
                             if zone:
-                                zone.gap = update_var_if_changed(
-                                    zone.gap, z.get("work_gap", zone.gap)
+                                zone.gap = setvalue("work_gap", z, zone.gap)
+                                zone.region_size = setvalue(
+                                    "region_size", z, zone.region_size
                                 )
-                                zone.region_size = update_var_if_changed(
-                                    zone.region_size,
-                                    z.get("region_size", zone.region_size),
+                                zone.blade_height = setvalue(
+                                    "blade_height", z, zone.blade_height
                                 )
-                                zone.blade_height = update_var_if_changed(
-                                    zone.blade_height,
-                                    z.get("blade_height", zone.blade_height),
+                                zone.estimate_time = setvalue(
+                                    "estimate_time", z, zone.estimate_time
                                 )
-                                zone.estimate_time = update_var_if_changed(
-                                    zone.estimate_time,
-                                    z.get("estimate_time", zone.estimate_time),
+                                zone.blade_speed = setvalue(
+                                    "blade_speed", z, zone.blade_speed
                                 )
-                                zone.blade_speed = update_var_if_changed(
-                                    zone.blade_speed,
-                                    z.get("blade_speed", zone.blade_speed),
+                                zone.plan_mode = setvalue(
+                                    "plan_mode", z, zone.plan_mode
                                 )
-                                zone.plan_mode = update_var_if_changed(
-                                    zone.plan_mode, z.get("plan_mode", zone.plan_mode)
+                                zone.work_speed = setvalue(
+                                    "work_speed", z, zone.work_speed
                                 )
-                                zone.work_speed = update_var_if_changed(
-                                    zone.work_speed,
-                                    z.get("work_speed", zone.work_speed),
+                                zone.setting = setvalue("setting", z, zone.setting)
+                                zone.plan_angle = setvalue(
+                                    "plan_angle", z, zone.plan_angle
                                 )
-                                zone.setting = update_var_if_changed(
-                                    zone.setting, z.get("setting", zone.setting)
-                                )
-                                zone.plan_angle = update_var_if_changed(
-                                    zone.plan_angle,
-                                    z.get("plan_angle", zone.plan_angle),
-                                )
-
-                if "station" in data:
-                    device.station = update_var_if_changed(
-                        device.station, data.get("station", device.station)
-                    )
-                if "wifi_lv" in data:
-                    device.wifi_lv = update_var_if_changed(
-                        device.wifi_lv, data.get("wifi_lv", device.wifi_lv)
-                    )
-                if "rain_en" in data:
-                    device.rain_en = update_var_if_changed(
-                        device.rain_en, data.get("rain_en", device.rain_en)
-                    )
-                if "rain_status" in data:
-                    device.rain_status = update_var_if_changed(
-                        device.rain_status, data.get("rain_status", device.rain_status)
-                    )
-                if "rain_delay_set" in data:
-                    device.rain_delay_set = update_var_if_changed(
-                        device.rain_delay_set,
-                        data.get("rain_delay_set", device.rain_delay_set),
-                    )
-                if "rain_delay_left" in data:
-                    device.rain_delay_left = update_var_if_changed(
-                        device.rain_delay_left,
-                        data.get("rain_delay_left", device.rain_delay_left),
-                    )
-                if "rain_countdown" in data:
-                    device.rain_delay_left = update_var_if_changed(
-                        device.rain_delay_left,
-                        data.get("rain_countdown", device.rain_delay_left),
-                    )
-                if "cur_min" in data:
-                    device.cur_min = update_var_if_changed(
-                        device.cur_min, data.get("cur_min", device.cur_min)
-                    )
-                if "data" in data:
-                    device.deviceOnlineFlag = data.get("data", device.deviceOnlineFlag)
-                if "zoneOpenFlag" in data:
-                    device.zoneOpenFlag = update_var_if_changed(
-                        device.zoneOpenFlag,
-                        data.get("zoneOpenFlag", device.zoneOpenFlag),
-                    )
-                if "mul_en" in data:
-                    device.mul_en = update_var_if_changed(
-                        device.mul_en, data.get("mul_en", device.mul_en)
-                    )
-                if "mul_auto" in data:
-                    device.mul_auto = update_var_if_changed(
-                        device.mul_auto, data.get("mul_auto", device.mul_auto)
-                    )
-                if "mul_zon1" in data:
-                    device.mul_zon1 = update_var_if_changed(
-                        device.mul_zon1, data.get("mul_zon1", device.mul_zon1)
-                    )
-                if "mul_zon2" in data:
-                    device.mul_zon2 = update_var_if_changed(
-                        device.mul_zon2, data.get("mul_zon2", device.mul_zon2)
-                    )
-                if "mul_zon3" in data:
-                    device.mul_zon3 = update_var_if_changed(
-                        device.mul_zon3, data.get("mul_zon3", device.mul_zon3)
-                    )
-                if "mul_zon4" in data:
-                    device.mul_zon4 = update_var_if_changed(
-                        device.mul_zon4, data.get("mul_zon4", device.mul_zon4)
-                    )
-                if "mul_pro1" in data:
-                    device.mulpro_zon1 = update_var_if_changed(
-                        device.mulpro_zon1, data.get("mul_pro1", device.mulpro_zon1)
-                    )
-                if "mul_pro2" in data:
-                    device.mulpro_zon2 = update_var_if_changed(
-                        device.mulpro_zon2, data.get("mul_pro2", device.mulpro_zon2)
-                    )
-                if "mul_pro3" in data:
-                    device.mulpro_zon3 = update_var_if_changed(
-                        device.mulpro_zon3, data.get("mul_pro3", device.mulpro_zon3)
-                    )
-                if "mul_pro4" in data:
-                    device.mulpro_zon4 = update_var_if_changed(
-                        device.mulpro_zon4, data.get("mul_pro4", device.mulpro_zon4)
-                    )
+                device.station = setvalue("station", data, device.station)
+                device.wifi_lv = setvalue("wifi_lv", data, device.wifi_lv)
+                device.rain_en = setvalue("rain_en", data, device.rain_en)
+                device.rain_status = setvalue("rain_status", data, device.rain_status)
+                device.rain_delay_set = setvalue(
+                    "rain_delay_set", data, device.rain_delay_set
+                )
+                device.rain_delay_left = setvalue(
+                    "rain_delay_left", data, device.rain_delay_left
+                )
+                device.rain_delay_left = setvalue(
+                    "rain_countdown", data, device.rain_delay_left
+                )
+                device.cur_min = setvalue("cur_min", data, device.cur_min)
+                device.deviceOnlineFlag = setvalue(
+                    "data", data, device.deviceOnlineFlag
+                )
+                device.zoneOpenFlag = setvalue(
+                    "zoneOpenFlag", data, device.zoneOpenFlag
+                )
+                device.mul_en = setvalue("mul_en", data, device.mul_en)
+                device.mul_auto = setvalue("mul_auto", data, device.mul_auto)
+                device.mul_zon1 = setvalue("mul_zon1", data, device.mul_zon1)
+                device.mul_zon2 = setvalue("mul_zon2", data, device.mul_zon2)
+                device.mul_zon3 = setvalue("mul_zon3", data, device.mul_zon3)
+                device.mul_zon4 = setvalue("mul_zon4", data, device.mul_zon4)
+                device.mulpro_zon1 = setvalue("mul_pro1", data, device.mulpro_zon1)
+                device.mulpro_zon2 = setvalue("mul_pro2", data, device.mulpro_zon2)
+                device.mulpro_zon3 = setvalue("mul_pro3", data, device.mulpro_zon3)
+                device.mulpro_zon4 = setvalue("mul_pro4", data, device.mulpro_zon4)
                 if self.apptype == "Old":
                     if "Mon" in data:
                         device.Schedule.UpdateFromMqtt(data.get("Mon"), 1)
@@ -1947,28 +1869,17 @@ class SunseekerRoboticmower:
                         schedule = True
                 if self.sub_apptype == "V models":
                     # V models
-                    if "wifi_rssi" in data:
-                        device.robotsignal = update_var_if_changed(
-                            device.robotsignal,
-                            data.get("wifi_rssi", device.robotsignal),
-                        )
                     device.screen_lock = setvalue("duration", data, device.screen_lock)
-                    # if "duration" in data:
-                    #    device.screen_lock = update_var_if_changed(
-                    #        device.screen_lock, data.get("duration", device.screen_lock)
-                    #    )
-                    if "lv" in data:
-                        device.border_distance = update_var_if_changed(
-                            device.border_distance,
-                            data.get("lv", device.border_distance),
-                        )
-                    if "ride_en" in data:
-                        device.border_first = update_var_if_changed(
-                            device.border_first,
-                            data.get("ride_en", device.border_first),
-                        )
+                    device.border_distance = setvalue(
+                        "lv", data, device.border_distance
+                    )
+                    device.border_first = setvalue("ride_en", data, device.border_first)
+                    device.robotsignal = setvalue("wifi_rssi", data, device.robotsignal)
                     # "cmd":536,"type":0 = sporingsfrit / "cmd":536,"type":1 = smart
                     if "cmd" in data:
+                        if data.get("cmd") == 503:  # schedule
+                            self.update_schedule_from_mqtt_v1(data, device)
+                            need_update = True
                         if data.get("cmd") == 536:
                             if "type" in data:
                                 if data.get("type") == 0:
@@ -1995,6 +1906,41 @@ class SunseekerRoboticmower:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug("MQTT message error: " + str(error))  # noqa: G003
             _LOGGER.debug("MQTT message: " + message.payload.decode())  # noqa: G003
+
+    def Update_single_day(
+        self, device: SunseekerDevice, daydata, dayindex: int
+    ) -> None:
+        """Update single day data."""
+        trim = daydata.get("Trimming")
+        index = 1
+        for slice_obj in daydata["slice"]:
+            day = device.Schedule_new.GetDay(dayindex, index)
+            day.enabled = True
+            day.start = slice_obj["start"] * 60
+            day.end = slice_obj["end"] * 60
+            day.need_fllow_boader = trim
+            index = index + 1
+
+    def update_schedule_from_mqtt_v1(self, data, device: SunseekerDevice) -> None:
+        """Update schedule on V models from mqqt using old format."""
+        for day in device.Schedule_new.days:
+            day.enabled = False
+        if "Mon" in data:
+            self.Update_single_day(device, data.get("Mon"), 1)
+        if "Tue" in data:
+            self.Update_single_day(device, data.get("Tue"), 2)
+        if "Wed" in data:
+            self.Update_single_day(device, data.get("Wed"), 3)
+        if "Thu" in data:
+            self.Update_single_day(device, data.get("Thu"), 4)
+        if "Fri" in data:
+            self.Update_single_day(device, data.get("Fri"), 5)
+        if "Sat" in data:
+            self.Update_single_day(device, data.get("Sat"), 6)
+        if "Sun" in data:
+            self.Update_single_day(device, data.get("Sun"), 7)
+        if "pause" in data:
+            device.Schedule_new.schedule_pause = data.get("pause")
 
     def on_mqtt_error(self, client, userdata, error):
         """On mqtt error."""
@@ -3107,19 +3053,32 @@ class SunseekerRoboticmower:
 
     def set_schedule_new(self, devicesn, timedata):
         """Set schedule from service call."""
+        _LOGGER.debug(timedata)
         device = self.get_device(devicesn)
-        data = {
-            "appId": self.session["user_id"],
-            "deviceSn": devicesn,
-            "id": "setTimeTactics",
-            "key": "time_tactics",
-            "method": "set_property",
-            "time_custom_flag": timedata.get("user_defined"),
-            "recommended_time_flag": timedata.get("recommended_time_work"),
-            "time": device.Schedule_new.generate_enabled_time_list(timedata),
-            "time_zone": device.Schedule_new.timezone,
-            "pause": timedata.get("pause"),
-        }
+        if self.sub_apptype == "":
+            data = {
+                "appId": self.session["user_id"],
+                "deviceSn": devicesn,
+                "id": "setTimeTactics",
+                "key": "time_tactics",
+                "method": "setSchedule",
+                "time_custom_flag": timedata.get("user_defined"),
+                "recommended_time_flag": timedata.get("recommended_time_work"),
+                "time": device.Schedule_new.generate_enabled_time_list(timedata),
+                "time_zone": device.Schedule_new.timezone,
+                "pause": timedata.get("pause"),
+            }
+        else:
+            data = {
+                "appId": self.session["user_id"],
+                "deviceSn": devicesn,
+                "autoFlag": False,
+                "method": "setSchedule",
+                "deviceScheduleBOS": device.Schedule_new.generate_enabled_time_list_V1(
+                    timedata
+                ),
+                "pause": timedata.get("pause"),
+            }
 
         self.set_property(data, devicesn)
 
@@ -3253,6 +3212,8 @@ class SunseekerRoboticmower:
             return old_value
 
         device = self.get_device(devicesn)
+        if "pause" in data:
+            device.Schedule_new.schedule_pause = data.get("pause")
         if "deviceSchedules" in data["data"]:
             ctime = data.get("data").get("deviceSchedules")
             if ctime:
@@ -3288,8 +3249,6 @@ class SunseekerRoboticmower:
                             dayobj.end,
                             end,
                         )
-        if need_update:
-            return
 
     def Get_schedule_data_V1(self, devicesn):
         """Get schedule data for V1."""
@@ -3554,13 +3513,13 @@ class SunseekerRoboticmower:
         }
         self.set_property(data, devicesn)
 
-    def set_schedule_on_off_V1(self, value: int, devicesn):
+    def set_schedule_on_off_V1(self, value: bool, devicesn):
         """Set workmode V1."""
         data = {
             "appId": self.session["user_id"],
             "deviceSn": devicesn,
-            "method": "setWorkStatus",
-            "mode": int(value),
+            "method": "setPause",
+            "Pause": value,
         }
         self.set_property(data, devicesn)
 

@@ -61,6 +61,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 for coordinator in robot_coordinators(hass, entry)
             ]
         )
+    if AppNew:
         async_add_entities(
             [
                 SunseekerSchedulePauseSwitch(
@@ -627,18 +628,32 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         self._data_handler.get_device(self._sn).Schedule_new.schedule_pause = True
-        await self.hass.async_add_executor_job(
-            self._data_handler.set_schedule_data,
-            self._sn,
-        )
+        if self._data_handler.sub_apptype == "V1":
+            await self.hass.async_add_executor_job(
+                self._data_handler.set_schedule_on_off_V1,
+                True,
+                self._sn,
+            )
+        else:
+            await self.hass.async_add_executor_job(
+                self._data_handler.set_schedule_data,
+                self._sn,
+            )
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         self._data_handler.get_device(self._sn).Schedule_new.schedule_pause = False
-        await self.hass.async_add_executor_job(
-            self._data_handler.set_schedule_data,
-            self._sn,
-        )
+        if self._data_handler.sub_apptype == "V1":
+            await self.hass.async_add_executor_job(
+                self._data_handler.set_schedule_on_off_V1,
+                False,
+                self._sn,
+            )
+        else:
+            await self.hass.async_add_executor_job(
+                self._data_handler.set_schedule_data,
+                self._sn,
+            )
 
     async def async_toggle(self, **kwargs):
         """Toggle the entity."""
@@ -647,10 +662,17 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
         ).Schedule_new.schedule_pause = not self._data_handler.get_device(
             self._sn
         ).Schedule_new.schedule_pause
-        await self.hass.async_add_executor_job(
-            self._data_handler.set_schedule_data,
-            self._sn,
-        )
+        if self._data_handler.sub_apptype == "V1":
+            await self.hass.async_add_executor_job(
+                self._data_handler.set_schedule_on_off_V1,
+                self._data_handler.get_device(self._sn).Schedule_new.schedule_pause,
+                self._sn,
+            )
+        else:
+            await self.hass.async_add_executor_job(
+                self._data_handler.set_schedule_data,
+                self._sn,
+            )
 
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
