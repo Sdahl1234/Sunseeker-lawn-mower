@@ -788,7 +788,7 @@ class SunseekerDevice:
             self.station = self.devicedata["data"].get("stationFlag")
         self.rain_en = self.devicedata["data"].get("rainFlag")
         self.rain_delay_set = int(self.devicedata["data"].get("rainDelayDuration"))
-        if self.apptype == "New":
+        if self.apptype == "New" and self.sub_apptype == "":
             self.rain_delay_left = self.settings["data"].get("rainCountdown")
         else:
             self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
@@ -2861,8 +2861,6 @@ class SunseekerRoboticmower:
         """Get devAllProperties."""
         if self.sub_apptype == "V models":
             return
-            # endpoint = self.cmdurl + "getProperty"
-        # else:
         endpoint = self.cmdurl + "get_property"
         attempt = 0
         while attempt < MAX_SET_CONFIG_RETRIES:
@@ -2872,22 +2870,13 @@ class SunseekerRoboticmower:
 
             try:
                 url_ = self.url + endpoint
-                if self.sub_apptype == "V models":
-                    data_ = {
-                        "appId": self.session["user_id"],
-                        "deviceSn": snr,
-                        # "key": "all",
-                        # "method": "getProperty",
-                        "method": "all",
-                    }
-                else:
-                    data_ = {
-                        "appId": self.session["user_id"],
-                        "deviceSn": snr,
-                        "id": "getDevAllProperty",
-                        "key": "all",
-                        "method": "get_property",
-                    }
+                data_ = {
+                    "appId": self.session["user_id"],
+                    "deviceSn": snr,
+                    "id": "getDevAllProperty",
+                    "key": "all",
+                    "method": "get_property",
+                }
                 headers_ = {
                     # "Accept-Language": self.language,
                     "Authorization": "bearer " + self.session["access_token"],
@@ -2899,7 +2888,6 @@ class SunseekerRoboticmower:
                 _LOGGER.debug(
                     f"Get devAllProperties header: {headers_} url: {url_} data: {data_}"  # noqa: G004
                 )
-                # device = self.get_device(snr)
                 response = requests.post(
                     url=url_,
                     headers=headers_,
@@ -3279,7 +3267,8 @@ class SunseekerRoboticmower:
                 )
                 response_data = response.json()
                 self.parse_schedule_data_V1(response_data, devicesn)
-                _LOGGER.debug(json.dumps(response_data))
+                logdata = json.dumps(response_data)
+                _LOGGER.debug(f"Get device schedule {logdata}")  # noqa: G004
 
                 if response_data["code"] != 0:
                     _LOGGER.debug("Error getting device schedule")
