@@ -2,7 +2,7 @@
 
 import base64
 import importlib.resources
-from io import BytesIO
+from io import BytesIO32884
 import json
 import logging
 import math
@@ -1170,6 +1170,10 @@ class SunseekerRoboticmower:
                 host = "app.mqttv1-us.sk-robot.com"
             else:
                 host = "wfsmqtt-specific-us.sk-robot.com"
+        if self.sub_apptype == "V models":
+            port = 32884
+        else
+            port = 1884
         _LOGGER.debug("MQTT host: " + host)  # noqa: G003
         _LOGGER.debug("MQTT username: " + self.session["username"] + self.appId)  # noqa: G003
         _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
@@ -1177,7 +1181,7 @@ class SunseekerRoboticmower:
             self.mqtt_client_new.connect(
                 host=host,
                 keepalive=60,
-                port=32884,  # 1884,
+                port=port,
             )
             _LOGGER.debug("MQTT starting loop")
             self.mqtt_client_new.loop_start()
