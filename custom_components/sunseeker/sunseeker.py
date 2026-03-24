@@ -1172,7 +1172,7 @@ class SunseekerRoboticmower:
                 host = "wfsmqtt-specific-us.sk-robot.com"
         if self.sub_apptype == "V models":
             port = 32884
-        else
+        else:
             port = 1884
         _LOGGER.debug("MQTT host: " + host)  # noqa: G003
         _LOGGER.debug("MQTT username: " + self.session["username"] + self.appId)  # noqa: G003
