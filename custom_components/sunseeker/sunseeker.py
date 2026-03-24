@@ -2,7 +2,7 @@
 
 import base64
 import importlib.resources
-from io import BytesIO32884
+from io import BytesIO
 import json
 import logging
 import math
