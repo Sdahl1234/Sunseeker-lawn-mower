@@ -1236,9 +1236,10 @@ class SunseekerRoboticmower:
     def on_mqtt_connect_new(self, client, userdata, flags, rc):
         """On mqtt connect."""
         _LOGGER.debug("MQTT new connected event")
-        # v1
-        ep = "wirelessmower"
-        # ep = "wirelessdevice"
+        if self.sub_apptype == "":
+            ep = "wirelessdevice"  # X
+        else:
+            ep = "wirelessmower"  # V
 
         sub = f"/{ep}/" + str(self.session["user_id"]) + "/get"
         _LOGGER.debug(
