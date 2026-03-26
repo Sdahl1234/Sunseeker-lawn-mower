@@ -7,6 +7,7 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
+from .const import APPTYPE_V, APPTYPE_X, APPTYPE_Old
 from .entity import SunseekerEntity
 
 
@@ -15,7 +16,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
 
     AppNew = False
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.data_handler.apptype == "New":
+        if coordinator.data_handler.apptype in {APPTYPE_V, APPTYPE_X}:
             # Skip if the app type is New, as these sensors are not supported
             AppNew = True
             break
@@ -142,7 +143,7 @@ class SunseekerBinarySensor(SunseekerEntity, BinarySensorEntity):
             return self._data_handler.get_device(self._sn).mul_en
         if self._valuepair == "mul_auto":
             return self._data_handler.get_device(self._sn).mul_auto
-        if self.coordinator.data_handler.apptype == "Old":
+        if self.coordinator.data_handler.apptype == APPTYPE_Old:
             if self._valuepair == "deviceOnlineFlag":
                 return (
                     self._data_handler.get_device(self._sn).deviceOnlineFlag

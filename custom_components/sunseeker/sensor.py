@@ -9,6 +9,8 @@ from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
+    APPTYPE_V,
+    APPTYPE_X,
     DOMAIN,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
@@ -33,6 +35,7 @@ from .const import (
     SUNSEEKER_UNKNOWN_4,
     SUNSEEKER_WET,
     SUNSEEKER_WORKING,
+    APPTYPE_Old,
 )
 from .entity import SunseekerEntity
 
@@ -40,15 +43,9 @@ from .entity import SunseekerEntity
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     """Async Setup entry."""
 
-    AppNew = False
-    SubApp = ""
+    Apptype = ""
     for coordinator in robot_coordinators(hass, entry):
-        SubApp = coordinator.data_handler.sub_apptype
-        if coordinator.data_handler.apptype == "New":
-            # Skip if the app type is New, as these sensors are not supported
-            AppNew = True
-            break
-
+        Apptype = coordinator.data_handler.apptype
     async_add_devices(
         [
             SunseekerSensor(
@@ -79,7 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    if not AppNew:
+    if Apptype == APPTYPE_Old:
         async_add_devices(
             [
                 SunseekerSensor(
@@ -95,7 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 for coordinator in robot_coordinators(hass, entry)
             ]
         )
-    if AppNew:
+    if Apptype in {APPTYPE_V, APPTYPE_X}:
         est_time = []
         est_size = []
         for coordinator in robot_coordinators(hass, entry):
@@ -143,7 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 for coordinator in robot_coordinators(hass, entry)
             ]
         )
-        if SubApp == "":
+        if Apptype == APPTYPE_X:
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -190,7 +187,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 for coordinator in robot_coordinators(hass, entry)
             ]
         )
-        if SubApp == "":
+        if Apptype == APPTYPE_X:
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -206,7 +203,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     for coordinator in robot_coordinators(hass, entry)
                 ]
             )
-        if SubApp == "":
+        if Apptype == APPTYPE_X:
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -222,7 +219,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     for coordinator in robot_coordinators(hass, entry)
                 ]
             )
-        if SubApp == "":
+        if Apptype == APPTYPE_X:
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -238,7 +235,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     for coordinator in robot_coordinators(hass, entry)
                 ]
             )
-        if SubApp == "":
+        if Apptype == APPTYPE_X:
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -344,7 +341,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    if SubApp == "":
+    if Apptype in {APPTYPE_Old, APPTYPE_X}:
         async_add_devices(
             [
                 SunseekerSensor(
@@ -361,7 +358,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             ]
         )
 
-    if not AppNew:
+    if Apptype == APPTYPE_Old:
         async_add_devices(
             [
                 SunseekerSensor(
@@ -452,7 +449,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    if not AppNew:
+    if Apptype == APPTYPE_Old:
         async_add_devices(
             [
                 SunseekerSensor(
@@ -568,34 +565,22 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                     + ")"
                 )
             elif ival == 0:
-                if (
-                    self._data_handler.apptype == "New"
-                    and self._data_handler.sub_apptype == ""
-                ):
+                if self._data_handler.apptype == APPTYPE_X:
                     val = SUNSEEKER_UNKNOWN
                 else:
                     val = SUNSEEKER_STANDBY
             elif ival == 1:
-                if (
-                    self._data_handler.apptype == "New"
-                    and self._data_handler.sub_apptype == ""
-                ):
+                if self._data_handler.apptype == APPTYPE_X:
                     val = SUNSEEKER_IDLE
                 else:
                     val = SUNSEEKER_MOWING
             elif ival == 2:
-                if (
-                    self._data_handler.apptype == "New"
-                    and self._data_handler.sub_apptype == ""
-                ):
+                if self._data_handler.apptype == APPTYPE_X:
                     val = SUNSEEKER_WORKING
                 else:
                     val = SUNSEEKER_GOING_HOME
             elif ival == 3:
-                if (
-                    self._data_handler.apptype == "New"
-                    and self._data_handler.sub_apptype == ""
-                ):
+                if self._data_handler.apptype == APPTYPE_X:
                     val = SUNSEEKER_PAUSE
                 else:
                     val = SUNSEEKER_CHARGING
@@ -604,7 +589,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             elif ival == 6:
                 val = SUNSEEKER_ERROR
             elif ival == 7:
-                if self._data_handler.apptype == "New":
+                if self._data_handler.apptype in {APPTYPE_X, APPTYPE_V}:
                     val = SUNSEEKER_RETURN
                 else:
                     val = SUNSEEKER_MOWING_BORDER
@@ -635,12 +620,12 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             if ival == 0:
                 val = SUNSEEKER_DRY
             elif ival == 1:
-                if self._data_handler.apptype == "New":
+                if self._data_handler.apptype in {APPTYPE_V, APPTYPE_X}:
                     val = SUNSEEKER_WET
                 else:
                     val = SUNSEEKER_DRY_COUNTDOWN
             elif ival == 2:
-                if self._data_handler.apptype == "New":
+                if self._data_handler.apptype in {APPTYPE_V, APPTYPE_X}:
                     val = SUNSEEKER_DRY_COUNTDOWN
                 else:
                     val = SUNSEEKER_WET

@@ -8,6 +8,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
+from .const import APPTYPE_V, APPTYPE_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
 
     AppNew = False
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.data_handler.apptype == "New":
+        if coordinator.data_handler.apptype in {APPTYPE_V, APPTYPE_X}:
             # Skip if the app type is New, as these sensors are not supported
             AppNew = True
             break

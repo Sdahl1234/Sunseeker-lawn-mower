@@ -9,6 +9,7 @@ from homeassistant.components.text import TextEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
+from .const import APPTYPE_Old
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,14 +18,11 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
 
-    AppNew = False
+    Apptype = ""
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.data_handler.apptype == "New":
-            # Skip if the app type is New, as these sensors are not supported
-            AppNew = True
-            break
+        Apptype = coordinator.data_handler.apptype
 
-    if not AppNew:
+    if Apptype == APPTYPE_Old:
         async_add_entities(
             [
                 SunseekerScheduleText(

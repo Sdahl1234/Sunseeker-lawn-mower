@@ -9,6 +9,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
+from .const import APPTYPE_V, APPTYPE_X, APPTYPE_Old
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,17 +18,9 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
 
-    AppNew = False
-    SubApp = ""
+    Apptype = ""
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.data_handler.apptype == "New":
-            # Skip if the app type is New, as these sensors are not supported
-            AppNew = True
-            break
-
-    for coordinator in robot_coordinators(hass, entry):
-        SubApp = coordinator.data_handler.sub_apptype
-        break
+        Apptype = coordinator.data_handler.apptype
 
     async_add_entities(
         [
@@ -36,7 +29,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
         ]
     )
 
-    if AppNew and SubApp == "":
+    if Apptype == APPTYPE_X:
         async_add_entities(
             [
                 SunseekerCustomEnableSwitch(
@@ -61,7 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 for coordinator in robot_coordinators(hass, entry)
             ]
         )
-    if AppNew:
+    if Apptype in {APPTYPE_V, APPTYPE_X}:
         async_add_entities(
             [
                 SunseekerSchedulePauseSwitch(
@@ -71,7 +64,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             ]
         )
 
-    if not AppNew:
+    if Apptype == APPTYPE_Old:
         async_add_entities(
             [
                 SunseekerMultiZoneSwitch(
@@ -628,7 +621,7 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         self._data_handler.get_device(self._sn).Schedule_new.schedule_pause = True
-        if self._data_handler.sub_apptype == "V1":
+        if self._data_handler.apptype == APPTYPE_V:
             await self.hass.async_add_executor_job(
                 self._data_handler.set_schedule_on_off_V1,
                 True,
@@ -643,7 +636,7 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         self._data_handler.get_device(self._sn).Schedule_new.schedule_pause = False
-        if self._data_handler.sub_apptype == "V1":
+        if self._data_handler.apptype == APPTYPE_V:
             await self.hass.async_add_executor_job(
                 self._data_handler.set_schedule_on_off_V1,
                 False,
@@ -662,7 +655,7 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
         ).Schedule_new.schedule_pause = not self._data_handler.get_device(
             self._sn
         ).Schedule_new.schedule_pause
-        if self._data_handler.sub_apptype == "V1":
+        if self._data_handler.apptype == APPTYPE_V:
             await self.hass.async_add_executor_job(
                 self._data_handler.set_schedule_on_off_V1,
                 self._data_handler.get_device(self._sn).Schedule_new.schedule_pause,

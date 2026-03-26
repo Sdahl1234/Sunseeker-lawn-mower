@@ -5,25 +5,18 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
 from . import SunseekerDataCoordinator, robot_coordinators
+from .const import APPTYPE_V, APPTYPE_X
 from .entity import SunseekerEntity
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
     """Do setup entry."""
 
-    AppNew = False
+    Apptype = ""
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.data_handler.apptype == "New":
-            # Skip if the app type is New, as these sensors are not supported
-            AppNew = True
-            break
+        Apptype = coordinator.data_handler.apptype
 
-    SubApp = ""
-    for coordinator in robot_coordinators(hass, entry):
-        SubApp = coordinator.data_handler.sub_apptype
-        break
-
-    if AppNew and SubApp == "":
+    if Apptype == APPTYPE_X:
         plan_mode = []
         speed = []
         gap = []
@@ -143,7 +136,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                 for coordinator in robot_coordinators(hass, entry)
             ]
         )
-    if SubApp == "V models":
+    if Apptype == APPTYPE_V:
         async_add_entities(
             [
                 SunseekerBorderDistanceSelect(

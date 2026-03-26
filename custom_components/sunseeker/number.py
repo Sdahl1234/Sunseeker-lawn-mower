@@ -8,6 +8,7 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
+from .const import APPTYPE_X, APPTYPE_Old
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -15,14 +16,9 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
-    AppNew = False
-    SubApp = ""
+    AppType = ""
     for coordinator in robot_coordinators(hass, entry):
-        SubApp = coordinator.data_handler.sub_apptype
-        if coordinator.data_handler.apptype == "New":
-            # Skip if the app type is New, as these sensors are not supported
-            AppNew = True
-            break
+        AppType = coordinator.data_handler.apptype
 
     async_add_entities(
         [
@@ -30,7 +26,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    if AppNew and SubApp == "":
+    if AppType == APPTYPE_X:
         blade_speed = []
         blade_height = []
         plan_angle = []
@@ -94,7 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             ]
         )
 
-    if not AppNew:
+    if AppType == APPTYPE_Old:
         async_add_entities(
             [
                 SunseekerZoneNumber(coordinator, "Zone1", 1, "sunseeker_zone1")

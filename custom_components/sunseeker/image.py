@@ -11,7 +11,7 @@ from homeassistant.components.image import ImageEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import DOMAIN
+from .const import APPTYPE_X, DOMAIN
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -22,16 +22,11 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
 
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    AppNew = False
-    SubApp = ""
+    AppType = ""
     for coordinator in robot_coordinators(hass, entry):
-        SubApp = coordinator.data_handler.sub_apptype
-        if coordinator.data_handler.apptype == "New":
-            # Skip if the app type is New, as these sensors are not supported
-            AppNew = True
-            break
+        AppType = coordinator.data_handler.apptype
 
-    if AppNew and SubApp == "":
+    if AppType == APPTYPE_X:
         async_add_entities(
             [
                 MowerImage(
