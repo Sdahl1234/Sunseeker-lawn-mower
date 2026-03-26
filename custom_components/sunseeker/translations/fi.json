@@ -179,7 +179,8 @@
                     "stop": "Pysäytetty",
                     "continue_mowing": "Jatka leikkaamista",
                     "stuck": "Jumissa",
-                    "updating_firmware": "Opdating firmware"
+                    "updating_firmware": "Opdating firmware",
+                    "enter_pin": "Enter pin"
                 }
             },
             "sunseeker_battery": {
@@ -280,7 +281,8 @@
                     "stop": "Pysäytetty",
                     "continue_mowing": "Jatka leikkaamista",
                     "stuck": "Jumissa",
-                    "updating_firmware": "Opdating firmware"
+                    "updating_firmware": "Opdating firmware",
+                    "enter_pin": "Enter pin"
                 }
             }
         },

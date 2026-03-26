@@ -29,6 +29,7 @@ SUNSEEKER_STUCK = "stuck"
 SUNSEEKER_DRY = "dry"
 SUNSEEKER_WET = "wet"
 SUNSEEKER_DRY_COUNTDOWN = "dry_countdown"
+SUNSEEKER_ENTERPIN = "enter_pin"
 
 # Max retries
 MAX_LOGIN_RETRIES = 1

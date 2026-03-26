@@ -17,6 +17,7 @@ from .const import (
     SUNSEEKER_CONTINUE_CUTTING,
     SUNSEEKER_DRY,
     SUNSEEKER_DRY_COUNTDOWN,
+    SUNSEEKER_ENTERPIN,
     SUNSEEKER_ERROR,
     SUNSEEKER_FIRMWARE_UPDATE,
     SUNSEEKER_GOING_HOME,
@@ -611,6 +612,8 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                 val = SUNSEEKER_STUCK
             elif ival == 18:
                 val = SUNSEEKER_STOP
+            elif ival == 20:
+                val = SUNSEEKER_ENTERPIN
             else:
                 val = SUNSEEKER_UNKNOWN + " (Code: " + str(ival) + ")"
         elif self._valuepair == "wifi_lv":

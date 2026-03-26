@@ -198,7 +198,8 @@
 					"stop": "Stoppet",
 					"continue_mowing": "Fortsætter klipning",
           			"stuck": "Sidder fast",
-					"updating_firmware": "Opdatere firmware"
+					"updating_firmware": "Opdatere firmware",
+					"enter_pin": "Indtast pinkode"
 				}
 			},
 			"sunseeker_battery": {
@@ -296,7 +297,8 @@
 					"stop": "Stoppet",
 					"continue_mowing": "Fortsætter klipning",
           			"stuck": "Sidder fast",
-					"updating_firmware": "Opdatere firmware"
+					"updating_firmware": "Opdatere firmware",
+					"enter_pin": "Indtast pinkode"
 				}
 			}
 		},

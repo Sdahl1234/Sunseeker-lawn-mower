@@ -191,8 +191,8 @@
           "stop": "Gestoppt",
           "continue_mowing": "Weiter mähen",
           "stuck": "Festgefahren",
- 					"updating_firmware": "Opdating firmware"
-
+ 					"updating_firmware": "Opdating firmware",
+          "enter_pin": "Enter pin"
         }
       },
       "sunseeker_battery": {
@@ -290,8 +290,8 @@
           "stop": "Gestoppt",
           "continue_mowing": "Weiter mähen",
           "stuck": "Festgefahren",
- 					"updating_firmware": "Opdating firmware"
-
+ 					"updating_firmware": "Opdating firmware",
+          "enter_pin": "Enter pin"
         }
       }
     },

@@ -190,7 +190,8 @@
                     "stop": "Arrêté",
                     "continue_mowing": "Continuer la tonte",
                     "stuck": "Bloqué",
-                    "updating_firmware": "Opdating firmware"
+                    "updating_firmware": "Opdating firmware",
+                    "enter_pin": "Enter pin"
                 }
             },
             "sunseeker_battery": {
@@ -288,7 +289,8 @@
                     "stop": "Arrêté",
                     "continue_mowing": "Continuer la tonte",
                     "stuck": "Bloqué",
-                    "updating_firmware": "Opdating firmware"
+                    "updating_firmware": "Opdating firmware",
+                    "enter_pin": "Enter pin"
                 }
             }
         },
