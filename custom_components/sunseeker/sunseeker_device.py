@@ -9,7 +9,7 @@ import math
 from PIL import Image, ImageDraw
 import requests
 
-from .const import APPTYPE_V, APPTYPE_X, APPTYPE_Old
+from .const import APPTYPE_OLD, APPTYPE_V, APPTYPE_X
 from .sunseeker_schedule import Sunseeker_new_schedule, SunseekerSchedule
 from .sunseeker_zone import SunseekerZone
 
@@ -22,7 +22,7 @@ class SunseekerDevice:
     def __init__(self, Devicesn) -> None:
         """Init."""
 
-        self.apptype = APPTYPE_Old
+        self.apptype = APPTYPE_OLD
         self.devicesn = Devicesn
         self.deviceId = None
         self.devicedata = {}
@@ -461,7 +461,7 @@ class SunseekerDevice:
         else:
             self.rain_status = int(self.devicedata["data"].get("rainStatusCode"))
 
-        if self.apptype == APPTYPE_Old:
+        if self.apptype == APPTYPE_OLD:
             self.station = self.devicedata["data"].get("stationFlag")
             if self.devicedata["data"].get("onlineFlag"):
                 self.deviceOnlineFlag = '{"online":"1"}'

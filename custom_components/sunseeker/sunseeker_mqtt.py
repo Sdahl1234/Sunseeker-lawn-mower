@@ -16,7 +16,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 import paho.mqtt.client as mqtt
 import requests
 
-from .const import APPTYPE_V, APPTYPE_X, MAX_SET_CONFIG_RETRIES, APPTYPE_Old
+from .const import APPTYPE_OLD, APPTYPE_V, APPTYPE_X, MAX_SET_CONFIG_RETRIES
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_schedule import Sunseeker_new_schedule_day
 
@@ -719,7 +719,7 @@ class SunseekermqttController:
         device.mulpro_zon2 = self.setvalue(nu, data, [], "mul_pro2", device.mulpro_zon2)
         device.mulpro_zon3 = self.setvalue(nu, data, [], "mul_pro3", device.mulpro_zon3)
         device.mulpro_zon4 = self.setvalue(nu, data, [], "mul_pro4", device.mulpro_zon4)
-        if self.apptype == APPTYPE_Old:
+        if self.apptype == APPTYPE_OLD:
             if "Mon" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Mon"), 1)
                 upd.schedule = True

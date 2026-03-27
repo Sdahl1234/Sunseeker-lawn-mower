@@ -9,7 +9,7 @@ from typing import Any
 from PIL import Image
 import requests
 
-from .const import APPTYPE_V, APPTYPE_X, APPTYPE_Old
+from .const import APPTYPE_OLD, APPTYPE_V, APPTYPE_X
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_mqtt import SunseekermqttController
 from .sunseeker_zone import SunseekerZone
@@ -29,7 +29,7 @@ class SunseekerRoboticmower:
         #    "X models", "New"
         #    "V models", "V1"
         if apptype == "Old":
-            apptype = APPTYPE_Old
+            apptype = APPTYPE_OLD
         if apptype == "New":
             apptype = APPTYPE_X
         self.apptype = apptype
@@ -914,7 +914,7 @@ class SunseekerRoboticmower:
             endpoint = self.cmdurl + "action"
 
         try:
-            if self.apptype == APPTYPE_Old:
+            if self.apptype == APPTYPE_OLD:
                 data = {
                     "appId": self.session["user_id"],
                     "deviceSn": devicesn,

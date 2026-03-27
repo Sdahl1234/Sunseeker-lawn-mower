@@ -22,7 +22,7 @@ from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DATAHANDLER, DH, DOMAIN, ROBOTS, APPTYPE_Old
+from .const import APPTYPE_OLD, APPTYPE_X, DATAHANDLER, DH, DOMAIN, ROBOTS
 from .sunseeker import SunseekerRoboticmower
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_mqtt import mqtt_update_values
@@ -195,7 +195,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     email = entry.data.get(CONF_EMAIL)
     password = entry.data.get(CONF_PASSWORD)
     brand = entry.data.get(CONF_MODEL)
-    apptype = entry.data.get(CONF_MODEL_ID, APPTYPE_Old)
+    apptype = entry.data.get(CONF_MODEL_ID, APPTYPE_OLD)
     region = entry.data.get("region", "EU")  # Default to EU if not set
 
     language = hass.config.language
@@ -298,23 +298,23 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.config.config_dir,
             "Schedule-{}.json".format(self.devicesn.replace(" ", "_")),
         )
-        _LOGGER.debug(self.schedulefilepath)
+        # _LOGGER.debug(self.schedulefilepath)
         self.heatimagefilepath = os.path.join(  # noqa: PTH118
             self.hass.config.config_dir,
             "heatmap-{}.png".format(self.devicesn.replace(" ", "_")),
         )
-        _LOGGER.debug(self.heatimagefilepath)
+        # _LOGGER.debug(self.heatimagefilepath)
         self.wifiimagefilepath = os.path.join(  # noqa: PTH118
             self.hass.config.config_dir,
             "wifimap-{}.png".format(self.devicesn.replace(" ", "_")),
         )
-        _LOGGER.debug(self.heatimagefilepath)
+        # _LOGGER.debug(self.heatimagefilepath)
         self.jdata = self.data_default
         self.livemap_entity = None  # MowerImage
         self.map_entity = None  # MowerImage
         self.heatmap_entity = None
         self.wifimap_entity = None
-        if self.device.apptype == APPTYPE_Old:
+        if self.device.apptype == APPTYPE_OLD:
             self.hass.add_job(self.set_schedule_data)
             self.hass.add_job(self.schedule_file_exits)
             self.hass.add_job(self.schedule_load_data)
@@ -323,19 +323,20 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.forcewifi = False
         getheat = False
         getwifi = False
-        if not self.device.heatmap_url:
-            self.hass.add_job(self.load_image, self.heatimagefilepath, 0)
-        else:
-            getheat = True
-        if not self.device.wifimap_url:
-            self.hass.add_job(self.load_image, self.wifiimagefilepath, 1)
-        else:
-            getwifi = True
-        if getwifi or getheat:
-            uv = mqtt_update_values()
-            uv.wifimap = getwifi
-            uv.heatmap = getheat
-            self.dataupdated(self.devicesn, uv=uv)
+        if self.device.apptype == APPTYPE_X:
+            if not self.device.heatmap_url:
+                self.hass.add_job(self.load_image, self.heatimagefilepath, 0)
+            else:
+                getheat = True
+            if not self.device.wifimap_url:
+                self.hass.add_job(self.load_image, self.wifiimagefilepath, 1)
+            else:
+                getwifi = True
+            if getwifi or getheat:
+                uv = mqtt_update_values()
+                uv.wifimap = getwifi
+                uv.heatmap = getheat
+                self.dataupdated(self.devicesn, uv=uv)
 
     async def set_schedule_data(self):
         """Set default."""
@@ -467,7 +468,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             _LOGGER.debug("map trigger update")
             self.hass.add_job(self.map_entity.trigger_update)
         if (
-            self.device.apptype == APPTYPE_Old
+            self.device.apptype == APPTYPE_OLD
             and uv.schedule
             and not self.device.Schedule.IsEmpty()
         ):

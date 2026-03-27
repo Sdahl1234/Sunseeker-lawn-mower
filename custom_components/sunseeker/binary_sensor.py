@@ -7,7 +7,7 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import APPTYPE_V, APPTYPE_X, APPTYPE_Old
+from .const import APPTYPE_OLD, APPTYPE_V, APPTYPE_X
 from .entity import SunseekerEntity
 
 
@@ -143,7 +143,7 @@ class SunseekerBinarySensor(SunseekerEntity, BinarySensorEntity):
             return self._data_handler.get_device(self._sn).mul_en
         if self._valuepair == "mul_auto":
             return self._data_handler.get_device(self._sn).mul_auto
-        if self.coordinator.data_handler.apptype == APPTYPE_Old:
+        if self.coordinator.data_handler.apptype == APPTYPE_OLD:
             if self._valuepair == "deviceOnlineFlag":
                 return (
                     self._data_handler.get_device(self._sn).deviceOnlineFlag

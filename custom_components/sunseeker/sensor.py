@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
+    APPTYPE_OLD,
     APPTYPE_V,
     APPTYPE_X,
     DOMAIN,
@@ -36,7 +37,6 @@ from .const import (
     SUNSEEKER_UNKNOWN_4,
     SUNSEEKER_WET,
     SUNSEEKER_WORKING,
-    APPTYPE_Old,
 )
 from .entity import SunseekerEntity
 
@@ -77,7 +77,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    if Apptype == APPTYPE_Old:
+    if Apptype == APPTYPE_OLD:
         async_add_devices(
             [
                 SunseekerSensor(
@@ -342,7 +342,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    if Apptype in {APPTYPE_Old, APPTYPE_X}:
+    if Apptype in {APPTYPE_OLD, APPTYPE_X}:
         async_add_devices(
             [
                 SunseekerSensor(
@@ -359,7 +359,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             ]
         )
 
-    if Apptype == APPTYPE_Old:
+    if Apptype == APPTYPE_OLD:
         async_add_devices(
             [
                 SunseekerSensor(
@@ -450,7 +450,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    if Apptype == APPTYPE_Old:
+    if Apptype == APPTYPE_OLD:
         async_add_devices(
             [
                 SunseekerSensor(

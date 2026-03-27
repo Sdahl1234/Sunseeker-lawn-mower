@@ -8,7 +8,7 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import APPTYPE_X, APPTYPE_Old
+from .const import APPTYPE_OLD, APPTYPE_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             ]
         )
 
-    if AppType == APPTYPE_Old:
+    if AppType == APPTYPE_OLD:
         async_add_entities(
             [
                 SunseekerZoneNumber(coordinator, "Zone1", 1, "sunseeker_zone1")

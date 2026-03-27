@@ -36,6 +36,6 @@ MAX_LOGIN_RETRIES = 1
 MAX_SET_CONFIG_RETRIES = 1
 
 # APPTYPE = "app_type"
-APPTYPE_Old = "Old models"
+APPTYPE_OLD = "Old models"
 APPTYPE_X = "X models"
 APPTYPE_V = "V models"
