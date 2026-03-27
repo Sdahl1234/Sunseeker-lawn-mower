@@ -552,11 +552,11 @@ class SunseekerDevice:
                         self.consumable.cutter.ls = cutter.get("ls")
                     blade = ci.get("blade", None)
                     if blade:
-                        self.consumable.cutter.twt = blade.get("twt")
-                        self.consumable.cutter.at = blade.get("at")
-                        self.consumable.cutter.mp = blade.get("mp")
-                        self.consumable.cutter.loop = blade.get("loop")
-                        self.consumable.cutter.ls = blade.get("ls")
+                        self.consumable.blade.twt = blade.get("twt")
+                        self.consumable.blade.at = blade.get("at")
+                        self.consumable.blade.mp = blade.get("mp")
+                        self.consumable.blade.loop = blade.get("loop")
+                        self.consumable.blade.ls = blade.get("ls")
 
             if self.apptype == APPTYPE_V:
                 self.docking_path = self.settings["data"].get("returnMode")

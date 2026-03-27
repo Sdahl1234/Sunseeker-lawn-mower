@@ -616,6 +616,8 @@ class SunseekermqttController:
                 )
                 update_timer.start()
                 # New apptype values
+        if "consumable_items" in datanode:
+            self.handle_mqtt_consumable_data(upd, nu, data, datanode, device)
         if "id" in data:
             self.handle_mqtt_data_id(upd, nu, data, datanode, device)
 
