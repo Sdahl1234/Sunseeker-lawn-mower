@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 import requests
 
 from .const import APPTYPE_OLD, APPTYPE_V, APPTYPE_X
+from .sunseeker_consumable_items import SunseekerConsumableItems
 from .sunseeker_schedule import Sunseeker_new_schedule, SunseekerSchedule
 from .sunseeker_zone import SunseekerZone
 
@@ -25,8 +26,8 @@ class SunseekerDevice:
         self.apptype = APPTYPE_OLD
         self.devicesn = Devicesn
         self.deviceId = None
-        self.devicedata = {}
-        self.settings = {}
+        self.devicedata = {}  # device status
+        self.settings = {}  # settings
         self.power = 0
         self.mode = 0
         # New apptype modes:
@@ -146,6 +147,8 @@ class SunseekerDevice:
         self.docking_path = 0
         # self.border_first
         self.screen_lock = 60
+        # X models
+        self.consumable = SunseekerConsumableItems()
 
     def get_zone(self, id) -> SunseekerZone:
         """Get the zone obj."""
@@ -536,6 +539,24 @@ class SunseekerDevice:
                         zone.work_speed = z.get("work_speed", zone.work_speed)
                         zone.setting = z.get("setting", zone.setting)
                         zone.plan_angle = z.get("plan_angle", zone.plan_angle)
+
+            if self.apptype == APPTYPE_X:
+                ci = self.settings["data"].get("consumableItemsObject", None)
+                if ci:
+                    cutter = ci.get("cutter", None)
+                    if cutter:
+                        self.consumable.cutter.twt = cutter.get("twt")
+                        self.consumable.cutter.at = cutter.get("at")
+                        self.consumable.cutter.mp = cutter.get("mp")
+                        self.consumable.cutter.loop = cutter.get("loop")
+                        self.consumable.cutter.ls = cutter.get("ls")
+                    blade = ci.get("blade", None)
+                    if blade:
+                        self.consumable.cutter.twt = blade.get("twt")
+                        self.consumable.cutter.at = blade.get("at")
+                        self.consumable.cutter.mp = blade.get("mp")
+                        self.consumable.cutter.loop = blade.get("loop")
+                        self.consumable.cutter.ls = blade.get("ls")
 
             if self.apptype == APPTYPE_V:
                 self.docking_path = self.settings["data"].get("returnMode")

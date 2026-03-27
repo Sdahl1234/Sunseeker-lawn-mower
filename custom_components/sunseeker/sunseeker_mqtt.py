@@ -374,6 +374,87 @@ class SunseekermqttController:
                     dayobj.start = day.get("start", dayobj.start)
                     dayobj.end = day.get("end", dayobj.end)
 
+    def handle_mqtt_consumable_data(
+        self,
+        upd: mqtt_update_values,
+        nu: mqtt_needupdate,
+        data,
+        datanode,
+        device: SunseekerDevice,
+    ):
+        """Handles the mqtt consumable items."""
+        device.consumable.blade.at = self.setvalue(
+            nu,
+            datanode,
+            ["consumable_items", "blade"],
+            "at",
+            device.consumable.blade.at,
+        )
+        device.consumable.blade.loop = self.setvalue(
+            nu,
+            datanode,
+            ["consumable_items", "blade"],
+            "loop",
+            device.consumable.blade.loop,
+        )
+        device.consumable.blade.ls = self.setvalue(
+            nu,
+            datanode,
+            ["consumable_items", "blade"],
+            "ls",
+            device.consumable.blade.ls,
+        )
+        device.consumable.blade.mp = self.setvalue(
+            nu,
+            datanode,
+            ["consumable_items", "blade"],
+            "mp",
+            device.consumable.blade.mp,
+        )
+        device.consumable.blade.twt = self.setvalue(
+            nu,
+            datanode,
+            ["consumable_items", "blade"],
+            "twt",
+            device.consumable.blade.twt,
+        )
+
+        device.consumable.cutter.at = self.setvalue(
+            nu,
+            datanode,
+            ["consumable_items", "cutter"],
+            "at",
+            device.consumable.cutter.at,
+        )
+        device.consumable.cutter.loop = self.setvalue(
+            nu,
+            datanode,
+            ["consumable_items", "cutter"],
+            "loop",
+            device.consumable.cutter.loop,
+        )
+        device.consumable.cutter.ls = self.setvalue(
+            nu,
+            datanode,
+            ["consumable_items", "cutter"],
+            "ls",
+            device.consumable.cutter.ls,
+        )
+        device.consumable.cutter.mp = self.setvalue(
+            nu,
+            datanode,
+            ["consumable_items", "cutter"],
+            "mp",
+            device.consumable.cutter.mp,
+        )
+        device.consumable.cutter.twt = self.setvalue(
+            nu,
+            datanode,
+            ["consumable_items", "cutter"],
+            "twt",
+            device.consumable.cutter.twt,
+        )
+
     def handle_mqtt_schedule_data(
         self,
         upd: mqtt_update_values,
