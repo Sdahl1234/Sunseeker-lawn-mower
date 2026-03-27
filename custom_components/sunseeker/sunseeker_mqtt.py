@@ -800,17 +800,7 @@ class SunseekermqttController:
         try:
             self.handle_mqtt_data(upd, nu, data, device)
             if device.dataupdated is not None:
-                device.dataupdated(
-                    device.devicesn,
-                    upd.schedule,
-                    upd.map_update,
-                    upd.livemap_update,
-                    upd.live_move_update,
-                    upd.fetch_new_map_data,
-                    upd.heatmap,
-                    upd.wifimap,
-                    nu.need_update,
-                )
+                device.dataupdated(device.devicesn, upd, nu.need_update)
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error("MQTT message error: " + str(error))  # noqa: G003
             _LOGGER.error("MQTT message: " + message.payload.decode())  # noqa: G003

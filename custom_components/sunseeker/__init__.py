@@ -24,6 +24,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DATAHANDLER, DH, DOMAIN, ROBOTS
 from .sunseeker import SunseekerRoboticmower
+from .sunseeker_device import SunseekerDevice
+from .sunseeker_mqtt import mqtt_update_values
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -104,7 +106,6 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: D103
                         device.devicesn,
                         schedule,
                     )
-                    # coordinator.data_handler.set_schedule_new(device.devicesn, schedule)
                     return
         raise HomeAssistantError(f"Device for {entity_id} not found")
 
@@ -291,7 +292,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.always_update = True
         self.data_handler = data_handler
         self.devicesn = devicesn
-        self.device = self.data_handler.get_device(devicesn)
+        self.device: SunseekerDevice = self.data_handler.get_device(devicesn)
         self.device.dataupdated = self.dataupdated
         self.filepath = os.path.join(  # noqa: PTH118
             self.hass.config.config_dir,
@@ -330,9 +331,10 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         else:
             getwifi = True
         if getwifi or getheat:
-            self.dataupdated(
-                self.devicesn, False, False, False, False, False, getheat, getwifi
-            )
+            uv = mqtt_update_values()
+            uv.wifimap = getwifi
+            uv.heatmap = getheat
+            self.dataupdated(self.devicesn, uv=uv)
 
     async def set_schedule_data(self):
         """Set default."""
@@ -448,46 +450,42 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
     def dataupdated(
         self,
         devicesn: str,
-        schedule: bool = False,
-        map: bool = False,
-        livemap: bool = False,
-        mapmove: bool = False,
-        load_new_map_data: bool = False,
-        load_heat_map: bool = False,
-        load_wifi_map: bool = False,
+        uv: mqtt_update_values = None,
         need_update: bool = True,
     ):
         """Func Callback when data is updated."""
+        if self.devicesn != devicesn:
+            return
         _LOGGER.debug(f"callback - Sunseeker {self.devicesn} data updated")  # noqa: G004
-        if self.devicesn == devicesn:
-            if need_update:
-                self.hass.add_job(self.async_set_updated_data, None)
+        if not uv:
+            uv = mqtt_update_values()
+        if need_update:
+            self.hass.add_job(self.async_set_updated_data, None)
 
-            if self.device.map_updated:
-                if self.map_entity:
-                    _LOGGER.debug("map trigger update")
-                    self.hass.add_job(self.map_entity.trigger_update)
-        if schedule and not self.device.Schedule.IsEmpty():
+        if self.device.map_updated and self.map_entity:
+            _LOGGER.debug("map trigger update")
+            self.hass.add_job(self.map_entity.trigger_update)
+        if uv.schedule and not self.device.Schedule.IsEmpty():
             self.hass.add_job(self.save_schedule_data)
-        if mapmove:
+        if uv.map_update:
             self.hass.add_job(
                 self.device.generate_livemap,
                 self.device.mower_pos_x,
                 self.device.mower_pos_y,
             )
-        if load_new_map_data:
+        if uv.fetch_new_map_data:
             self.hass.add_job(self.get_map_data, devicesn)
-        if livemap and map:
+        if uv.livemap_update and uv.map_update:
             self.hass.add_job(self.device.reload_maps, 0)
-        elif livemap:
+        elif uv.livemap_update:
             self.hass.add_job(self.device.generate_livemap)
-        if load_heat_map:
+        if uv.heatmap:
             self.hass.add_job(self.get_heat_map, devicesn)
             if self.heatmap_entity:
                 _LOGGER.debug("heatmap trigger update")
                 self.hass.add_job(self.heatmap_entity.trigger_update)
 
-        if load_wifi_map:
+        if uv.wifimap:
             self.hass.add_job(self.get_wifi_map, devicesn)
             if self.wifimap_entity:
                 _LOGGER.debug("wifimap trigger update")
