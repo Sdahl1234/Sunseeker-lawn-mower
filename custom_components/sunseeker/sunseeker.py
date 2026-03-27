@@ -92,14 +92,13 @@ class SunseekerRoboticmower:
             ad = SunseekerDevice(device_sn)
             ad.deviceId = deviceId
             ad.DeviceModel = device["deviceModelName"]
-            if self.apptype in {APPTYPE_X, APPTYPE_V}:
-                ad.robot_image_url = device["picUrlDetail"]
+            ad.ModelName = device.get("modelName", "")
+            ad.robot_image_url = device.get("picUrlDetail", None)
+            ad.DeviceName = device.get("deviceName", None)
             ad.DeviceName = device["deviceName"]
             ad.apptype = self.apptype
-            if self.apptype in {APPTYPE_V, APPTYPE_X}:
-                ad.DeviceWifiAddress = device["ipAddr"]
-            else:
-                ad.DeviceBluetooth = device["bluetoothMac"]
+            ad.DeviceWifiAddress = device.get("ipAddr", "")
+            ad.DeviceBluetooth = device.get("bluetoothMac", "")
             self.robotList.append(ad)
             self.get_settings(device_sn, deviceId)
         for device_sn in self.deviceArray:
@@ -1360,7 +1359,6 @@ class SunseekerRoboticmower:
     def get_schedule_data(self, devicesn):
         """Get schedule property."""
         if self.apptype == APPTYPE_V:
-            # self.url + self.cmdurl + f"device-schedule/{deviceId}"
             self.Get_schedule_data_V1(devicesn)
             return
         data = {

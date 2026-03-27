@@ -69,6 +69,7 @@ class SunseekerDevice:
 
         self.DeviceModel = ""
         self.DeviceName = ""
+        self.ModelName = ""
         self.DeviceBluetooth = ""
         self.DeviceWifiAddress = ""
         self.Schedule: SunseekerSchedule = SunseekerSchedule()

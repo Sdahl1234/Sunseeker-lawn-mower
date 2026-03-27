@@ -22,7 +22,7 @@ from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DATAHANDLER, DH, DOMAIN, ROBOTS
+from .const import DATAHANDLER, DH, DOMAIN, ROBOTS, APPTYPE_Old
 from .sunseeker import SunseekerRoboticmower
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_mqtt import mqtt_update_values
@@ -195,7 +195,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     email = entry.data.get(CONF_EMAIL)
     password = entry.data.get(CONF_PASSWORD)
     brand = entry.data.get(CONF_MODEL)
-    apptype = entry.data.get(CONF_MODEL_ID, "Old")
+    apptype = entry.data.get(CONF_MODEL_ID, APPTYPE_Old)
     region = entry.data.get("region", "EU")  # Default to EU if not set
 
     language = hass.config.language
@@ -294,29 +294,30 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.devicesn = devicesn
         self.device: SunseekerDevice = self.data_handler.get_device(devicesn)
         self.device.dataupdated = self.dataupdated
-        self.filepath = os.path.join(  # noqa: PTH118
+        self.schedulefilepath = os.path.join(  # noqa: PTH118
             self.hass.config.config_dir,
             "Schedule-{}.json".format(self.devicesn.replace(" ", "_")),
         )
-        _LOGGER.info(self.filepath)
+        _LOGGER.debug(self.schedulefilepath)
         self.heatimagefilepath = os.path.join(  # noqa: PTH118
             self.hass.config.config_dir,
             "heatmap-{}.png".format(self.devicesn.replace(" ", "_")),
         )
-        _LOGGER.info(self.heatimagefilepath)
+        _LOGGER.debug(self.heatimagefilepath)
         self.wifiimagefilepath = os.path.join(  # noqa: PTH118
             self.hass.config.config_dir,
             "wifimap-{}.png".format(self.devicesn.replace(" ", "_")),
         )
-        _LOGGER.info(self.heatimagefilepath)
+        _LOGGER.debug(self.heatimagefilepath)
         self.jdata = self.data_default
         self.livemap_entity = None  # MowerImage
         self.map_entity = None  # MowerImage
         self.heatmap_entity = None
         self.wifimap_entity = None
-        self.hass.add_job(self.set_schedule_data)
-        self.hass.add_job(self.file_exits)
-        self.hass.add_job(self.load_data)
+        if self.device.apptype == APPTYPE_Old:
+            self.hass.add_job(self.set_schedule_data)
+            self.hass.add_job(self.schedule_file_exits)
+            self.hass.add_job(self.schedule_load_data)
         self.hass.add_job(self.device.reload_maps, 0)
         self.forceheat = False
         self.forcewifi = False
@@ -361,6 +362,57 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         }
         return str(retval).replace("{", "").replace("}", "").replace("'", "")
 
+    async def schedule_file_exits(self):
+        """Do file exists."""
+        try:
+            f = await self.hass.async_add_executor_job(
+                open, self.schedulefilepath, "r", -1, "utf-8"
+            )
+            f.close()
+        except FileNotFoundError:
+            # save a new file
+            await self.save_data(False)
+
+    async def schedule_save_data(self, append: bool):
+        """Save data."""
+        try:
+            if append:
+                cfile = await self.hass.async_add_executor_job(
+                    open, self.schedulefilepath, "w", -1, "utf-8"
+                )
+            else:
+                cfile = await self.hass.async_add_executor_job(
+                    open, self.schedulefilepath, "a", -1, "utf-8"
+                )
+            ocrdata = json.dumps(self.jdata)
+            self.device.Schedule.SavedData = self.jdata
+            cfile.write(ocrdata)
+            cfile.close()
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"Save data failed: {ex}")  # noqa: G004
+
+    async def schedule_load_data(self):
+        """Load data."""
+        try:
+            cfile = await self.hass.async_add_executor_job(
+                open, self.schedulefilepath, "r", -1, "utf-8"
+            )
+            ocrdata = cfile.read()
+            cfile.close()
+            _LOGGER.debug(f"ocrdata: {ocrdata}")  # noqa: G004
+            _LOGGER.debug(f"jsonload: {json.loads(ocrdata)}")  # noqa: G004
+
+            self.jdata = json.loads(ocrdata)
+            self.device.Schedule.SavedData = self.jdata
+            self.data_loaded = True
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"load data failed: {ex}")  # noqa: G004
+
+    async def save_schedule_data(self):
+        """Update schedule data on disk."""
+        await self.set_schedule_data()
+        await self.schedule_save_data(True)
+
     async def does_file_exits(self, filepath) -> bool:
         """Do file exists."""
         try:
@@ -369,17 +421,6 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             return True  # noqa: TRY300
         except FileNotFoundError:
             return False
-
-    async def file_exits(self):
-        """Do file exists."""
-        try:
-            f = await self.hass.async_add_executor_job(
-                open, self.filepath, "r", -1, "utf-8"
-            )
-            f.close()
-        except FileNotFoundError:
-            # save a new file
-            await self.save_data(False)
 
     async def save_image(self, image: Image.Image, imagefilepath):
         """Save image."""
@@ -407,46 +448,6 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Load image failed: {ex}")  # noqa: G004
 
-    async def save_data(self, append: bool):
-        """Save data."""
-        try:
-            if append:
-                cfile = await self.hass.async_add_executor_job(
-                    open, self.filepath, "w", -1, "utf-8"
-                )
-            else:
-                cfile = await self.hass.async_add_executor_job(
-                    open, self.filepath, "a", -1, "utf-8"
-                )
-            ocrdata = json.dumps(self.jdata)
-            self.device.Schedule.SavedData = self.jdata
-            cfile.write(ocrdata)
-            cfile.close()
-        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"Save data failed: {ex}")  # noqa: G004
-
-    async def load_data(self):
-        """Load data."""
-        try:
-            cfile = await self.hass.async_add_executor_job(
-                open, self.filepath, "r", -1, "utf-8"
-            )
-            ocrdata = cfile.read()
-            cfile.close()
-            _LOGGER.debug(f"ocrdata: {ocrdata}")  # noqa: G004
-            _LOGGER.debug(f"jsonload: {json.loads(ocrdata)}")  # noqa: G004
-
-            self.jdata = json.loads(ocrdata)
-            self.device.Schedule.SavedData = self.jdata
-            self.data_loaded = True
-        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"load data failed: {ex}")  # noqa: G004
-
-    async def save_schedule_data(self):
-        """Update schedule data on disk."""
-        await self.set_schedule_data()
-        await self.save_data(True)
-
     def dataupdated(
         self,
         devicesn: str,
@@ -465,7 +466,11 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         if self.device.map_updated and self.map_entity:
             _LOGGER.debug("map trigger update")
             self.hass.add_job(self.map_entity.trigger_update)
-        if uv.schedule and not self.device.Schedule.IsEmpty():
+        if (
+            self.device.apptype == APPTYPE_Old
+            and uv.schedule
+            and not self.device.Schedule.IsEmpty()
+        ):
             self.hass.add_job(self.save_schedule_data)
         if uv.map_update:
             self.hass.add_job(
