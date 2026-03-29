@@ -473,7 +473,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             and not self.device.Schedule.IsEmpty()
         ):
             self.hass.add_job(self.save_schedule_data)
-        if uv.map_update:
+        if uv.live_move_update:
             self.hass.add_job(
                 self.device.generate_livemap,
                 self.device.mower_pos_x,
