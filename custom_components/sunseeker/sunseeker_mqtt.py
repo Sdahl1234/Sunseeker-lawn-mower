@@ -327,9 +327,35 @@ class SunseekermqttController:
         """Gets the value to update."""
         current_node = basenode
         for key in key_path:
-            if not current_node.get(key):
-                return prev_prop_value
-            current_node = current_node.get(key)
+            if isinstance(current_node, dict):
+                if key not in current_node:
+                    return prev_prop_value
+                current_node = current_node[key]
+                continue
+
+            if isinstance(current_node, list):
+                if isinstance(key, int):
+                    idx = key
+                elif isinstance(key, str) and key.isdigit():
+                    idx = int(key)
+                else:
+                    return prev_prop_value
+
+                if idx < 0 or idx >= len(current_node):
+                    return prev_prop_value
+
+                current_node = current_node[idx]
+                continue
+
+            return prev_prop_value
+
+        if not isinstance(current_node, dict):
+            return prev_prop_value
+
+        #        for key in key_path:
+        #            if not current_node.get(key):
+        #               return prev_prop_value
+        #            current_node = current_node.get(key)
         return self.update_var_if_changed(
             nu, nodename, prev_prop_value, current_node.get(nodename, prev_prop_value)
         )
