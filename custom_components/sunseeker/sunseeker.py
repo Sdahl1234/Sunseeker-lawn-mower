@@ -1029,6 +1029,30 @@ class SunseekerRoboticmower:
         }
         self.set_property(data, devicesn)
 
+    def set_reset_blade(self, devicesn):
+        """Reset the blade timer."""
+        data = {
+            "appId": self.session["user_id"],
+            "cmd": "maintain_consumable_item",
+            "consumable_items": ["blade"],
+            "deviceSn": devicesn,
+            "id": "maintainConsumableItem",
+            "method": "action",
+        }
+        self.set_action(data, devicesn)
+
+    def set_reset_bladeplade(self, devicesn):
+        """Reset the blade timer."""
+        data = {
+            "appId": self.session["user_id"],
+            "cmd": "maintain_consumable_item",
+            "consumable_items": ["cutter"],
+            "deviceSn": devicesn,
+            "id": "maintainConsumableItem",
+            "method": "action",
+        }
+        self.set_action(data, devicesn)
+
     def set_AIsensitivity(self, value: int, devicesn):
         """Border freq."""
         data = {
@@ -1369,6 +1393,59 @@ class SunseekerRoboticmower:
             "method": "get_property",
         }
         self.set_property(data, devicesn)
+
+    def set_action(self, data, devicesn):
+        """Set property status."""
+        try:
+            cmd = "action"
+            url = self.url + self.cmdurl + cmd
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.session["access_token"],
+                "Content-Type": "application/json",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            _LOGGER.debug(
+                f"Set action url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.get_device(devicesn).error_text = response_data.get("msg")
+                self.get_device(devicesn).dataupdated(devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.get_device(devicesn).error_text = ""
+            return  # noqa: TRY300
+
+        except requests.exceptions.HTTPError as errh:
+            self.get_device(devicesn).error_text = errh
+            self.get_device(devicesn).dataupdated(devicesn)
+            _LOGGER.debug(f"Set action: Http Error:  {errh}")  # noqa: G004
+        except requests.exceptions.ConnectionError as errc:
+            self.get_device(devicesn).error_text = errc
+            self.get_device(devicesn).dataupdated(devicesn)
+            _LOGGER.debug(f"Set action: Error Connecting: {errc}")  # noqa: G004
+        except requests.exceptions.Timeout as errt:
+            self.get_device(devicesn).error_text = errt
+            self.get_device(devicesn).dataupdated(devicesn)
+            _LOGGER.debug(f"Set action: Timeout Error: {errt}")  # noqa: G004
+        except requests.exceptions.RequestException as err:
+            self.get_device(devicesn).error_text = err
+            self.get_device(devicesn).dataupdated(devicesn)
+            _LOGGER.debug(f"Set action: Error: {err}")  # noqa: G004
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.get_device(devicesn).error_text = error
+            self.get_device(devicesn).dataupdated(devicesn)
+            _LOGGER.debug(f"Set action: failed {error}")  # noqa: G004
 
     def set_property(self, data, devicesn):
         """Set property status."""

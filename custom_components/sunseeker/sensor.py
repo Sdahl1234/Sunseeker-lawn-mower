@@ -4,7 +4,7 @@
 import time
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
-from homeassistant.const import AREA, PERCENTAGE
+from homeassistant.const import AREA, PERCENTAGE, UnitOfTime
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
@@ -157,7 +157,67 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     for coordinator in robot_coordinators(hass, entry)
                 ]
             )
-
+        if Apptype == APPTYPE_X:
+            async_add_devices(
+                [
+                    SunseekerSensor(
+                        coordinator,
+                        PERCENTAGE,
+                        "Blade health",
+                        "%",
+                        "blade_health",
+                        "",
+                        "mdi:heart",
+                        "sunseeker_blade_health",
+                    )
+                    for coordinator in robot_coordinators(hass, entry)
+                ]
+            )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    UnitOfTime.HOURS,
+                    "Blade time left",
+                    UnitOfTime.HOURS,
+                    "blade_time_left",
+                    "",
+                    "mdi:timer-sand",
+                    "sunseeker_blade_time_left",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    PERCENTAGE,
+                    "Cutterplade health",
+                    "%",
+                    "cutterplade_health",
+                    "",
+                    "mdi:heart",
+                    "sunseeker_cutterplade_health",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    UnitOfTime.HOURS,
+                    "Cutterplade time left",
+                    UnitOfTime.HOURS,
+                    "cutterplade_time_left",
+                    "",
+                    "mdi:timer-sand",
+                    "sunseeker_cutterplade_time_left",
+                )
+                for coordinator in robot_coordinators(hass, entry)
+            ]
+        )
         async_add_devices(
             [
                 SunseekerSensor(
@@ -668,13 +728,52 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                 or not b
                 or self._data_handler.get_device(self._sn).taskTotalArea == 0
             ):
-                val = 0
+                val = round(0)
             else:
                 # Calculate the progress as a percentage
                 # V1 does not provide this
-                val = (
-                    self._data_handler.get_device(self._sn).taskCoverArea * 100
-                ) / self._data_handler.get_device(self._sn).taskTotalArea
+                val = round(
+                    (self._data_handler.get_device(self._sn).taskCoverArea * 100)
+                    / self._data_handler.get_device(self._sn).taskTotalArea
+                )
+        elif self._valuepair == "blade_time_left":
+            a = self._data_handler.get_device(self._sn).consumable.blade.at
+            b = self._data_handler.get_device(self._sn).consumable.blade.mp
+            if a is None or b is None or (b - a) == 0:
+                val = 0
+            else:
+                val = round((b - a) / 60 / 60)
+
+        elif self._valuepair == "blade_health":
+            a = self._data_handler.get_device(self._sn).consumable.blade.at
+            b = self._data_handler.get_device(self._sn).consumable.blade.mp
+            if a is None or b is None or (b - a) == 0:
+                val = 0
+            elif b == 0:
+                val = 100
+            elif b < 0:
+                val = 0
+            else:
+                val = round(100 - ((a / b) * 100))
+        elif self._valuepair == "cutterplade_time_left":
+            a = self._data_handler.get_device(self._sn).consumable.cutter.at
+            b = self._data_handler.get_device(self._sn).consumable.cutter.mp
+            if a is None or b is None or (b - a) == 0:
+                val = 0
+            else:
+                val = round((b - a) / 60 / 60)
+
+        elif self._valuepair == "cutterplade_health":
+            a = self._data_handler.get_device(self._sn).consumable.cutter.at
+            b = self._data_handler.get_device(self._sn).consumable.cutter.mp
+            if a is None or b is None or (b - a) == 0:
+                val = 0
+            elif b == 0:
+                val = 100
+            elif b < 0:
+                val = 0
+            else:
+                val = round(100 - ((a / b) * 100))
         elif self._valuepair == "errortype":
             val = self._data_handler.get_device(self._sn).errortype
             if self._source == "Etext":

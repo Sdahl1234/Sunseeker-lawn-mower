@@ -143,6 +143,18 @@
 
 		},
 		"sensor": {
+			"sunseeker_blade_health": {
+				"name": "knive helbred"
+			},
+			"sunseeker_blade_time_left": {
+				"name": "Knive skift"
+			},
+			"sunseeker_cutterplade_health": {
+				"name": "knivplade helbred"
+			},
+			"sunseeker_cutterplade_time_left": {
+				"name": "knivplade rengøring"
+			},
 			"sunseeker_estimated_time_custom": {
 				"name": "{post_name} Estimeret tid"
 			},
@@ -303,6 +315,12 @@
 			}
 		},
 		"button": {
+	        "sunseeker_reset_bladeplade": {
+    	      "name": "Reset knivplade"
+        	},
+	        "sunseeker_reset_blade": {
+    	      "name": "Reset knive"
+        	},
 			"sunseeker_start": {
 				"name": "Start"
 			},

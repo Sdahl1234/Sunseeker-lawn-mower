@@ -135,6 +135,18 @@
             }
         },
         "sensor": {
+			"sunseeker_blade_health": {
+				"name": "Blade health"
+			},
+			"sunseeker_blade_time_left": {
+				"name": "Blade time left"
+			},
+			"sunseeker_cutterplade_health": {
+				"name": "Cutterplade health"
+			},
+			"sunseeker_cutterplade_time_left": {
+				"name": "Cutterplade time left"
+			},
 			"sunseeker_estimated_time_custom": {
 				"name": "{post_name} Temps estimé"
 			},
@@ -295,6 +307,12 @@
             }
         },
         "button": {
+            "sunseeker_reset_bladeplade": {
+              "name": "Reset bladeplade"
+            },
+            "sunseeker_reset_blade": {
+              "name": "Reset blade"
+            },
             "sunseeker_start": {
                 "name": "Démarrer"
             },
