@@ -14,7 +14,7 @@ from homeassistant.const import (
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 
-from .const import DOMAIN
+from .const import APPTYPE_NEW, APPTYPE_OLD, DOMAIN, REGION_EU, REGION_US
 
 # _LOGGER = logging.getLogger(__name__)
 
@@ -31,14 +31,13 @@ brands = [
 ]
 
 apptypes = [
-    "Old models",
-    "X models",
-    "V models",
+    APPTYPE_OLD,
+    APPTYPE_NEW,
 ]
 
 regions = [
-    "EU",
-    "US",
+    REGION_EU,
+    REGION_US,
 ]
 
 DATA_SCHEMA = vol.Schema(

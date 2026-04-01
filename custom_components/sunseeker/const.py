@@ -31,11 +31,28 @@ SUNSEEKER_WET = "wet"
 SUNSEEKER_DRY_COUNTDOWN = "dry_countdown"
 SUNSEEKER_ENTERPIN = "enter_pin"
 
-# Max retries
-MAX_LOGIN_RETRIES = 1
-MAX_SET_CONFIG_RETRIES = 1
+# Regions
+REGION_EU = "EU"
+REGION_US = "US"
 
 # APPTYPE = "app_type"
-APPTYPE_OLD = "Old models"
-APPTYPE_X = "X models"
-APPTYPE_V = "V models"
+APPTYPE_OLD = "Old app"
+APPTYPE_NEW = "New app"
+
+# Mower models
+MODEL_OLD = "Old models"
+MODEL_X = "X models"
+MODEL_V = "Y models"
+
+# URLS, HOST
+URL_OLD = "https://server.sk-robot.com/api"
+HOST_OLD = "server.sk-robot.com"
+
+URL_XV_EU = "https://wirefree-specific.sk-robot.com/api"
+HOST_XV_EU = "wirefree-specific.sk-robot.com"
+
+URL_XV_US = "https://wirefree-specific-us.sk-robot.com/api"
+HOST_XV_US = "wirefree-specific-us.sk-robot.com"
+
+CMDURL_X = "/iot_mower/wireless/device/"
+CMDURL_V = "/app_wirelessv1_mower/wirelessv1/device/"

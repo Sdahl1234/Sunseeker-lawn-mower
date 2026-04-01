@@ -6,7 +6,6 @@ import base64
 import json
 import logging
 from threading import Thread, Timer
-import time
 from typing import TYPE_CHECKING, Any
 import uuid
 
@@ -16,7 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 import paho.mqtt.client as mqtt
 import requests
 
-from .const import APPTYPE_OLD, APPTYPE_V, APPTYPE_X, MAX_SET_CONFIG_RETRIES
+from .const import APPTYPE_NEW, APPTYPE_OLD, MODEL_V, MODEL_X, REGION_EU, REGION_US
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_schedule import Sunseeker_new_schedule_day
 
@@ -57,8 +56,9 @@ class SunseekermqttController:
         user_id,
         access_token: str,
         region: str,
-        apptype: str,
-        url: str,
+        apptype,
+        model,
+        url,
     ) -> None:
         """Init."""
         self.Sunseeker: SunseekerRoboticmower = mower
@@ -70,6 +70,7 @@ class SunseekermqttController:
         self.username = username
         self.region = region
         self.apptype = apptype
+        self.model = model
         self.access_token = access_token
         self.url = url
         self.user_id = user_id
@@ -79,7 +80,7 @@ class SunseekermqttController:
 
     def Start_mqtt(self):
         """Create and connect."""
-        if self.apptype in {APPTYPE_V, APPTYPE_X}:
+        if self.apptype == APPTYPE_NEW:
             self.connect_mqtt_new()
         else:
             self.connect_mqtt()
@@ -103,54 +104,35 @@ class SunseekermqttController:
 
     def edit_password_mqtt(self, password):
         """Updates MQTT password."""
-        attempt = 0
-        while attempt < MAX_SET_CONFIG_RETRIES:
-            if attempt > 0:
-                time.sleep(1)
-            attempt = attempt + 1
-            try:
-                data_ = {
-                    "appIdCode": self.appId,
-                    "appType": 2,
-                    "mqttsPassword": password,
-                    "operatingSystemCode": "android",
-                }
-                headers_ = {
-                    "Authorization": "bearer " + self.access_token,
-                }
-                url_ = self.url + "/admin/user/edit"
-                _LOGGER.debug("Edit password mqtt")
-                _LOGGER.debug(f"data: {data_}")  # noqa: G004
-                _LOGGER.debug(f"headers: {headers_}")  # noqa: G004
-                _LOGGER.debug(f"url: {url_}")  # noqa: G004
-                response = requests.put(
-                    url=url_,
-                    headers=headers_,
-                    json=data_,
-                    timeout=10,
-                )
-                response_data = response.json()
-                _LOGGER.debug(json.dumps(response_data))
-                if response_data.get("ok") is False:
-                    _LOGGER.debug(response_data.get("msg"))
-                return  # noqa: TRY300
+        try:
+            data_ = {
+                "appIdCode": self.appId,
+                "appType": 2,
+                "mqttsPassword": password,
+                "operatingSystemCode": "android",
+            }
+            headers_ = {
+                "Authorization": "bearer " + self.access_token,
+            }
+            url_ = self.url + "/admin/user/edit"
+            _LOGGER.debug("Edit password mqtt")
+            _LOGGER.debug(f"data: {data_}")  # noqa: G004
+            _LOGGER.debug(f"headers: {headers_}")  # noqa: G004
+            _LOGGER.debug(f"url: {url_}")  # noqa: G004
+            response = requests.put(
+                url=url_,
+                headers=headers_,
+                json=data_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                _LOGGER.debug(response_data.get("msg"))
+            return  # noqa: TRY300
 
-            except requests.exceptions.HTTPError as errh:
-                _LOGGER.debug(
-                    f"Set MQTT password attempt {attempt}: Http Error:  {errh}"  # noqa: G004
-                )
-            except requests.exceptions.ConnectionError as errc:
-                _LOGGER.debug(
-                    f"Set MQTT password attempt {attempt}: Error Connecting: {errc}"  # noqa: G004
-                )
-            except requests.exceptions.Timeout as errt:
-                _LOGGER.debug(
-                    f"Set MQTT password attempt {attempt}: Timeout Error: {errt}"  # noqa: G004
-                )
-            except requests.exceptions.RequestException as err:
-                _LOGGER.debug(f"Set MQTT password attempt {attempt}: Error: {err}")  # noqa: G004
-            except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-                _LOGGER.debug(f"Set MQTT password attempt {attempt}: failed {error}")  # noqa: G004
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"Set MQTT password failed {error}")  # noqa: G004
 
     def connect_mqtt_new(self):
         """Connect mqtt new."""
@@ -174,19 +156,19 @@ class SunseekermqttController:
             self.username + self.appId, self.mqtt_passwd
         )
         self.mqtt_client_new.tls_set()
-        if self.region == "EU":
-            if self.apptype == APPTYPE_V:
+        if self.region == REGION_EU:
+            if self.model == MODEL_V:
                 host = "app.mqttv1-eu.sk-robot.com"
             else:
                 host = "wfsmqtt-specific.sk-robot.com"
-        elif self.region == "US":
-            if self.apptype == APPTYPE_V:
+        elif self.region == REGION_US:
+            if self.model == MODEL_V:
                 host = "app.mqttv1-us.sk-robot.com"
             else:
                 host = "wfsmqtt-specific-us.sk-robot.com"
-        if self.apptype == APPTYPE_V:
+        if self.model == MODEL_V:
             port = 32884
-        elif self.apptype == APPTYPE_X:
+        elif self.model == MODEL_X:
             port = 1884
         _LOGGER.debug("MQTT host: " + host)  # noqa: G003
         _LOGGER.debug("MQTT username: " + self.username + self.appId)  # noqa: G003
@@ -206,9 +188,9 @@ class SunseekermqttController:
     def on_mqtt_connect_new(self, client, userdata, flags, rc):
         """On mqtt connect."""
         _LOGGER.debug("MQTT new connected event")
-        if self.apptype == APPTYPE_V:
+        if self.model == MODEL_V:
             ep = "wirelessmower"
-        else:  # APPTYPE_X
+        else:  # MODEL_X
             ep = "wirelessdevice"
 
         sub = f"/{ep}/" + str(self.user_id) + "/get"
@@ -543,6 +525,82 @@ class SunseekermqttController:
             ctime = datanode.get("time")
             self.handle_mqtt_schedule_ctime_data(upd, nu, ctime, device)
 
+    def handle_mqtt_map_data(
+        self,
+        upd: mqtt_update_values,
+        nu: mqtt_needupdate,
+        data,
+        datanode,
+        device: SunseekerDevice,
+    ):
+        """Handle map data."""
+        # "charge_pos":{"angle":-3.127,"point":[-0.018,0.261]}
+        device.map.charger_orientation = self.setvalue(
+            nu, datanode, ["charge_pos"], "angle", device.map.charger_orientation
+        )
+        if "charge_pos" in datanode:
+            if "point" in datanode.get("charge_pos"):
+                x, y = data["data"]["charge_pos"]["point"]
+                device.map.charger_pos_x = x
+                device.map.charger_pos_y = y
+                upd.live_move_update = True
+        device.map.mower_orientation = self.setvalue(
+            nu, datanode, ["robot_pos"], "angle", device.map.mower_orientation
+        )
+        if "robot_pos" in datanode:
+            if "point" in datanode.get("robot_pos"):
+                x, y = data["data"]["robot_pos"]["point"]
+                device.map.mower_pos_x = x
+                device.map.mower_pos_y = y
+                upd.live_move_update = True
+        if "path_info" in datanode:
+            if "path" in datanode.get("path_info"):
+                path = datanode.get("path_info").get("path")
+                new_points = json.loads(path)
+                device.map.livepathpoints.extend(new_points)
+                if len(device.map.livepathpoints) > 100:
+                    upd.live_move_update = True
+
+    def handle_mqtt_zone_data(
+        self,
+        upd: mqtt_update_values,
+        nu: mqtt_needupdate,
+        data,
+        datanode,
+        device: SunseekerDevice,
+    ):
+        """Handle zone data."""
+        # zones
+        device.custom_zones = self.setvalue(
+            nu, datanode, [], "custom_flag", device.custom_zones
+        )
+        if "custom" in datanode:
+            customdata = datanode.get("custom")
+            for z in customdata:
+                zoneid = z["region_id"]
+                zone = device.get_zone(zoneid)
+                if zone:
+                    zone.gap = self.setvalue(nu, z, [], "work_gap", zone.gap)
+                    zone.region_size = self.setvalue(
+                        nu, z, [], "region_size", zone.region_size
+                    )
+                    zone.blade_height = self.setvalue(
+                        nu, z, [], "blade_height", zone.blade_height
+                    )
+                    zone.estimate_time = self.setvalue(
+                        nu, z, [], "estimate_time", zone.estimate_time
+                    )
+                    zone.blade_speed = self.setvalue(
+                        nu, z, [], "blade_speed", zone.blade_speed
+                    )
+                    zone.plan_mode = self.setvalue(
+                        nu, z, [], "plan_mode", zone.plan_mode
+                    )
+                    zone.work_speed = self.setvalue(
+                        nu, z, [], "work_speed", zone.work_speed
+                    )
+                    zone.setting = self.setvalue(nu, z, [], "setting", zone.setting)
+
     def handle_mqtt_data_id(
         self,
         upd: mqtt_update_values,
@@ -571,8 +629,8 @@ class SunseekermqttController:
                 if device.eventcode == 7:
                     if datanode.get("url"):
                         code7url = datanode.get("url")
-                        if code7url != device.mapurl:
-                            device.mapurl = code7url
+                        if code7url != device.map.mapurl:
+                            device.map.mapurl = code7url
                             nu.need_update = True
                             upd.fetch_new_map_data = True
                             upd.map_update = True
@@ -580,8 +638,8 @@ class SunseekermqttController:
                 if device.eventcode == 17:
                     if datanode.get("url"):
                         code17url = datanode.get("url")
-                        if code17url != device.pathurl:
-                            device.pathurl = code17url
+                        if code17url != device.map.pathurl:
+                            device.map.pathurl = code17url
                             nu.need_update = True
                             upd.fetch_new_map_data = True
                             upd.map_update = True
@@ -596,7 +654,7 @@ class SunseekermqttController:
             if device.eventtype == "report_notice":
                 if device.eventcode == 1:
                     if datanode.get("url"):
-                        device.heatmap_url = datanode.get("url")
+                        device.map.heatmap_url = datanode.get("url")
                         upd.heatmap = True
                 if device.eventcode == 2:
                     nu.need_update = True
@@ -606,7 +664,7 @@ class SunseekermqttController:
 
                 if device.eventcode == 3:
                     if datanode.get("url"):
-                        device.wifimap_url = datanode.get("url")
+                        device.map.wifimap_url = datanode.get("url")
                         upd.wifimap = True
 
     def handle_mqtt_data_data(
@@ -641,7 +699,6 @@ class SunseekermqttController:
                     10, self.Sunseeker.update_devices, [device.devicesn]
                 )
                 update_timer.start()
-                # New apptype values
         if "consumable_items" in datanode:
             self.handle_mqtt_consumable_data(upd, nu, data, datanode, device)
         if "id" in data:
@@ -709,63 +766,9 @@ class SunseekermqttController:
         device.blade_height = self.setvalue(
             nu, datanode, ["blade"], "height", device.blade_height
         )
-        # "charge_pos":{"angle":-3.127,"point":[-0.018,0.261]}
-        device.charger_orientation = self.setvalue(
-            nu, datanode, ["charge_pos"], "angle", device.charger_orientation
-        )
-        if "charge_pos" in datanode:
-            if "point" in datanode.get("charge_pos"):
-                x, y = data["data"]["charge_pos"]["point"]
-                device.charger_pos_x = x
-                device.charger_pos_y = y
-                upd.live_move_update = True
-        device.mower_orientation = self.setvalue(
-            nu, datanode, ["robot_pos"], "angle", device.mower_orientation
-        )
-        if "robot_pos" in datanode:
-            if "point" in datanode.get("robot_pos"):
-                x, y = data["data"]["robot_pos"]["point"]
-                device.mower_pos_x = x
-                device.mower_pos_y = y
-                upd.live_move_update = True
-        if "path_info" in datanode:
-            if "path" in datanode.get("path_info"):
-                path = datanode.get("path_info").get("path")
-                new_points = json.loads(path)
-                device.livepathpoints.extend(new_points)
-                if len(device.livepathpoints) > 100:
-                    upd.live_move_update = True
+        self.handle_mqtt_map_data(upd, nu, data, datanode, device)
         self.handle_mqtt_schedule_data(upd, nu, data, datanode, device)
-        # zones
-        device.custom_zones = self.setvalue(
-            nu, datanode, [], "custom_flag", device.custom_zones
-        )
-        if "custom" in datanode:
-            customdata = datanode.get("custom")
-            for z in customdata:
-                zoneid = z["region_id"]
-                zone = device.get_zone(zoneid)
-                if zone:
-                    zone.gap = self.setvalue(nu, z, [], "work_gap", zone.gap)
-                    zone.region_size = self.setvalue(
-                        nu, z, [], "region_size", zone.region_size
-                    )
-                    zone.blade_height = self.setvalue(
-                        nu, z, [], "blade_height", zone.blade_height
-                    )
-                    zone.estimate_time = self.setvalue(
-                        nu, z, [], "estimate_time", zone.estimate_time
-                    )
-                    zone.blade_speed = self.setvalue(
-                        nu, z, [], "blade_speed", zone.blade_speed
-                    )
-                    zone.plan_mode = self.setvalue(
-                        nu, z, [], "plan_mode", zone.plan_mode
-                    )
-                    zone.work_speed = self.setvalue(
-                        nu, z, [], "work_speed", zone.work_speed
-                    )
-                    zone.setting = self.setvalue(nu, z, [], "setting", zone.setting)
+        self.handle_mqtt_zone_data(upd, nu, data, datanode, device)
 
     def handle_mqtt_data(
         self,
@@ -850,7 +853,7 @@ class SunseekermqttController:
             if "Sun" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Sun"), 7)
                 upd.schedule = True
-        if self.apptype == APPTYPE_V:
+        if self.model == MODEL_V:
             # V models
             device.screen_lock = self.setvalue(
                 nu, data, [], "duration", device.screen_lock
@@ -882,14 +885,13 @@ class SunseekermqttController:
     def handle_mqtt_message(self, message):
         """Thread to handle the messages."""
 
-        if (self.firstMQTTmessage) and self.apptype in {APPTYPE_V, APPTYPE_X}:
+        if (self.firstMQTTmessage) and self.apptype == APPTYPE_NEW:
             _LOGGER.debug("First MQTT message")
             self.firstMQTTmessage = False
             for device_ in self.Sunseeker.robotList:
                 device: SunseekerDevice = device_
                 thread = Thread(
-                    target=self.Sunseeker.get_dev_all_properties,
-                    args=(device.devicesn, self.user_id),
+                    target=device.get_dev_all_properties,
                 )
                 thread.start()
                 thread2 = Thread(

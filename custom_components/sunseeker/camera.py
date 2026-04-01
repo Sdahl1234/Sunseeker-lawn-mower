@@ -7,7 +7,7 @@ from homeassistant.components.camera import Camera, CameraEntityFeature
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import APPTYPE_X, DOMAIN
+from .const import MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -15,25 +15,20 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Set up Sunseeker camera entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    AppType = ""
     for coordinator in robot_coordinators(hass, entry):
-        AppType = coordinator.data_handler.apptype
-
-    if AppType == APPTYPE_X:
-        async_add_entities(
-            [
-                MowerCamera(
-                    hass,
-                    coordinator,
-                    "Live Map",
-                    "mower_live_map",
-                    "mdi:map",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+        if coordinator.model == MODEL_X:
+            async_add_entities(
+                [
+                    MowerCamera(
+                        hass,
+                        coordinator,
+                        "Live Map",
+                        "mower_live_map",
+                        "mdi:map",
+                    )
+                ]
+            )
 
 
 class MowerCamera(SunseekerEntity, Camera):
@@ -60,13 +55,13 @@ class MowerCamera(SunseekerEntity, Camera):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.data_coordinator.livemap_entity = self
-        self._device = self._data_handler.get_device(self._sn)
+        self.device = self._data_handler.get_device(self._sn)
         self._attr_supported_features = CameraEntityFeature(0)
 
     async def async_camera_image(self, **kwargs) -> bytes | None:
         """Return bytes of camera image."""
         try:
-            roi_img = self._data_handler.get_device(self._sn).livemap
+            roi_img = self.device.map.livemap
             if roi_img is not None:
                 img_byte_arr = io.BytesIO()
                 roi_img.save(img_byte_arr, format="PNG")

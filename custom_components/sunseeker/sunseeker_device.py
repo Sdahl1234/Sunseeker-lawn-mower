@@ -1,16 +1,14 @@
 """SunseekerPy."""
 
-import importlib.resources
-from io import BytesIO
 import json
 import logging
-import math
+from threading import Timer
 
-from PIL import Image, ImageDraw
 import requests
 
-from .const import APPTYPE_OLD, APPTYPE_V, APPTYPE_X
+from .const import APPTYPE_NEW, APPTYPE_OLD, MODEL_OLD, MODEL_V, MODEL_X
 from .sunseeker_consumable_items import SunseekerConsumableItems
+from .sunseeker_map import SunseekerMap
 from .sunseeker_schedule import Sunseeker_new_schedule, SunseekerSchedule
 from .sunseeker_zone import SunseekerZone
 
@@ -23,11 +21,18 @@ class SunseekerDevice:
     def __init__(self, Devicesn) -> None:
         """Init."""
 
+        self.language = ""
+        self.host = ""
+        self.url = ""
+        self.cmdurl = ""
+        self.access_token = ""
+        self.userid = ""
         self.apptype = APPTYPE_OLD
+        self.model = MODEL_OLD
         self.devicesn = Devicesn
         self.deviceId = None
         self.devicedata = {}  # device status
-        self.settings = {}  # settings
+        self.settings = {}  # data from get settings
         self.power = 0
         self.mode = 0
         # New apptype modes:
@@ -66,6 +71,7 @@ class SunseekerDevice:
         self.forceupdate = False
         self.error_text = ""
 
+        # callback function to datacoordinaton
         self.dataupdated = None
 
         self.DeviceModel = ""
@@ -75,6 +81,7 @@ class SunseekerDevice:
         self.DeviceWifiAddress = ""
         self.Schedule: SunseekerSchedule = SunseekerSchedule()
         self.Schedule_new: Sunseeker_new_schedule = Sunseeker_new_schedule()
+        self.Schedule_new.mower = self
 
         # New apptype values
         self.time_work_repeat = False
@@ -97,36 +104,7 @@ class SunseekerDevice:
         self.net_4g_sig = 0
         self.blade_speed = 0
         self.blade_height = 0
-        self.image = None
-        self.image_path = None
-        self.image_state = "Not loaded"
-        self.live_image_state = "Not loaded"
-        self.image_data = None
-        self.map_min_x = 0
-        self.map_max_x = 0
-        self.map_min_y = 0
-        self.map_max_y = 0
-        self.canvas_width = 0
-        self.canvas_height = 0
-        self.livemap = None
-        self.mower_pos_x = 0
-        self.mower_pos_y = 0
-        self.mower_orientation: float = 0
-        self.charger_pos_x = 0
-        self.charger_pos_y = 0
-        self.charger_orientation: float = 0
-        self.robot_image_url = None
-        self.map_updated = False
-        self.map_phi = 0
-        self.robot_image = None
-        self.charger_image = None
-        self.mappathdata = None
-        self.realPathmapdata = None
-        self.livepathpoints = []
-        self.heatmap = None
-        self.heatmap_url = None
-        self.wifimap: Image.Image = None
-        self.wifimap_url = None
+
         self.current_zone_id = 0
         self.zones = [[0, "Global"]]
         # self.zones = []  # entities setup
@@ -138,10 +116,6 @@ class SunseekerDevice:
         self.selected_zone = 0
         self.custom_zones = bool
 
-        self.work_color = (124, 252, 0)
-        self.grass_color = (34, 139, 34)
-        self.alert_color = (240, 128, 128)
-
         # V1
         self.border_distance = 0
         self.docking_path = 0
@@ -149,308 +123,36 @@ class SunseekerDevice:
         self.screen_lock = 60
         # X models
         self.consumable = SunseekerConsumableItems()
+        self.map = SunseekerMap()
+        self.map.mower = self
+        self.func_refesh_token = None
 
-    def get_zone(self, id) -> SunseekerZone:
-        """Get the zone obj."""
-        for zone in self.zonelist:
-            if zone.id == id:
-                return zone
-        return None
+    def InitDevice(self) -> None:
+        """Setup the device."""
+        self.get_settings()
+        self.update_devices()
+        self.InitValues()
 
-    def load_charger_image(self) -> Image.Image:
-        """Load robot.png from the integration folder."""
-        with importlib.resources.path(
-            "custom_components.sunseeker", "charger.png"
-        ) as img_path:
-            return Image.open(img_path)
+        if self.model == MODEL_V:
+            self.Schedule_new.Get_schedule_data_V1()
 
-    def load_robot_image(self) -> Image.Image:
-        """Load robot.png from the integration folder."""
-        with importlib.resources.path(
-            "custom_components.sunseeker", "robot.png"
-        ) as img_path:
-            return Image.open(img_path)
-
-    async def generate_path(self, pdata=None) -> None:
-        """Generate livemap."""
-        change_image = False
-        data = pdata
-        if not pdata:
-            self.image_path = None
-            if self.realPathmapdata:
-                await self.generate_path(self.realPathmapdata)
-                # we need to use Image_path image
-                change_image = True
-            if self.mappathdata:
-                data = self.mappathdata
-        if data is None:
-            return
-        if change_image and self.image_path:
-            image = self.image_path.copy()
-        else:
-            image = self.image.copy()
-        draw = ImageDraw.Draw(image)
-
-        def transform(point):
-            x, y = point
-            x_norm = (x - self.map_min_x) / (self.map_max_x - self.map_min_x)
-            y_norm = (y - self.map_min_y) / (self.map_max_y - self.map_min_y)
-            # Flip Y-axis for image coordinates
-            return (
-                int(x_norm * self.canvas_width),
-                int((1 - y_norm) * self.canvas_height),
-            )
-
-        points = [transform([x, y]) for x, y, _ in data]
-
-        # Draw a line between the points
-        draw.line(points, fill=self.work_color, width=1)
-
-        self.image_path = image
-
-    async def add_live_points(self, image: Image) -> None:
-        """Plot in the new lines."""
-        size = len(self.livepathpoints)
-        if size < 2:
-            return
-        if not image:
-            return
-
-        draw = ImageDraw.Draw(image)
-
-        #  _LOGGER.debug(f"Pathpoints: {self.livepathpoints}")
-        data = self.livepathpoints
-
-        def transform(point):
-            x, y = point
-            x_norm = (x - self.map_min_x) / (self.map_max_x - self.map_min_x)
-            y_norm = (y - self.map_min_y) / (self.map_max_y - self.map_min_y)
-            # Flip Y-axis for image coordinates
-            return (
-                int(x_norm * self.canvas_width),
-                int((1 - y_norm) * self.canvas_height),
-            )
-
-        points = [transform([x, y]) for x, y, _ in data]
-
-        # Draw a line between the points
-        draw.line(points, fill=self.work_color, width=1)
-
-        self.livepathpoints = [self.livepathpoints[-1]]
-
-    async def generate_livemap(self, x: float, y: float) -> None:
-        """Generate livemap."""
-        # _LOGGER.debug(f"Generate livemap: {x}, {y}")  noqa: G004
-        await self.add_live_points(self.image_path)
-
-        if self.image_path:
-            image = self.image_path.copy()
-        elif self.image:
-            image = self.image.copy()
-        else:
-            return
-        draw = ImageDraw.Draw(image)
-
-        x_norm = (self.charger_pos_x - self.map_min_x) / (
-            self.map_max_x - self.map_min_x
-        )
-        y_norm = (self.charger_pos_y - self.map_min_y) / (
-            self.map_max_y - self.map_min_y
-        )
-        # Flip Y-axis for image coordinates
-        xx, yy = (
-            int(x_norm * self.canvas_width),
-            int((1 - y_norm) * self.canvas_height),
-        )
-
-        # Draw charger
-        charger_img = self.charger_image.convert("RGBA")
-        w1, h1 = charger_img.size
-        iw, ih = image.size
-        mul = (iw + ih) / 2 / 1000
-        rw = int(w1 * mul)
-        rh = int(h1 * mul)
-        charger_img = charger_img.resize((rw, rh))
-
-        angle = math.degrees(self.charger_orientation)
-        charger_img = charger_img.rotate(angle)
-        w, h = charger_img.size
-        # Center the robot image at (xx, yy)
-        xx_centered = int(xx - w / 2)
-        yy_centered = int(yy - h / 2)
-
-        # Paste the charger image on top of the map, using itself as the mask for transparency
-        image.paste(charger_img, (xx_centered, yy_centered), charger_img)
-
-        x_norm = (x - self.map_min_x) / (self.map_max_x - self.map_min_x)
-        y_norm = (y - self.map_min_y) / (self.map_max_y - self.map_min_y)
-        # Flip Y-axis for image coordinates
-        xx, yy = (
-            int(x_norm * self.canvas_width),
-            int((1 - y_norm) * self.canvas_height),
-        )
-
-        # Draw robot
-        robot_img = self.robot_image.convert("RGBA")
-        w1, h1 = robot_img.size
-        iw, ih = image.size
-        mul = (iw + ih) / 2 / 1000
-        rw = int(w1 * mul)
-        rh = int(h1 * mul)
-        robot_img = robot_img.resize((rw, rh))
-
-        angle = math.degrees(self.mower_orientation)
-        robot_img = robot_img.rotate(angle)
-        w, h = robot_img.size
-        # Center the robot image at (xx, yy)
-        xx_centered = int(xx - w / 2)
-        yy_centered = int(yy - h / 2)
-
-        # Paste the robot image on top of the map, using itself as the mask for transparency
-        image.paste(robot_img, (xx_centered, yy_centered), robot_img)
-
-        # draw.bitmap((xx, yy), self.robot_image, fill=None)
-        draw.circle((xx, yy), 50, fill=None, outline="red")
-        self.livemap = image
-        self.live_image_state = "Loaded"
-
-    async def generate_map(self):
-        """Generate map."""
-
-        json_data = self.image_data
-        data = json.loads(json_data)
-        if data.get("map_coordniate"):
-            if data.get("map_coordniate").get("phi"):
-                self.map_phi = data.get("map_coordniate").get("phi")
-
-        min_x = 0
-        max_x = 0
-        min_y = 0
-        max_y = 0
-
-        def parse_points(points_str):
-            """Convert points string to list of tuples."""
-            points_str = points_str.strip()
-            # Use eval safely
-            points_list = json.loads(points_str)
-            return [(float(p[0]), float(p[1])) for p in points_list]
-
-        def transform(point):
-            x, y = point
-            x_norm = (x - min_x) / (max_x - min_x)
-            y_norm = (y - min_y) / (max_y - min_y)
-            # Flip Y-axis for image coordinates
-            return (int(x_norm * canvas_width), int((1 - y_norm) * canvas_height))
-
-        def get_min_max(pts_):
-            nonlocal min_x, max_x, min_y, max_y
-            gmin_x = min(p[0] for p in pts_)
-            gmax_x = max(p[0] for p in pts_)
-            gmin_y = min(p[1] for p in pts_)
-            gmax_y = max(p[1] for p in pts_)
-            min_x = min(gmin_x, min_x)
-            max_x = max(gmax_x, max_x)
-            min_y = min(gmin_y, min_y)
-            max_y = max(gmax_y, max_y)
-
-        for work in data.get("region_work", []):
-            pts = parse_points(work["points"])
-            get_min_max(pts)
-
-        for region in data.get("region_channel", []):
-            pts = parse_points(region["points"])
-            get_min_max(pts)
-
-        for obstacle in data.get("region_obstacle", []):
-            pts = parse_points(obstacle["points"])
-            get_min_max(pts)
-
-        for forb in data.get("region_forbidden", []):
-            pts = parse_points(forb["points"])
-            get_min_max(pts)
-
-        for rb in data.get("region_placed_blank", []):
-            pts = parse_points(rb["points"])
-            get_min_max(pts)
-
-        for charger in data.get("region_charger_channel", []):
-            pts = parse_points(charger["points"])
-            get_min_max(pts)
-
-        self.map_max_x = max_x
-        self.map_min_x = min_x
-        self.map_max_y = max_y
-        self.map_min_y = min_y
-
-        width = max_x - min_x
-        height = max_y - min_y
-
-        canvas_width = width * 25  # 1920
-        canvas_height = height * 25  # 1080
-        self.canvas_width = canvas_width
-        self.canvas_height = canvas_height
-        # Create a new image
-        image = Image.new("RGBA", (int(canvas_width), int(canvas_height)), (0, 0, 0, 0))
-
-        draw = ImageDraw.Draw(image)
-
-        for region in data.get("region_channel", []):
-            pts = parse_points(region["points"])
-            transformed_points = [transform(p) for p in pts]
-            draw.polygon(transformed_points, outline="gray", fill="gray")
-
-        for work in data.get("region_work", []):
-            pts = parse_points(work["points"])
-            transformed_points = [transform(p) for p in pts]
-            draw.polygon(
-                transformed_points, outline=self.grass_color, fill=self.grass_color
-            )
-
-        for obstacle in data.get("region_obstacle", []):
-            pts = parse_points(obstacle["points"])
-            transformed_points = [transform(p) for p in pts]
-            draw.polygon(
-                transformed_points, outline=self.alert_color, fill=self.alert_color
-            )
-
-        for forb in data.get("region_forbidden", []):
-            pts = parse_points(forb["points"])
-            transformed_points = [transform(p) for p in pts]
-            draw.polygon(transformed_points, outline="black", fill="black")
-
-        for rb in data.get("region_placed_blank", []):
-            pts = parse_points(rb["points"])
-            transformed_points = [transform(p) for p in pts]
-            draw.polygon(transformed_points, outline="blue", fill=None)  # "blue")
-
-        # for charger in data.get("region_charger_channel", []):
-        #    pts = parse_points(charger["points"])
-        #    transformed_points = [transform(p) for p in pts]
-        #    draw.polygon(transformed_points, outline="yellow", fill="yellow")
-
-        self.image = image
-        self.image_state = "Loaded"
-        self.map_updated = True
-
-    async def reload_maps(self, state):
-        """Reloads maps."""
-        if state == 0:  # Reload without requesting new map data
-            if self.image_data is not None:
-                await self.generate_map()  # Opret nyt image med kort
-                await self.generate_path()  # opret image med path på nyt kort
-                await self.generate_livemap(
-                    self.mower_pos_x, self.mower_pos_y
-                )  # Opret live image med robot
-                self.image_state = "Loaded"
-
-    def updateschedule(self) -> None:
-        """Refresh schedule from settings."""
-        for dsl in self.settings["data"]["deviceScheduleList"]:
-            daynumber = dsl.get("dayOfWeek")
-            day = self.Schedule.GetDay(daynumber)
-            day.start = dsl.get("startAt")[0:5]
-            day.end = dsl.get("endAt")[0:5]
-            day.trim = dsl.get("trimFlag")
+    def InitMapAndZoneData(self) -> None:
+        """Init map and zone data."""
+        if self.apptype == APPTYPE_NEW:
+            self.map.get_map_data()
+            if self.map.image_data:
+                json_data = self.map.image_data
+                idata = json.loads(json_data)
+                for work in idata.get("region_work", []):
+                    zoneid = work["id"]
+                    zonename = work["name"]
+                    self.zones.append([zoneid, zonename])
+                    zone = SunseekerZone()
+                    zone.id = zoneid
+                    zone.name = zonename
+                    self.zonelist.append(zone)
+                    self.Schedule_new.zones.append([zoneid, zonename])
+            self.map.get_heat_map_data()
 
     def InitValues(self) -> None:
         """Init values at upstart."""
@@ -480,7 +182,7 @@ class SunseekerDevice:
             self.mulpro_zon3 = self.settings["data"].get("proThird")
             self.mulpro_zon4 = self.settings["data"].get("proFour")
             self.updateschedule()
-        elif self.apptype in {APPTYPE_V, APPTYPE_X}:
+        elif self.apptype == APPTYPE_NEW:
             if self.devicedata["data"].get("timeCustomFlag"):
                 self.Schedule_new.schedule_custom = self.devicedata["data"].get(
                     "timeCustomFlag"
@@ -491,27 +193,7 @@ class SunseekerDevice:
                 )
             if self.devicedata["data"].get("onlineFlag"):
                 self.deviceOnlineFlag = self.devicedata["data"].get("onlineFlag")
-            if self.robot_image_url:
-                response = requests.get(self.robot_image_url, timeout=10)
-                if response.status_code == 200:
-                    robot_data = response.content
-                    self.robot_image = Image.open(BytesIO(robot_data))
-                    self.robot_image = self.robot_image.resize((50, 50))
-            if not self.robot_image:
-                self.robot_image = self.load_robot_image()
-            robotpos = self.settings["data"].get("robotPos")
-            if robotpos:
-                rp = json.loads(robotpos)
-                self.mower_orientation = rp["angle"]
-                self.mower_pos_x, self.mower_pos_y = rp["point"]
-
-            if not self.charger_image:
-                self.charger_image = self.load_charger_image()
-            chargepos = self.settings["data"].get("chargePos")
-            if chargepos:
-                cp = json.loads(chargepos)
-                self.charger_orientation = cp["angle"]
-                self.charger_pos_x, self.charger_pos_y = cp["point"]
+            self.map.InitValues(self.settings)
 
             self.net_4g_sig = self.settings["data"].get("net4gSig")
             self.taskCoverArea = self.settings["data"].get("taskCoverArea")
@@ -540,7 +222,7 @@ class SunseekerDevice:
                         zone.setting = z.get("setting", zone.setting)
                         zone.plan_angle = z.get("plan_angle", zone.plan_angle)
 
-            if self.apptype == APPTYPE_X:
+            if self.model == MODEL_X:
                 ci = self.settings["data"].get("consumableItemsObject", None)
                 if ci:
                     cutter = ci.get("cutter", None)
@@ -558,13 +240,984 @@ class SunseekerDevice:
                         self.consumable.blade.loop = blade.get("loop")
                         self.consumable.blade.ls = blade.get("ls")
 
-            if self.apptype == APPTYPE_V:
+            if self.model == MODEL_V:
                 self.docking_path = self.settings["data"].get("returnMode")
                 self.screen_lock = self.settings["data"].get("durationTime")
                 self.border_first = self.settings["data"].get("rideMode")  # ok
                 self.border_distance = self.settings["data"].get("lv")
 
-        if self.apptype == APPTYPE_X:
+        if self.model == MODEL_X:
             self.rain_delay_left = self.settings["data"].get("rainCountdown")
         else:
             self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
+
+        self.InitMapAndZoneData()
+
+    def get_zone(self, id) -> SunseekerZone:
+        """Get the zone obj."""
+        for zone in self.zonelist:
+            if zone.id == id:
+                return zone
+        return None
+
+    def updateschedule(self) -> None:
+        """Refresh schedule from settings."""
+        for dsl in self.settings["data"]["deviceScheduleList"]:
+            daynumber = dsl.get("dayOfWeek")
+            day = self.Schedule.GetDay(daynumber)
+            day.start = dsl.get("startAt")[0:5]
+            day.end = dsl.get("endAt")[0:5]
+            day.trim = dsl.get("trimFlag")
+
+    def get_settings(self):
+        """Get settings."""
+        if self.apptype == APPTYPE_OLD:
+            endpoint = f"/mower/device-setting/{self.devicesn}"
+        else:
+            endpoint = f"/app_wireless_mower/device/info/{self.deviceId}"
+        try:
+            url_ = self.url + endpoint
+            headers_ = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.session["access_token"],
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get settings header: {headers_} url: {url_}")  # noqa: G004
+            response = requests.get(
+                url=url_,
+                headers=headers_,
+                timeout=10,
+            )
+            response_data = response.json()
+            self.settings = response_data
+            _LOGGER.debug(json.dumps(response_data))
+
+            if response_data["code"] != 0:
+                _LOGGER.debug(f"Error getting device settings for {self.devicesn}")  # noqa: G004
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            if self.dataupdated is not None:
+                self.dataupdated(self.devicesn)
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"Get settings: failed {error}")  # noqa: G004
+
+    def update_devices(self):
+        """Update device."""
+        if self.apptype == APPTYPE_OLD:
+            endpoint = f"/mower/device/getBysn?sn={self.devicesn}"
+        else:
+            endpoint = f"/app_wireless_mower/device/getBysn?sn={self.devicesn}"
+
+        url = self.url + endpoint
+
+        try:
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get status header: {headers} url: {url}")  # noqa: G004
+            response = requests.get(
+                url=url,
+                headers=headers,
+                timeout=10,
+            )
+            response_data = response.json()
+            self.devicedata = response_data
+            _LOGGER.debug(json.dumps(response_data))
+
+            if self.dataupdated is not None:
+                self.dataupdated(self.devicesn)
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            if hasattr(error, "response"):
+                if error.response.status == 401:
+                    _LOGGER.debug(json.dumps(error.response.json()))
+                    _LOGGER.debug(
+                        "{element['path']} receive 401 error. Refresh Token in 60 seconds"
+                    )
+                    if self.func_refesh_token:
+                        self.func_refesh_token()
+                    return
+
+            _LOGGER.debug(url)
+            _LOGGER.debug(error)
+
+    def get_dev_all_properties(self):
+        """Get devAllProperties. Data received via mqtt."""
+        if self.model == MODEL_V:
+            return
+        endpoint = self.cmdurl + "get_property"
+        try:
+            url_ = self.url + endpoint
+            data_ = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "getDevAllProperty",
+                "key": "all",
+                "method": "get_property",
+            }
+            headers_ = {
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Connection": "Keep-Alive",
+            }
+            _LOGGER.debug(
+                f"Get devAllProperties header: {headers_} url: {url_} data: {data_}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url_,
+                headers=headers_,
+                json=data_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+
+            if response_data["code"] != 0:
+                _LOGGER.debug(f"Error getting devAllProperties for {self.devicesn}")  # noqa: G004
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"Get devAllProperties: failed {error}")  # noqa: G004
+
+    def set_rain_status(self, state: bool, delaymin: int):
+        """Set rain status."""
+        try:
+            if self.model in {MODEL_V, MODEL_V}:
+                if self.model == MODEL_V:
+                    url = self.url + self.cmdurl + "setProperty"
+                    data = {
+                        "appId": self.userid,
+                        "deviceSn": self.devicesn,
+                        "method": "setRain",
+                        "rainDelayDuration": int(delaymin),
+                        "rainFlag": state,
+                    }
+                else:
+                    url = self.url + self.cmdurl + "set_property"
+                    data = {
+                        "appId": self.userid,
+                        "delay": int(delaymin),
+                        "deviceSn": self.devicesn,
+                        "id": "setDevRain",
+                        "key": "rain",
+                        "method": "set_property",
+                        "rain_flag": state,
+                    }
+            else:
+                url = self.url + "/app_mower/device/setRain"
+                data = {
+                    "appId": self.userid,
+                    "deviceSn": self.devicesn,
+                    "rainDelayDuration": int(delaymin),
+                    "rainFlag": state,
+                }
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            _LOGGER.debug(
+                f"Set rain status url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            self.dataupdated(self.devicesn)
+            _LOGGER.debug(f"Set rain status: failed {error}")  # noqa: G004
+
+    def set_state_change(self, command, state, zone=None):
+        """Old Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Border."""
+        # New Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Stop.
+        # V models state 4=start
+        # device_id = self.DeviceSn  # self.devicedata["data"].get("id")
+        if self.mode == MODEL_V:
+            self.set_workmode_V1(state, self.devicesn)
+            return
+        endpoint = "/app_mower/device/setWorkStatus"
+        if self.apptype == APPTYPE_NEW:
+            endpoint = self.cmdurl + "action"
+
+        try:
+            if self.apptype == APPTYPE_OLD:
+                data = {
+                    "appId": self.userid,
+                    "deviceSn": self.devicesn,
+                    "mode": state,
+                }
+            elif self.apptype == APPTYPE_NEW:
+                if state == 1:
+                    cmd = "start"
+                    cmdid = "startWork"
+                elif state == 0:
+                    cmd = "pause"
+                    cmdid = "pauseWork"
+                elif state == 2:
+                    cmd = "start_find_charger"
+                    cmdid = "startFindCharger"
+                elif state == 4:
+                    cmd = "stop"
+                    cmdid = "stopWork"
+
+                if zone:
+                    data = {
+                        "appId": self.userid,
+                        "cmd": cmd,
+                        "deviceSn": self.devicesn,
+                        "id": cmdid,
+                        "method": "action",
+                        "work_id": zone,
+                    }
+                else:
+                    data = {
+                        "appId": self.userid,
+                        "cmd": cmd,
+                        "deviceSn": self.devicesn,
+                        "id": cmdid,
+                        "method": "action",
+                    }
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            url = self.url + endpoint
+            _LOGGER.debug(
+                f"Set state change url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.device.error_text = response_data.get("msg")
+                self.device.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.device.error_text = ""
+
+            refresh_timeout = Timer(
+                10,
+                self.refresh,
+            )
+            refresh_timeout.start()
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.device.error_text = error
+            self.device.dataupdated(self.devicesn)
+            _LOGGER.debug(f"Set state change: failed {error}")  # noqa: G004
+
+    def start_mowing(self, zone=None):
+        """Start Mowing."""
+        _LOGGER.debug("Start mowing")
+        # custom = zone is not None
+        # self.set_custom_flag(custom, devicesn)
+        self.set_state_change("mode", 1, zone)
+
+    def dock(self):
+        """Dock."""
+        _LOGGER.debug("Docking")
+        self.set_state_change("mode", 2)
+
+    def pause(self):
+        """Pause."""
+        _LOGGER.debug("Pause")
+        self.set_state_change("mode", 0)
+
+    def border(self):
+        """Border."""
+        _LOGGER.debug("Border")
+        self.set_state_change("mode", 4)
+
+    def stop(self):
+        """Stop."""
+        _LOGGER.debug("Stop")
+        self.set_state_change("mode", 4)
+
+    def refresh(self):
+        """Refresh data."""
+        _LOGGER.debug("Refresh device data")
+        self.update_devices()
+
+    def set_schedule(self, ScheduleList):
+        """Set schedule data."""
+        # time format: "23:30:00"
+        for day in ScheduleList:
+            if day.day == 1:
+                start1 = day.start
+                end1 = day.end
+                trim1 = day.trim
+            if day.day == 2:
+                start2 = day.start
+                end2 = day.end
+                trim2 = day.trim
+            if day.day == 3:
+                start3 = day.start
+                end3 = day.end
+                trim3 = day.trim
+            if day.day == 4:
+                start4 = day.start
+                end4 = day.end
+                trim4 = day.trim
+            if day.day == 5:
+                start5 = day.start
+                end5 = day.end
+                trim5 = day.trim
+            if day.day == 6:
+                start6 = day.start
+                end6 = day.end
+                trim6 = day.trim
+            if day.day == 7:
+                start7 = day.start
+                end7 = day.end
+                trim7 = day.trim
+
+        data = {
+            "appId": self.userid,
+            "autoFlag": False,
+            "deviceScheduleBOS": [
+                {
+                    "dayOfWeek": 1,
+                    "endAt": end1 + ":00",
+                    "startAt": start1 + ":00",
+                    "trimFlag": trim1,
+                },
+                {
+                    "dayOfWeek": 2,
+                    "endAt": end2 + ":00",
+                    "startAt": start2 + ":00",
+                    "trimFlag": trim2,
+                },
+                {
+                    "dayOfWeek": 3,
+                    "endAt": end3 + ":00",
+                    "startAt": start3 + ":00",
+                    "trimFlag": trim3,
+                },
+                {
+                    "dayOfWeek": 4,
+                    "endAt": end4 + ":00",
+                    "startAt": start4 + ":00",
+                    "trimFlag": trim4,
+                },
+                {
+                    "dayOfWeek": 5,
+                    "endAt": end5 + ":00",
+                    "startAt": start5 + ":00",
+                    "trimFlag": trim5,
+                },
+                {
+                    "dayOfWeek": 6,
+                    "endAt": end6 + ":00",
+                    "startAt": start6 + ":00",
+                    "trimFlag": trim6,
+                },
+                {
+                    "dayOfWeek": 7,
+                    "endAt": end7 + ":00",
+                    "startAt": start7 + ":00",
+                    "trimFlag": trim7,
+                },
+            ],
+            "deviceSn": self.devicesn,
+        }
+
+        try:
+            url = self.url + "/app_mower/device-schedule/setScheduling"
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json; charset=UTF-8",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+                "Accept-Encoding": "gzip",
+            }
+            _LOGGER.debug(f"Set schedule url: {url} header: {headers} data: {data}")  # noqa: G004
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            self.dataupdated(self.devicesn)
+            _LOGGER.debug(f"Set_schedule: failed {error}")  # noqa: G004
+
+    def set_zone_status(
+        self,
+        zoneauto: bool,
+        zone_enable: bool,
+        zone1: int,
+        zone2: int,
+        zone3: int,
+        zone4: int,
+        mul1: int,
+        mul2: int,
+        mul3: int,
+        mul4: int,
+    ):
+        """Set zone status."""
+        try:
+            url = self.url + "/app_mower/device/setZones"
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "meterFirst": 0,
+                "meterFour": 0,
+                "meterSecond": 0,
+                "meterThird": 0,
+                "proFirst": mul1,
+                "proFour": mul2,
+                "proSecond": mul3,
+                "proThird": mul4,
+                "zoneAutomaticFlag": zoneauto,
+                "zoneExFlag": 0,
+                "zoneFirstPercentage": zone1,
+                "zoneFourthPercentage": zone4,
+                "zoneOpenFlag": zone_enable,
+                "zoneSecondPercentage": zone2,
+                "zoneThirdPercentage": zone3,
+            }
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json; charset=UTF-8",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+                "Accept-Encoding": "gzip",
+            }
+            _LOGGER.debug(
+                f"Set zone status url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            self.dataupdated(self.devicesn)
+            _LOGGER.debug(f"Set zone status: failed {error}")  # noqa: G004
+
+    def set_border_freq(self, freq: int):
+        """Border freq."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setFollowBorderFreq",
+            "key": "follow_border_freq",
+            "method": "set_property",
+            "value": int(freq),
+        }
+        self.set_property(data)
+
+    def set_plan_mode(self, mode: int, angle: int):
+        """Plan mode."""
+        # if mode == 2:
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setPlanAngle",
+            "key": "plan_angle",
+            "method": "set_property",
+            "plan_mode": int(mode),
+            "plan_value": int(angle),
+        }
+        self.set_property(data)
+
+    def set_reset_blade(self):
+        """Reset the blade timer."""
+        data = {
+            "appId": self.userid,
+            "cmd": "maintain_consumable_item",
+            "consumable_items": ["blade"],
+            "deviceSn": self.devicesn,
+            "id": "maintainConsumableItem",
+            "method": "action",
+        }
+        self.set_action(data)
+
+    def set_reset_bladeplade(self):
+        """Reset the blade timer."""
+        data = {
+            "appId": self.userid,
+            "cmd": "maintain_consumable_item",
+            "consumable_items": ["cutter"],
+            "deviceSn": self.devicesn,
+            "id": "maintainConsumableItem",
+            "method": "action",
+        }
+        self.set_action(data)
+
+    def set_AIsensitivity(self, value: int):
+        """Border freq."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setAISensitivity",
+            "key": "ai_sensitivity",
+            "method": "set_property",
+            "value": int(value),
+        }
+        self.set_property(data)
+
+    def set_avoid_objects(self, value: int):
+        """Border freq."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setWorkTouchMode",
+            "key": "work_touch_mode",
+            "method": "set_property",
+            "value": int(value),
+        }
+        self.set_property(data)
+
+    def set_border_first(self, value: bool):
+        """Border first."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setFirstAlongBorder",
+            "key": "first_along_border",
+            "method": "set_property",
+            "value": value,
+        }
+        self.set_property(data)
+
+    def set_time_work_repeat(self, value: bool):
+        """Time work repeat."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setTimeWorkRepeat",
+            "key": "time_work_repeat",
+            "method": "set_property",
+            "value": value,
+        }
+        self.set_property(data)
+
+    def set_mow_efficiency(self, gap: int, workspeed: int):
+        """Mow efficiency."""
+        data = {
+            "appId": self.userid,
+            "gap": int(gap),
+            "deviceSn": self.devicesn,
+            "id": "setMowEfficiency",
+            "key": "mow_efficiency",
+            "method": "set_property",
+            "speed": int(workspeed),
+        }
+        self.set_property(data)
+
+    def set_blade_speed(self, speed: int):
+        """Blade speed."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setDevBlade",
+            "key": "blade",
+            "method": "set_property",
+            "speed": int(speed),
+        }
+        self.set_property(data)
+
+    def set_blade_height(self, height: int):
+        """Blade speed."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setDevBlade",
+            "key": "blade",
+            "method": "set_property",
+            "height": int(height),
+        }
+        self.set_property(data)
+
+    def set_schedule_new(self, timedata):
+        """Set schedule from service call."""
+        _LOGGER.debug(timedata)
+        if self.model == MODEL_X:
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "setTimeTactics",
+                "key": "time_tactics",
+                "method": "setSchedule",
+                "time_custom_flag": timedata.get("user_defined"),
+                "recommended_time_flag": timedata.get("recommended_time_work"),
+                "time": self.Schedule_new.generate_enabled_time_list(timedata),
+                "time_zone": self.Schedule_new.timezone,
+                "pause": timedata.get("pause"),
+            }
+        else:
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "autoFlag": False,
+                "method": "setSchedule",
+                "deviceScheduleBOS": self.Schedule_new.generate_enabled_time_list_V1(
+                    timedata
+                ),
+                "pause": timedata.get("pause"),
+            }
+
+        self.set_property(data)
+
+    def set_schedule_data(self):
+        """Set schedule from own data."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setTimeTactics",
+            "key": "time_tactics",
+            "method": "set_property",
+            "time_custom_flag": self.Schedule_new.schedule_custom,
+            "recommended_time_flag": self.Schedule_new.schedule_recommended,
+            "time": self.Schedule_new.GenerateTimeData(),
+            "time_zone": 3600,
+            "pause": self.Schedule_new.schedule_pause,
+        }
+        self.set_property(data)
+
+    def set_schedue_mode(self, mode: int):
+        """Set schedule."""
+        # 0 = ingen, 1 = recommended, 2 = custom
+        if mode == 20:
+            self.set_schedule_data()
+        mode = 100
+        if mode == 10:
+            self.get_schedule_data()
+
+        if mode == 0:
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "setTimeCustomFlag",
+                "key": "time_custom_flag",
+                "method": "set_property",
+                "value": False,
+            }
+            self.set_property(data)
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "setRecommendedTimeFlag",
+                "key": "recommended_time_flag",
+                "method": "set_property",
+                "value": False,
+            }
+            self.set_property(data)
+        elif mode == 1:
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "setTimeCustomFlag",
+                "key": "time_custom_flag",
+                "method": "set_property",
+                "value": False,
+            }
+            # self.set_property(data)
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "setRecommendedTimeFlag",
+                "key": "recommended_time_flag",
+                "method": "set_property",
+                "value": True,
+            }
+            self.set_property(data)
+        elif mode == 2:
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "setTimeCustomFlag",
+                "key": "time_custom_flag",
+                "method": "set_property",
+                "value": True,
+            }
+            self.set_property(data)
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "setRecommendedTimeFlag",
+                "key": "recommended_time_flag",
+                "method": "set_property",
+                "value": False,
+            }
+            # self.set_property(data)
+
+    def set_custom_flag(self, on: bool):
+        """Set custom flag."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setCustomFlag",
+            "key": "custom_flag",
+            "method": "set_property",
+            "value": on,
+        }
+        self.set_property(data)
+
+    def get_schedule_data(self):
+        """Get schedule property."""
+        if self.model == MODEL_V:
+            self.Schedule_new.Get_schedule_data_V1()
+            return
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "getTimeTactics",
+            "key": "time_custom",
+            "method": "get_property",
+        }
+        self.set_property(data)
+
+    def set_action(self, data):
+        """Set property status."""
+        try:
+            cmd = "action"
+            url = self.url + self.cmdurl + cmd
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            _LOGGER.debug(
+                f"Set action url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            self.dataupdated(self.devicesn)
+            _LOGGER.debug(f"Set action: failed {error}")  # noqa: G004
+
+    def set_property(self, data):
+        """Set property status."""
+        try:
+            if self.model == MODEL_V:
+                cmd = "setProperty"
+            else:
+                cmd = "set_property"
+            url = self.url + self.cmdurl + cmd
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            _LOGGER.debug(
+                f"Set property url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            self.dataupdated(self.devicesn)
+            _LOGGER.debug(f"Set property: failed {error}")  # noqa: G004
+
+    def set_custon_property(self, zone: SunseekerZone):
+        """Set custom zones."""
+        try:
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "setCustom",
+                "key": "custom",
+                "method": "set_property",
+                "value": [
+                    {
+                        "blade_height": zone.blade_height,  # int in mm
+                        "blade_speed": zone.blade_speed,  # int in revolutions per minute? 2800 = slow, 3000 = fast, at least for the X7; other robots may have different values?
+                        "plan_angle": zone.plan_angle,  # int in degrees, seems to refer to the horizontal of the displayed map, which is not necessarily enforced.
+                        "plan_mode": zone.plan_mode,  # int, 0 = standard, 1 = traceless, 2 = custom; probably only for 2 is plan_angle important
+                        "region_id": zone.id,  # long int id, id of the respective region
+                        "work_gap": zone.gap,  # int: 1 = narrow, 2 = normal, 3 = wide
+                        "work_speed": zone.work_speed,  # int: 1 = slow, 2 = normal, 3 = fast
+                    }
+                ],
+            }
+            url = self.url + self.cmdurl + "set_property"
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            _LOGGER.debug(
+                f"Set property url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            self.dataupdated(self.devicesn)
+            _LOGGER.debug(f"Set property: failed {error}")  # noqa: G004
+
+    def set_return_path_V1(self, value: int):
+        """Set return path V1."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "method": "setReturnMode",
+            "returnMode": int(value),
+        }
+        self.set_property(data)
+
+    def set_screen_durration_V1(self, value: int):
+        """Set screen timeout path V1."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "method": "setDuration",
+            "duration": int(value),
+        }
+        self.set_property(data)
+
+    def set_border_first_V1(self, value: int):
+        """Set border first V1."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "method": "setRideMode",
+            "rideMode": int(value),
+        }
+        self.set_property(data)
+
+    def set_border_distance_V1(self, value: int):
+        """Set border distance V1."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "method": "setLv",
+            "lv": int(value),
+        }
+        self.set_property(data)
+
+    def set_workmode_V1(self, value: int):
+        """Set workmode V1."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "method": "setWorkStatus",
+            "mode": int(value),
+        }
+        self.set_property(data)
+
+    def set_schedule_on_off_V1(self, value: bool):
+        """Set workmode V1."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "method": "setPause",
+            "Pause": value,
+        }
+        self.set_property(data)

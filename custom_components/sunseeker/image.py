@@ -11,7 +11,7 @@ from homeassistant.components.image import ImageEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import APPTYPE_X, DOMAIN
+from .const import MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,52 +20,36 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
 
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-
-    AppType = ""
     for coordinator in robot_coordinators(hass, entry):
-        AppType = coordinator.data_handler.apptype
-
-    if AppType == APPTYPE_X:
-        async_add_entities(
-            [
-                MowerImage(
-                    hass,
-                    coordinator,
-                    "Map",
-                    "mower_map",
-                    "mdi:map",
-                    0,
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                MowerImage(
-                    hass,
-                    coordinator,
-                    "Heat Map",
-                    "mower_heatmap",
-                    "mdi:map",
-                    1,
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                MowerImage(
-                    hass,
-                    coordinator,
-                    "Wifi Map",
-                    "mower_wifimap",
-                    "mdi:map",
-                    2,
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+        if coordinator.model == MODEL_X:
+            async_add_entities(
+                [
+                    MowerImage(
+                        hass,
+                        coordinator,
+                        "Map",
+                        "mower_map",
+                        "mdi:map",
+                        0,
+                    ),
+                    MowerImage(
+                        hass,
+                        coordinator,
+                        "Heat Map",
+                        "mower_heatmap",
+                        "mdi:map",
+                        1,
+                    ),
+                    MowerImage(
+                        hass,
+                        coordinator,
+                        "Wifi Map",
+                        "mower_wifimap",
+                        "mdi:map",
+                        2,
+                    ),
+                ]
+            )
 
 
 class MowerImage(SunseekerEntity, ImageEntity):
@@ -100,16 +84,13 @@ class MowerImage(SunseekerEntity, ImageEntity):
             self.data_coordinator.heatmap_entity = self
         elif mapid == 2:
             self.data_coordinator.wifimap_entity = self
-        self._device = self._data_handler.get_device(self._sn)
+        self.device = self._data_handler.get_device(self._sn)
         self.mapid = mapid
 
     @property
     def state(self):
         """State."""
         return self.image_last_updated
-        #    if self._live:
-        #        return self._device.live_image_state
-        #    return self._device.image_state
 
     async def trigger_update(self) -> None:
         """Trigger a state update for this image entity."""
@@ -117,17 +98,17 @@ class MowerImage(SunseekerEntity, ImageEntity):
         # self.async_write_ha_state()
         self.image_last_updated = datetime.now()
         if self.mapid == 0:
-            self._device.map_updated = False
+            self.device.map.map_updated = False
 
     async def async_image(self) -> bytes | None:
         """Return bytes of image."""
         try:
             if self.mapid == 0:
-                roi_img = self._data_handler.get_device(self._sn).image
+                roi_img = self.device.map.image
             elif self.mapid == 1:
-                roi_img = self._data_handler.get_device(self._sn).heatmap
+                roi_img = self.device.map.heatmap
             elif self.mapid == 2:
-                roi_img = self._data_handler.get_device(self._sn).wifimap
+                roi_img = self.device.map.wifimap
             # roi_img = img.convert("RGB")
             if roi_img is not None:
                 img_byte_arr = io.BytesIO()

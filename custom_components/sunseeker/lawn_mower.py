@@ -16,8 +16,8 @@ from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
-    APPTYPE_V,
-    APPTYPE_X,
+    APPTYPE_NEW,
+    MODEL_X,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
     SUNSEEKER_CONTINUE_CUTTING,
@@ -100,34 +100,32 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
     @property
     def state(self) -> str | None:
         """Return the current state."""
-        if self._data_handler.get_device(self._sn).errortype != 0:
+        if self.device.errortype != 0:
             return (
-                self._data_handler.get_device(self._sn)
-                .devicedata["data"]
-                .get("faultStatusCode")
+                self.device.devicedata["data"].get("faultStatusCode")
                 + " ("
-                + str(self._data_handler.get_device(self._sn).errortype)
+                + str(self.device.errortype)
                 + ")"
             )
-        ival = self._data_handler.get_device(self._sn).mode
+        ival = self.device.mode
 
         if ival == 0:
-            if self._data_handler.apptype == APPTYPE_X:
+            if self.device.model == MODEL_X:
                 val = SUNSEEKER_UNKNOWN
             else:
                 val = SUNSEEKER_STANDBY
         elif ival == 1:
-            if self._data_handler.apptype == APPTYPE_X:
+            if self.device.model == MODEL_X:
                 val = SUNSEEKER_IDLE
             else:
                 val = SUNSEEKER_MOWING
         elif ival == 2:
-            if self._data_handler.apptype == APPTYPE_X:
+            if self.device.model == MODEL_X:
                 val = SUNSEEKER_WORKING
             else:
                 val = SUNSEEKER_GOING_HOME
         elif ival == 3:
-            if self._data_handler.apptype == APPTYPE_X:
+            if self.device.model == MODEL_X:
                 val = SUNSEEKER_PAUSE
             else:
                 val = SUNSEEKER_CHARGING
@@ -136,7 +134,7 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
         elif ival == 6:
             val = SUNSEEKER_ERROR
         elif ival == 7:
-            if self._data_handler.apptype in {APPTYPE_X, APPTYPE_V}:
+            if self.device.apptype == APPTYPE_NEW:
                 val = SUNSEEKER_RETURN
             else:
                 val = SUNSEEKER_MOWING_BORDER
@@ -167,17 +165,15 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
 
     async def async_start_mowing(self) -> None:
         """Start or resume mowing."""
-        await self.hass.async_add_executor_job(
-            self._data_handler.start_mowing, self._sn, None
-        )
+        await self.hass.async_add_executor_job(self.device.start_mowing, None)
 
     async def async_dock(self) -> None:
         """Dock the mower."""
-        await self.hass.async_add_executor_job(self._data_handler.dock, self._sn)
+        await self.hass.async_add_executor_job(self.device.dock)
 
     async def async_pause(self) -> None:
         """Pause the lawn mower."""
-        await self.hass.async_add_executor_job(self._data_handler.pause, self._sn)
+        await self.hass.async_add_executor_job(self.device.pause)
 
     async def async_update(self):
         """Get the latest data."""

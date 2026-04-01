@@ -5,22 +5,18 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import APPTYPE_V, APPTYPE_X
+from .const import MODEL_V, MODEL_X
 from .entity import SunseekerEntity
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
     """Do setup entry."""
 
-    Apptype = ""
+    plan_mode = []
+    speed = []
+    gap = []
     for coordinator in robot_coordinators(hass, entry):
-        Apptype = coordinator.data_handler.apptype
-
-    if Apptype == APPTYPE_X:
-        plan_mode = []
-        speed = []
-        gap = []
-        for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_X:
             zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
             for zone in zones:
                 zid, zname = zone
@@ -49,134 +45,79 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                         zid,
                     )
                     gap.append(g)
-        async_add_entities(plan_mode)
-        async_add_entities(speed)
-        async_add_entities(gap)
+    async_add_entities(plan_mode)
+    async_add_entities(speed)
+    async_add_entities(gap)
 
-        async_add_entities(
-            [
-                SunseekerZoneSelect(
-                    coordinator,
-                    coordinator.data_handler.get_device(coordinator.devicesn).zones,
-                    "Zones",
-                    "sunseeker_zones",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        # Mowed to schedule card
-        # async_add_entities(
-        #    [
-        #        SunseekerScheduleModeSelect(
-        #            coordinator,
-        #            "Schedule mode",
-        #            "sunseeker_schedule_mode",
-        #        )
-        #        for coordinator in robot_coordinators(hass, entry)
-        #    ]
-        # )
-        async_add_entities(
-            [
-                SunseekerAvoidObjectsSelect(
-                    coordinator,
-                    "Avoiding objects",
-                    "sunseeker_avoiding_objects",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerAISensSelect(
-                    coordinator,
-                    "AI Sensitivity",
-                    "sunseeker_ai_sensitivity",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerSpeedSelect(
-                    coordinator,
-                    "Work speed",
-                    "sunseeker_work_speed",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerGapSelect(
-                    coordinator,
-                    "Cutting gap",
-                    "sunseeker_gap",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerBorderSelect(
-                    coordinator,
-                    "Edge trim frequency",
-                    "sunseeker_edge_freq",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_X:
+            async_add_entities(
+                [
+                    SunseekerZoneSelect(
+                        coordinator,
+                        coordinator.data_handler.get_device(coordinator.devicesn).zones,
+                        "Zones",
+                        "sunseeker_zones",
+                    ),
+                    SunseekerAvoidObjectsSelect(
+                        coordinator,
+                        "Avoiding objects",
+                        "sunseeker_avoiding_objects",
+                    ),
+                    SunseekerAISensSelect(
+                        coordinator,
+                        "AI Sensitivity",
+                        "sunseeker_ai_sensitivity",
+                    ),
+                    SunseekerSpeedSelect(
+                        coordinator,
+                        "Work speed",
+                        "sunseeker_work_speed",
+                    ),
+                    SunseekerGapSelect(
+                        coordinator,
+                        "Cutting gap",
+                        "sunseeker_gap",
+                    ),
+                    SunseekerBorderSelect(
+                        coordinator,
+                        "Edge trim frequency",
+                        "sunseeker_edge_freq",
+                    ),
+                    SunseekerPlanModeSelect(
+                        coordinator,
+                        "Cutting pattern",
+                        "sunseeker_cutting_pattern",
+                    ),
+                ]
+            )
 
-        async_add_entities(
-            [
-                SunseekerPlanModeSelect(
-                    coordinator,
-                    "Cutting pattern",
-                    "sunseeker_cutting_pattern",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-    if Apptype == APPTYPE_V:
-        async_add_entities(
-            [
-                SunseekerBorderDistanceSelect(
-                    coordinator,
-                    "Border distance",
-                    "sunseeker_border_distance",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerReturnModeSelect(
-                    coordinator,
-                    "Docking mode",
-                    "sunseeker_docking_mode",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerBorderFirstSelect(
-                    coordinator,
-                    "Ride on edge",
-                    "sunseeker_ride_on_edge",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerScreenTimeoutSelect(
-                    coordinator,
-                    "Automatic screen timeout",
-                    "sunseeker_screen_timeout",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_V:
+            async_add_entities(
+                [
+                    SunseekerBorderDistanceSelect(
+                        coordinator,
+                        "Border distance",
+                        "sunseeker_border_distance",
+                    ),
+                    SunseekerReturnModeSelect(
+                        coordinator,
+                        "Docking mode",
+                        "sunseeker_docking_mode",
+                    ),
+                    SunseekerBorderFirstSelect(
+                        coordinator,
+                        "Ride on edge",
+                        "sunseeker_ride_on_edge",
+                    ),
+                    SunseekerScreenTimeoutSelect(
+                        coordinator,
+                        "Automatic screen timeout",
+                        "sunseeker_screen_timeout",
+                    ),
+                ]
+            )
 
 
 class SunseekerScreenTimeoutSelect(SunseekerEntity, SelectEntity):
@@ -223,7 +164,7 @@ class SunseekerScreenTimeoutSelect(SunseekerEntity, SelectEntity):
         value = reverse_mapping.get(option, 0)
         # Call your integration's method to set the mode
         await self.hass.async_add_executor_job(
-            self._data_handler.set_screen_durration_V1, value, self._sn
+            self.device.set_screen_durration_V1, value
         )
         self._attr_current_option = option
         self.async_write_ha_state()
@@ -273,9 +214,7 @@ class SunseekerBorderFirstSelect(SunseekerEntity, SelectEntity):
         }
         value = reverse_mapping.get(option, 0)
         # Call your integration's method to set the mode
-        await self.hass.async_add_executor_job(
-            self._data_handler.set_border_first_V1, value, self._sn
-        )
+        await self.hass.async_add_executor_job(self.device.set_border_first_V1, value)
         self._attr_current_option = option
         self.async_write_ha_state()
 
@@ -324,9 +263,7 @@ class SunseekerReturnModeSelect(SunseekerEntity, SelectEntity):
         }
         value = reverse_mapping.get(option, 0)
         # Call your integration's method to set the mode
-        await self.hass.async_add_executor_job(
-            self._data_handler.set_return_path_V1, value, self._sn
-        )
+        await self.hass.async_add_executor_job(self.device.set_return_path_V1, value)
         self._attr_current_option = option
         self.async_write_ha_state()
 
@@ -376,7 +313,7 @@ class SunseekerBorderDistanceSelect(SunseekerEntity, SelectEntity):
         value = reverse_mapping.get(option, 0)
         # Call your integration's method to set the mode
         await self.hass.async_add_executor_job(
-            self._data_handler.set_border_distance_V1, value, self._sn
+            self.device.set_border_distance_V1, value
         )
         self._attr_current_option = option
         self.async_write_ha_state()
@@ -430,7 +367,7 @@ class SunseekerSpeedSelect(SunseekerEntity, SelectEntity):
         gap = self.device.gap
         # Call your integration's method to set the mode
         await self.hass.async_add_executor_job(
-            self._data_handler.set_mow_efficiency, gap, speed, self._sn
+            self.device.set_mow_efficiency, gap, speed
         )
         self._attr_current_option = option
         self.async_write_ha_state()
@@ -484,7 +421,7 @@ class SunseekerGapSelect(SunseekerEntity, SelectEntity):
         speed = self.device.work_speed
         # Call your integration's method to set the mode
         await self.hass.async_add_executor_job(
-            self._data_handler.set_mow_efficiency, gap, speed, self._sn
+            self.device.set_mow_efficiency, gap, speed
         )
         self._attr_current_option = option
         self.async_write_ha_state()
@@ -536,9 +473,7 @@ class SunseekerBorderSelect(SunseekerEntity, SelectEntity):
         }
         freq = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
-        await self.hass.async_add_executor_job(
-            self._data_handler.set_border_freq, freq, self._sn
-        )
+        await self.hass.async_add_executor_job(self.device.set_border_freq, freq)
         self._attr_current_option = option
         self.async_write_ha_state()
 
@@ -587,9 +522,7 @@ class SunseekerAISensSelect(SunseekerEntity, SelectEntity):
         }
         AIfreq = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
-        await self.hass.async_add_executor_job(
-            self._data_handler.set_AIsensitivity, AIfreq, self._sn
-        )
+        await self.hass.async_add_executor_job(self.device.set_AIsensitivity, AIfreq)
         self._attr_current_option = option
         self.async_write_ha_state()
 
@@ -638,9 +571,7 @@ class SunseekerAvoidObjectsSelect(SunseekerEntity, SelectEntity):
         }
         touch = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
-        await self.hass.async_add_executor_job(
-            self._data_handler.set_avoid_objects, touch, self._sn
-        )
+        await self.hass.async_add_executor_job(self.device.set_avoid_objects, touch)
         self._attr_current_option = option
         self.async_write_ha_state()
 
@@ -692,10 +623,9 @@ class SunseekerPlanModeSelect(SunseekerEntity, SelectEntity):
         plan_mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
         await self.hass.async_add_executor_job(
-            self._data_handler.set_plan_mode,
+            self.device.set_plan_mode,
             plan_mode,
             self.device.plan_angle,
-            self._sn,
         )
         self._attr_current_option = option
         self.async_write_ha_state()
@@ -757,9 +687,7 @@ class SunseekerScheduleModeSelect(SunseekerEntity, SelectEntity):
         }
         mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
-        await self.hass.async_add_executor_job(
-            self._data_handler.set_schedue_mode, mode, self._sn
-        )
+        await self.hass.async_add_executor_job(self.device.set_schedue_mode, mode)
         self._attr_current_option = option
         self.async_write_ha_state()
 
@@ -807,9 +735,6 @@ class SunseekerZoneSelect(SunseekerEntity, SelectEntity):
         """Handle user selecting a new option."""
         zone_id = self._zone_name_to_id.get(option)
         if zone_id is not None:
-            # await self.hass.async_add_executor_job(
-            #    self._data_handler.set_zone, zone_id, self._sn
-            # )
             self.device.selected_zone = zone_id
             self._attr_current_option = option
             self.async_write_ha_state()
@@ -872,7 +797,7 @@ class SunseekerCustomPlanModeSelect(SunseekerEntity, SelectEntity):
         self.zone.plan_mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
         await self.hass.async_add_executor_job(
-            self._data_handler.set_custon_property, self.zone, self._sn
+            self.device.set_custon_property, self.zone
         )
         self._attr_current_option = option
         self.async_write_ha_state()
@@ -933,7 +858,7 @@ class SunseekerCustomSpeedSelect(SunseekerEntity, SelectEntity):
         self.zone.work_speed = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
         await self.hass.async_add_executor_job(
-            self._data_handler.set_custon_property, self.zone, self._sn
+            self.device.set_custon_property, self.zone
         )
         self._attr_current_option = option
         self.async_write_ha_state()
@@ -994,7 +919,7 @@ class SunseekerCustomGapSelect(SunseekerEntity, SelectEntity):
         self.zone.gap = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
         await self.hass.async_add_executor_job(
-            self._data_handler.set_custon_property, self.zone, self._sn
+            self.device.set_custon_property, self.zone
         )
         self._attr_current_option = option
         self.async_write_ha_state()

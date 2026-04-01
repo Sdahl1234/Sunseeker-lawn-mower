@@ -8,7 +8,7 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import APPTYPE_OLD, APPTYPE_X
+from .const import MODEL_OLD, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -16,9 +16,6 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
-    AppType = ""
-    for coordinator in robot_coordinators(hass, entry):
-        AppType = coordinator.data_handler.apptype
 
     async_add_entities(
         [
@@ -26,11 +23,12 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    if AppType == APPTYPE_X:
-        blade_speed = []
-        blade_height = []
-        plan_angle = []
-        for coordinator in robot_coordinators(hass, entry):
+
+    blade_speed = []
+    blade_height = []
+    plan_angle = []
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_X:
             zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
             for zone in zones:
                 zid, zname = zone
@@ -60,86 +58,40 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     )
                     plan_angle.append(a)
 
-        async_add_entities(blade_height)
-        async_add_entities(blade_speed)
-        async_add_entities(plan_angle)
+    async_add_entities(blade_height)
+    async_add_entities(blade_speed)
+    async_add_entities(plan_angle)
 
-        async_add_entities(
-            [
-                SunseekerPlanangleNumber(
-                    coordinator, "Cutting angle", "sunseeker_angle"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_X:
+            async_add_entities(
+                [
+                    SunseekerPlanangleNumber(
+                        coordinator, "Cutting angle", "sunseeker_angle"
+                    ),
+                    SunseekerBladespeedNumber(
+                        coordinator, "Blade speed", "sunseeker_blade_speed"
+                    ),
+                    SunseekerBladeheightNumber(
+                        coordinator, "Blade height", "sunseeker_blade_height"
+                    ),
+                ]
+            )
 
-        async_add_entities(
-            [
-                SunseekerBladespeedNumber(
-                    coordinator, "Blade speed", "sunseeker_blade_speed"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerBladeheightNumber(
-                    coordinator, "Blade height", "sunseeker_blade_height"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-
-    if AppType == APPTYPE_OLD:
-        async_add_entities(
-            [
-                SunseekerZoneNumber(coordinator, "Zone1", 1, "sunseeker_zone1")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerZoneNumber(coordinator, "Zone2", 2, "sunseeker_zone2")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerZoneNumber(coordinator, "Zone3", 3, "sunseeker_zone3")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerZoneNumber(coordinator, "Zone4", 4, "sunseeker_zone4")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-
-        async_add_entities(
-            [
-                SunseekerMulNumber(coordinator, "MulZone1", 1, "sunseeker_mulpro1")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerMulNumber(coordinator, "MulZone2", 2, "sunseeker_mulpro2")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerMulNumber(coordinator, "MulZone3", 3, "sunseeker_mulpro3")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerMulNumber(coordinator, "MulZone4", 4, "sunseeker_mulpro4")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_OLD:
+            async_add_entities(
+                [
+                    SunseekerZoneNumber(coordinator, "Zone1", 1, "sunseeker_zone1"),
+                    SunseekerZoneNumber(coordinator, "Zone2", 2, "sunseeker_zone2"),
+                    SunseekerZoneNumber(coordinator, "Zone3", 3, "sunseeker_zone3"),
+                    SunseekerZoneNumber(coordinator, "Zone4", 4, "sunseeker_zone4"),
+                    SunseekerMulNumber(coordinator, "MulZone1", 1, "sunseeker_mulpro1"),
+                    SunseekerMulNumber(coordinator, "MulZone2", 2, "sunseeker_mulpro2"),
+                    SunseekerMulNumber(coordinator, "MulZone3", 3, "sunseeker_mulpro3"),
+                    SunseekerMulNumber(coordinator, "MulZone4", 4, "sunseeker_mulpro4"),
+                ]
+            )
 
 
 class SunseekerRainDelayNumber(SunseekerEntity, NumberEntity):
@@ -165,20 +117,20 @@ class SunseekerRainDelayNumber(SunseekerEntity, NumberEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
         self.icon = "mdi:clock-time-three-outline"
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_rain_status,
-            self._data_handler.get_device(self._sn).rain_en,
+            self.device.set_rain_status,
+            self.device.rain_en,
             value,
-            self._sn,
         )
 
     @property
     def native_value(self):
         """Return value."""
-        return self._data_handler.get_device(self._sn).rain_delay_set
+        return self.device.rain_delay_set
 
 
 class SunseekerZoneNumber(SunseekerEntity, NumberEntity):
@@ -206,81 +158,78 @@ class SunseekerZoneNumber(SunseekerEntity, NumberEntity):
         self._sn = self.coordinator.devicesn
         self.icon = "mdi:map"
         self.zonenumber = zonenumber
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         if self.zonenumber == 1:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_zone_status,
-                self._data_handler.get_device(self._sn).mul_auto,
-                self._data_handler.get_device(self._sn).mul_en,
+                self.device.set_zone_status,
+                self.device.mul_auto,
+                self.device.mul_en,
                 value,
-                self._data_handler.get_device(self._sn).mul_zon2,
-                self._data_handler.get_device(self._sn).mul_zon3,
-                self._data_handler.get_device(self._sn).mul_zon4,
-                self._data_handler.get_device(self._sn).mulpro_zon1,
-                self._data_handler.get_device(self._sn).mulpro_zon2,
-                self._data_handler.get_device(self._sn).mulpro_zon3,
-                self._data_handler.get_device(self._sn).mulpro_zon4,
-                self._sn,
+                self.device.mul_zon2,
+                self.device.mul_zon3,
+                self.device.mul_zon4,
+                self.device.mulpro_zon1,
+                self.device.mulpro_zon2,
+                self.device.mulpro_zon3,
+                self.device.mulpro_zon4,
             )
         if self.zonenumber == 2:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_zone_status,
-                self._data_handler.get_device(self._sn).mul_auto,
-                self._data_handler.get_device(self._sn).mul_en,
-                self._data_handler.get_device(self._sn).mul_zon1,
+                self.device.set_zone_status,
+                self.device.mul_auto,
+                self.device.mul_en,
+                self.device.mul_zon1,
                 value,
-                self._data_handler.get_device(self._sn).mul_zon3,
-                self._data_handler.get_device(self._sn).mul_zon4,
-                self._data_handler.get_device(self._sn).mulpro_zon1,
-                self._data_handler.get_device(self._sn).mulpro_zon2,
-                self._data_handler.get_device(self._sn).mulpro_zon3,
-                self._data_handler.get_device(self._sn).mulpro_zon4,
-                self._sn,
+                self.device.mul_zon3,
+                self.device.mul_zon4,
+                self.device.mulpro_zon1,
+                self.device.mulpro_zon2,
+                self.device.mulpro_zon3,
+                self.device.mulpro_zon4,
             )
         if self.zonenumber == 3:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_zone_status,
-                self._data_handler.get_device(self._sn).mul_auto,
-                self._data_handler.get_device(self._sn).mul_en,
-                self._data_handler.get_device(self._sn).mul_zon1,
-                self._data_handler.get_device(self._sn).mul_zon2,
+                self.device.set_zone_status,
+                self.device.mul_auto,
+                self.device.mul_en,
+                self.device.mul_zon1,
+                self.device.mul_zon2,
                 value,
-                self._data_handler.get_device(self._sn).mul_zon4,
-                self._data_handler.get_device(self._sn).mulpro_zon1,
-                self._data_handler.get_device(self._sn).mulpro_zon2,
-                self._data_handler.get_device(self._sn).mulpro_zon3,
-                self._data_handler.get_device(self._sn).mulpro_zon4,
-                self._sn,
+                self.device.mul_zon4,
+                self.device.mulpro_zon1,
+                self.device.mulpro_zon2,
+                self.device.mulpro_zon3,
+                self.device.mulpro_zon4,
             )
         if self.zonenumber == 4:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_zone_status,
-                self._data_handler.get_device(self._sn).mul_auto,
-                self._data_handler.get_device(self._sn).mul_en,
-                self._data_handler.get_device(self._sn).mul_zon1,
-                self._data_handler.get_device(self._sn).mul_zon2,
-                self._data_handler.get_device(self._sn).mul_zon3,
+                self.device.set_zone_status,
+                self.device.mul_auto,
+                self.device.mul_en,
+                self.device.mul_zon1,
+                self.device.mul_zon2,
+                self.device.mul_zon3,
                 value,
-                self._data_handler.get_device(self._sn).mulpro_zon1,
-                self._data_handler.get_device(self._sn).mulpro_zon2,
-                self._data_handler.get_device(self._sn).mulpro_zon3,
-                self._data_handler.get_device(self._sn).mulpro_zon4,
-                self._sn,
+                self.device.mulpro_zon1,
+                self.device.mulpro_zon2,
+                self.device.mulpro_zon3,
+                self.device.mulpro_zon4,
             )
 
     @property
     def native_value(self):
         """Return value."""
         if self.zonenumber == 1:
-            return self._data_handler.get_device(self._sn).mul_zon1
+            return self.device.mul_zon1
         if self.zonenumber == 2:
-            return self._data_handler.get_device(self._sn).mul_zon2
+            return self.device.mul_zon2
         if self.zonenumber == 3:
-            return self._data_handler.get_device(self._sn).mul_zon3
+            return self.device.mul_zon3
         if self.zonenumber == 4:
-            return self._data_handler.get_device(self._sn).mul_zon4
+            return self.device.mul_zon4
         return 0
 
 
@@ -309,81 +258,78 @@ class SunseekerMulNumber(SunseekerEntity, NumberEntity):
         self._sn = self.coordinator.devicesn
         self.icon = "mdi:map"
         self.mulnumber = mulnumber
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         if self.mulnumber == 1:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_zone_status,
-                self._data_handler.get_device(self._sn).mul_auto,
-                self._data_handler.get_device(self._sn).mul_en,
-                self._data_handler.get_device(self._sn).mul_zon1,
-                self._data_handler.get_device(self._sn).mul_zon2,
-                self._data_handler.get_device(self._sn).mul_zon3,
-                self._data_handler.get_device(self._sn).mul_zon4,
+                self.device.set_zone_status,
+                self.device.mul_auto,
+                self.device.mul_en,
+                self.device.mul_zon1,
+                self.device.mul_zon2,
+                self.device.mul_zon3,
+                self.device.mul_zon4,
                 value,
-                self._data_handler.get_device(self._sn).mulpro_zon2,
-                self._data_handler.get_device(self._sn).mulpro_zon3,
-                self._data_handler.get_device(self._sn).mulpro_zon4,
-                self._sn,
+                self.device.mulpro_zon2,
+                self.device.mulpro_zon3,
+                self.device.mulpro_zon4,
             )
         if self.mulnumber == 2:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_zone_status,
-                self._data_handler.get_device(self._sn).mul_auto,
-                self._data_handler.get_device(self._sn).mul_en,
-                self._data_handler.get_device(self._sn).mul_zon1,
-                self._data_handler.get_device(self._sn).mul_zon2,
-                self._data_handler.get_device(self._sn).mul_zon3,
-                self._data_handler.get_device(self._sn).mul_zon4,
-                self._data_handler.get_device(self._sn).mulpro_zon1,
+                self.device.set_zone_status,
+                self.device.mul_auto,
+                self.device.mul_en,
+                self.device.mul_zon1,
+                self.device.mul_zon2,
+                self.device.mul_zon3,
+                self.device.mul_zon4,
+                self.device.mulpro_zon1,
                 value,
-                self._data_handler.get_device(self._sn).mulpro_zon3,
-                self._data_handler.get_device(self._sn).mulpro_zon4,
-                self._sn,
+                self.device.mulpro_zon3,
+                self.device.mulpro_zon4,
             )
         if self.mulnumber == 3:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_zone_status,
-                self._data_handler.get_device(self._sn).mul_auto,
-                self._data_handler.get_device(self._sn).mul_en,
-                self._data_handler.get_device(self._sn).mul_zon1,
-                self._data_handler.get_device(self._sn).mul_zon2,
-                self._data_handler.get_device(self._sn).mul_zon3,
-                self._data_handler.get_device(self._sn).mul_zon4,
-                self._data_handler.get_device(self._sn).mulpro_zon1,
-                self._data_handler.get_device(self._sn).mulpro_zon2,
+                self.device.set_zone_status,
+                self.device.mul_auto,
+                self.device.mul_en,
+                self.device.mul_zon1,
+                self.device.mul_zon2,
+                self.device.mul_zon3,
+                self.device.mul_zon4,
+                self.device.mulpro_zon1,
+                self.device.mulpro_zon2,
                 value,
-                self._data_handler.get_device(self._sn).mulpro_zon4,
-                self._sn,
+                self.device.mulpro_zon4,
             )
         if self.mulnumber == 4:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_zone_status,
-                self._data_handler.get_device(self._sn).mul_auto,
-                self._data_handler.get_device(self._sn).mul_en,
-                self._data_handler.get_device(self._sn).mul_zon1,
-                self._data_handler.get_device(self._sn).mul_zon2,
-                self._data_handler.get_device(self._sn).mul_zon3,
-                self._data_handler.get_device(self._sn).mul_zon4,
-                self._data_handler.get_device(self._sn).mulpro_zon1,
-                self._data_handler.get_device(self._sn).mulpro_zon2,
-                self._data_handler.get_device(self._sn).mulpro_zon3,
+                self.device.set_zone_status,
+                self.device.mul_auto,
+                self.device.mul_en,
+                self.device.mul_zon1,
+                self.device.mul_zon2,
+                self.device.mul_zon3,
+                self.device.mul_zon4,
+                self.device.mulpro_zon1,
+                self.device.mulpro_zon2,
+                self.device.mulpro_zon3,
                 value,
-                self._sn,
             )
 
     @property
     def native_value(self):
         """Return value."""
         if self.mulnumber == 1:
-            return self._data_handler.get_device(self._sn).mulpro_zon1
+            return self.device.mulpro_zon1
         if self.mulnumber == 2:
-            return self._data_handler.get_device(self._sn).mulpro_zon2
+            return self.device.mulpro_zon2
         if self.mulnumber == 3:
-            return self._data_handler.get_device(self._sn).mulpro_zon3
+            return self.device.mulpro_zon3
         if self.mulnumber == 4:
-            return self._data_handler.get_device(self._sn).mulpro_zon4
+            return self.device.mulpro_zon4
         return 0
 
 
@@ -411,19 +357,19 @@ class SunseekerBladespeedNumber(SunseekerEntity, NumberEntity):
         self._sn = self.coordinator.devicesn
         self._attr_mode = "box"
         self.icon = "mdi:saw-blade"
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_blade_speed,
+            self.device.set_blade_speed,
             int(value),
-            self._sn,
         )
 
     @property
     def native_value(self):
         """Return value."""
-        return self._data_handler.get_device(self._sn).blade_speed
+        return self.device.blade_speed
 
 
 class SunseekerBladeheightNumber(SunseekerEntity, NumberEntity):
@@ -450,19 +396,19 @@ class SunseekerBladeheightNumber(SunseekerEntity, NumberEntity):
         self._sn = self.coordinator.devicesn
         self._attr_mode = "box"
         self.icon = "mdi:saw-blade"
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_blade_height,
+            self.device.set_blade_height,
             int(value),
-            self._sn,
         )
 
     @property
     def native_value(self):
         """Return value."""
-        return self._data_handler.get_device(self._sn).blade_height
+        return self.device.blade_height
 
 
 class SunseekerPlanangleNumber(SunseekerEntity, NumberEntity):
@@ -489,20 +435,20 @@ class SunseekerPlanangleNumber(SunseekerEntity, NumberEntity):
         self._sn = self.coordinator.devicesn
         self._attr_mode = "box"
         self.icon = "mdi:angle-acute"
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_plan_mode,
-            self._data_handler.get_device(self._sn).plan_mode,
+            self.device.set_plan_mode,
+            self.device.plan_mode,
             int(value),
-            self._sn,
         )
 
     @property
     def native_value(self):
         """Return value."""
-        return self._data_handler.get_device(self._sn).plan_angle
+        return self.device.plan_angle
 
 
 class SunseekerCustomBladeheightNumber(SunseekerEntity, NumberEntity):
@@ -536,14 +482,14 @@ class SunseekerCustomBladeheightNumber(SunseekerEntity, NumberEntity):
         self.zoneid = zoneid
         self.zonename = zonename
         self.zone = self.device.get_zone(zoneid)
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         self.zone.blade_height = int(value)
         await self.hass.async_add_executor_job(
-            self._data_handler.set_custon_property,
+            self.device.set_custon_property,
             self.zone,
-            self._sn,
         )
         self.async_write_ha_state()
 
@@ -589,9 +535,8 @@ class SunseekerCustomBladespeedNumber(SunseekerEntity, NumberEntity):
         """Update the current value."""
         self.zone.blade_speed = int(value)
         await self.hass.async_add_executor_job(
-            self._data_handler.set_custon_property,
+            self.device.set_custon_property,
             self.zone,
-            self._sn,
         )
         self.async_write_ha_state()
 
@@ -637,9 +582,8 @@ class SunseekerCustomPlanangleNumber(SunseekerEntity, NumberEntity):
         """Update the current value."""
         self.zone.plan_angle = int(value)
         await self.hass.async_add_executor_job(
-            self._data_handler.set_custon_property,
+            self.device.set_custon_property,
             self.zone,
-            self._sn,
         )
         self.async_write_ha_state()
 

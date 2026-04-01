@@ -22,7 +22,7 @@ from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import APPTYPE_OLD, APPTYPE_X, DATAHANDLER, DH, DOMAIN, ROBOTS
+from .const import APPTYPE_OLD, DATAHANDLER, DH, DOMAIN, MODEL_X, ROBOTS
 from .sunseeker import SunseekerRoboticmower
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_mqtt import mqtt_update_values
@@ -287,12 +287,14 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             # update_interval=timedelta(seconds=5),  # 60 * 60),
         )
         self.region = region
-        self.apptype = apptype
+        # self.apptype = apptype
         self.brand = brand
         self.always_update = True
         self.data_handler = data_handler
         self.devicesn = devicesn
         self.device: SunseekerDevice = self.data_handler.get_device(devicesn)
+        self.model = self.device.model
+        self.apptype = self.device.apptype
         self.device.dataupdated = self.dataupdated
         self.schedulefilepath = os.path.join(  # noqa: PTH118
             self.hass.config.config_dir,
@@ -318,17 +320,17 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.add_job(self.set_schedule_data)
             self.hass.add_job(self.schedule_file_exits)
             self.hass.add_job(self.schedule_load_data)
-        self.hass.add_job(self.device.reload_maps, 0)
+        self.hass.add_job(self.device.map.reload_maps, 0)
         self.forceheat = False
         self.forcewifi = False
         getheat = False
         getwifi = False
-        if self.device.apptype == APPTYPE_X:
-            if not self.device.heatmap_url:
+        if self.device.model == MODEL_X:
+            if not self.device.map.heatmap_url:
                 self.hass.add_job(self.load_image, self.heatimagefilepath, 0)
             else:
                 getheat = True
-            if not self.device.wifimap_url:
+            if not self.device.map.wifimap_url:
                 self.hass.add_job(self.load_image, self.wifiimagefilepath, 1)
             else:
                 getwifi = True
@@ -434,17 +436,17 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         """Load image."""
         try:
             if target == 0:
-                if self.device.heatmap:
+                if self.device.map.heatmap:
                     return
             elif target == 1:
-                if self.device.wifimap:
+                if self.device.map.wifimap:
                     return
             image = await self.hass.async_add_executor_job(Image.open, imagefilepath)
             if target == 0:
-                self.device.heatmap = image
+                self.device.map.heatmap = image
                 self.forceheat = True
             elif target == 1:
-                self.device.wifimap = image
+                self.device.map.wifimap = image
                 self.forcewifi = True
         except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Load image failed: {ex}")  # noqa: G004
@@ -475,16 +477,16 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.add_job(self.save_schedule_data)
         if uv.live_move_update:
             self.hass.add_job(
-                self.device.generate_livemap,
-                self.device.mower_pos_x,
-                self.device.mower_pos_y,
+                self.device.map.generate_livemap,
+                self.device.map.mower_pos_x,
+                self.device.map.mower_pos_y,
             )
         if uv.fetch_new_map_data:
             self.hass.add_job(self.get_map_data, devicesn)
         if uv.livemap_update and uv.map_update:
-            self.hass.add_job(self.device.reload_maps, 0)
+            self.hass.add_job(self.device.map.reload_maps, 0)
         elif uv.livemap_update:
-            self.hass.add_job(self.device.generate_livemap)
+            self.hass.add_job(self.device.map.generate_livemap)
         if uv.heatmap:
             self.hass.add_job(self.get_heat_map, devicesn)
             if self.heatmap_entity:
@@ -505,19 +507,22 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
 
     async def get_map_data(self, snr):
         """Function to call none async."""
-        await self.hass.async_add_executor_job(self.data_handler.get_map_data, snr)
+        ad = self.data_handler.get_device(snr)
+        await self.hass.async_add_executor_job(ad.map.get_map_data)
 
     async def get_heat_map(self, snr):
         """Function to call none async."""
-        await self.hass.async_add_executor_job(self.data_handler.get_heat_map, snr)
-        if self.device.heatmap:
-            await self.save_image(self.device.heatmap, self.heatimagefilepath)
+        ad = self.data_handler.get_device(snr)
+        await self.hass.async_add_executor_job(ad.map.get_heat_map)
+        if self.device.map.heatmap:
+            await self.save_image(self.device.map.heatmap, self.heatimagefilepath)
 
     async def get_wifi_map(self, snr):
         """Function to call none async."""
-        await self.hass.async_add_executor_job(self.data_handler.get_wifi_map, snr)
-        if self.device.wifimap:
-            await self.save_image(self.device.wifimap, self.wifiimagefilepath)
+        ad = self.data_handler.get_device(snr)
+        await self.hass.async_add_executor_job(ad.map.get_wifi_map)
+        if self.device.map.wifimap:
+            await self.save_image(self.device.map.wifimap, self.wifiimagefilepath)
 
     @property
     def dsn(self):
@@ -546,7 +551,8 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
 
     def update_device(self):
         """Update device."""
-        self.data_handler.update_devices(self.devicesn)
+        ad = self.data_handler.get_device(self.devicesn)
+        ad.update_devices()
 
     async def _async_update_data(self):
         try:

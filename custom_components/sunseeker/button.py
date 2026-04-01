@@ -8,7 +8,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import APPTYPE_OLD, APPTYPE_V, APPTYPE_X
+from .const import MODEL_OLD, MODEL_V, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -16,10 +16,6 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
-
-    Apptype = ""
-    for coordinator in robot_coordinators(hass, entry):
-        Apptype = coordinator.data_handler.apptype
 
     async_add_entities(
         [
@@ -39,42 +35,37 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-    if Apptype == APPTYPE_OLD:
-        async_add_entities(
-            [
-                SunseekerButton(coordinator, "Border", "border", "sunseeker_border")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
 
-    if Apptype in [APPTYPE_V, APPTYPE_X]:
-        async_add_entities(
-            [
-                SunseekerButton(coordinator, "Stop", "stop", "sunseeker_stop")
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-    if Apptype == APPTYPE_X:
-        async_add_entities(
-            [
-                SunseekerButton(
-                    coordinator, "Reset blade", "reset_blade", "sunseeker_reset_blade"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-    if Apptype == APPTYPE_X:
-        async_add_entities(
-            [
-                SunseekerButton(
-                    coordinator,
-                    "Reset bladeplade",
-                    "reset_bladeplade",
-                    "sunseeker_reset_bladeplade",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_OLD:
+            async_add_entities(
+                [SunseekerButton(coordinator, "Border", "border", "sunseeker_border")]
+            )
+
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model in [MODEL_V, MODEL_X]:
+            async_add_entities(
+                [SunseekerButton(coordinator, "Stop", "stop", "sunseeker_stop")]
+            )
+
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_X:
+            async_add_entities(
+                [
+                    SunseekerButton(
+                        coordinator,
+                        "Reset blade",
+                        "reset_blade",
+                        "sunseeker_reset_blade",
+                    ),
+                    SunseekerButton(
+                        coordinator,
+                        "Reset bladeplade",
+                        "reset_bladeplade",
+                        "sunseeker_reset_bladeplade",
+                    ),
+                ]
+            )
 
 
 class SunseekerButton(SunseekerEntity, ButtonEntity):
@@ -97,27 +88,22 @@ class SunseekerButton(SunseekerEntity, ButtonEntity):
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_press(self) -> None:
         """Handle the button press."""
         if self._valuepair == "home":
-            await self.hass.async_add_executor_job(self._data_handler.dock, self._sn)
+            await self.hass.async_add_executor_job(self.device.dock)
         elif self._valuepair == "start":
             zone = None
-            await self.hass.async_add_executor_job(
-                self._data_handler.start_mowing, self._sn, zone
-            )
+            await self.hass.async_add_executor_job(self.device.start_mowing, zone)
         elif self._valuepair == "pause":
-            await self.hass.async_add_executor_job(self._data_handler.pause, self._sn)
+            await self.hass.async_add_executor_job(self.device.pause)
         elif self._valuepair == "border":
-            await self.hass.async_add_executor_job(self._data_handler.border, self._sn)
+            await self.hass.async_add_executor_job(self.device.border)
         elif self._valuepair == "stop":
-            await self.hass.async_add_executor_job(self._data_handler.stop, self._sn)
+            await self.hass.async_add_executor_job(self.device.stop)
         elif self._valuepair == "reset_bladeplade":
-            await self.hass.async_add_executor_job(
-                self._data_handler.set_reset_bladeplade, self._sn
-            )
+            await self.hass.async_add_executor_job(self.device.set_reset_bladeplade)
         elif self._valuepair == "reset_blade":
-            await self.hass.async_add_executor_job(
-                self._data_handler.set_reset_blade, self._sn
-            )
+            await self.hass.async_add_executor_job(self.device.set_reset_blade)

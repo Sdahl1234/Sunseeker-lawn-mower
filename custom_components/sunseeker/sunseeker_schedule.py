@@ -1,7 +1,15 @@
 """SunseekerPy."""
 
+import json
 import logging
 import time
+from typing import TYPE_CHECKING, Any
+
+import requests
+
+if TYPE_CHECKING:
+    from .sunseeker import SunseekerDevice
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,6 +35,7 @@ class Sunseeker_new_schedule:
 
     def __init__(self) -> None:
         """Init."""
+        self.mower: SunseekerDevice
         self.schedule_pause: bool = False
         self.schedule_custom: bool = False
         self.schedule_recommended: bool = False
@@ -310,6 +319,113 @@ class Sunseeker_new_schedule:
                     item["region_id"] = self.get_id_by_name(entry["locations"])
                 time_list.append(item)
         return time_list
+
+    def parse_schedule_data_V1(self, data):
+        """Parsing schedule data V model."""
+        need_update = False
+
+        def hms_to_seconds(value: str) -> int:
+            hours, minutes, seconds = map(int, value.split(":"))
+            return hours * 3600 + minutes * 60 + seconds
+
+        def update_var_if_changed(old_value: Any, new_value: Any) -> Any:
+            """Update a variable if the new value is different."""
+            nonlocal need_update
+            if isinstance(old_value, dict) and isinstance(new_value, dict):
+                if old_value != new_value:
+                    _LOGGER.debug(
+                        f"dict - Old_value: {old_value} New_value: {new_value}"  # noqa: G004
+                    )
+                    need_update = True
+                    return new_value.copy()
+                return old_value
+            if isinstance(old_value, list) and isinstance(new_value, list):
+                if old_value != new_value:
+                    _LOGGER.debug(
+                        f"list - Old_value: {old_value} New_value: {new_value}"  # noqa: G004
+                    )
+                    need_update = True
+                    return new_value.copy()
+                return old_value
+            if old_value != new_value:
+                _LOGGER.debug(f"simple - Old_value: {old_value} New_value: {new_value}")  # noqa: G004
+                need_update = True
+                return new_value
+            return old_value
+
+        if "pause" in data:
+            self.schedule_pause = data.get("pause")
+        if "deviceSchedules" in data["data"]:
+            ctime = data.get("data").get("deviceSchedules")
+            if ctime:
+                for day in self.days:
+                    day.enabled = False
+                oldday = -1
+                index = 1
+                for day in ctime:
+                    day_of_week = day.get("dayOfWeek")
+                    if oldday == day_of_week:
+                        index = index + 1
+                    else:
+                        index = 1
+                    oldday = day_of_week
+
+                    dayobj = self.GetDay(day_of_week, index)
+                    if dayobj:
+                        dayobj.enabled = True
+                        dayobj.need_fllow_boader = update_var_if_changed(
+                            dayobj.need_fllow_boader,
+                            day.get(
+                                "trimFlag",
+                                dayobj.need_fllow_boader,
+                            ),
+                        )
+                        start = hms_to_seconds(day.get("startAt"))
+                        dayobj.start = update_var_if_changed(
+                            dayobj.start,
+                            start,
+                        )
+                        end = hms_to_seconds(day.get("endAt"))
+                        dayobj.end = update_var_if_changed(
+                            dayobj.end,
+                            end,
+                        )
+
+    def Get_schedule_data_V1(self):
+        """Get schedule data for V1."""
+        # self.url + self.cmdurl + f"device-schedule/{deviceId}"
+        endpoint = (
+            f"/app_wirelessv1_mower/wirelessv1/device-schedule/{self.mower.deviceId}"
+        )
+        try:
+            url_ = self.mower.url + endpoint
+            headers_ = {
+                "Content-Type": "application/json",
+                "Accept-Language": self.mower.language,
+                "Authorization": "bearer " + self.mower.access_token,
+                "Host": self.mower.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get schedule data header: {headers_} url: {url_}")  # noqa: G004
+            response = requests.get(
+                url=url_,
+                headers=headers_,
+                timeout=10,
+            )
+            response_data = response.json()
+            self.parse_schedule_data_V1(response_data)
+            logdata = json.dumps(response_data)
+            _LOGGER.debug(f"Get device schedule {logdata}")  # noqa: G004
+
+            if response_data["code"] != 0:
+                _LOGGER.debug("Error getting device schedule")
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"Get device schedule: failed {error}")  # noqa: G004
 
 
 class SunseekerScheduleDay:
