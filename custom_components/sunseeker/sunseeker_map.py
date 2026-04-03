@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from PIL import Image, ImageDraw
 import requests
 
-from .const import APPTYPE_X
+from .const import MODEL_X
 
 if TYPE_CHECKING:
     from .sunseeker import SunseekerDevice
@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 class SunseekerMap:
     """Class for a single Sunseeker robot."""
 
-    def __init__(self, Devicesn) -> None:
+    def __init__(self) -> None:
         """Init."""
 
         self.mower: SunseekerDevice
@@ -386,12 +386,18 @@ class SunseekerMap:
                 timeout=10,
             )
             response_data = response.json()
+            _LOGGER.debug(f"Map data: {json.dumps(response_data)}")  # noqa: G004
+
             mapurl = response_data["data"].get("mapPathFileUrl")
             realPathFileUlr = response_data["data"].get("realPathFileUlr")
             self.mappathdata = response_data["data"].get("realPathData")
             if mapurl:
                 response = requests.get(mapurl, timeout=10)
                 if response.status_code == 200:
+                    response_data = response.json()
+                    # _LOGGER.debug(
+                    #    f"Map data mapPathFileUrl: {json.dumps(response_data)}"
+                    # )
                     self.image_data = response.content
                     self.image_state = "Loaded"
                     _LOGGER.debug(f"Map data loaded for {self.mower.devicesn}")  # noqa: G004
@@ -399,6 +405,9 @@ class SunseekerMap:
                 response = requests.get(realPathFileUlr, timeout=10)
                 if response.status_code == 200:
                     self.realPathmapdata = response.json()
+                    # _LOGGER.debug(
+                    #    f"Map data realPathFileUlr: {json.dumps(self.realPathmapdata)}"
+                    # )
                     _LOGGER.debug(f"Map path data loaded for {self.mower.devicesn}")  # noqa: G004
 
             _LOGGER.debug(json.dumps(response_data))
@@ -450,7 +459,7 @@ class SunseekerMap:
 
     def InitValues(self, settings) -> None:
         """Init values at upstart."""
-        if self.mower.apptype == APPTYPE_X:
+        if self.mower.model == MODEL_X:
             if not self.robot_image:
                 self.robot_image = self.load_robot_image()
             robotpos = settings["data"].get("robotPos")

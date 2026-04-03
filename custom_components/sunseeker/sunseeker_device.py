@@ -166,6 +166,8 @@ class SunseekerDevice:
         else:
             self.rain_status = int(self.devicedata["data"].get("rainStatusCode"))
 
+        self.InitMapAndZoneData()
+
         if self.apptype == APPTYPE_OLD:
             self.station = self.devicedata["data"].get("stationFlag")
             if self.devicedata["data"].get("onlineFlag"):
@@ -223,6 +225,9 @@ class SunseekerDevice:
                         zone.plan_angle = z.get("plan_angle", zone.plan_angle)
 
             if self.model == MODEL_X:
+                self.plan_mode = self.settings["data"].get("planMode", 0)
+                self.plan_angle = self.settings["data"].get("planValue", 0)
+
                 ci = self.settings["data"].get("consumableItemsObject", None)
                 if ci:
                     cutter = ci.get("cutter", None)
@@ -251,8 +256,6 @@ class SunseekerDevice:
         else:
             self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
 
-        self.InitMapAndZoneData()
-
     def get_zone(self, id) -> SunseekerZone:
         """Get the zone obj."""
         for zone in self.zonelist:
@@ -279,7 +282,7 @@ class SunseekerDevice:
             url_ = self.url + endpoint
             headers_ = {
                 "Accept-Language": self.language,
-                "Authorization": "bearer " + self.session["access_token"],
+                "Authorization": "bearer " + self.access_token,
                 "Host": self.host,
                 "Connection": "Keep-Alive",
                 "User-Agent": "okhttp/4.4.1",
@@ -302,7 +305,7 @@ class SunseekerDevice:
                 self.dataupdated(self.devicesn)
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"Get settings: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Get settings: failed {error}")  # noqa: G004
 
     def update_devices(self):
         """Update device."""
@@ -386,7 +389,86 @@ class SunseekerDevice:
                 return
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"Get devAllProperties: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Get devAllProperties: failed {error}")  # noqa: G004
+
+    def getSelectRegionID(self):
+        """Get getSelectRegionID. Data received via mqtt."""
+        if self.model == MODEL_V:
+            return
+        endpoint = self.cmdurl + "get_property"
+        try:
+            url_ = self.url + endpoint
+            data_ = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "getSelectRegionID",
+                "key": "select_region_id",
+                "method": "get_property",
+            }
+            headers_ = {
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Connection": "Keep-Alive",
+            }
+            _LOGGER.debug(
+                f"Get getSelectRegionID header: {headers_} url: {url_} data: {data_}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url_,
+                headers=headers_,
+                json=data_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+
+            if response_data["code"] != 0:
+                _LOGGER.debug(f"Error getting getSelectRegionID for {self.devicesn}")  # noqa: G004
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"Get getSelectRegionID: failed {error}")  # noqa: G004
+
+    def getAllPath(self):
+        """Get getSelectRegionID. Data received via mqtt."""
+        if self.model == MODEL_V:
+            return
+        endpoint = self.cmdurl + "get_property"
+        try:
+            url_ = self.url + endpoint
+            data_ = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "getSelectRegionID",
+                "key": "all_path",
+                "map_file": "Wireless_Serialnum_num.json",
+                "method": "get_property",
+            }
+            headers_ = {
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Connection": "Keep-Alive",
+            }
+            _LOGGER.debug(
+                f"Get getAllPath header: {headers_} url: {url_} data: {data_}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url_,
+                headers=headers_,
+                json=data_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+
+            if response_data["code"] != 0:
+                _LOGGER.debug(f"Error getting getAllPath for {self.devicesn}")  # noqa: G004
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"Get getAllPath: failed {error}")  # noqa: G004
 
     def set_rain_status(self, state: bool, delaymin: int):
         """Set rain status."""
@@ -450,7 +532,7 @@ class SunseekerDevice:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
             self.dataupdated(self.devicesn)
-            _LOGGER.debug(f"Set rain status: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Set rain status: failed {error}")  # noqa: G004
 
     def set_state_change(self, command, state, zone=None):
         """Old Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Border."""
@@ -539,7 +621,7 @@ class SunseekerDevice:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.device.error_text = error
             self.device.dataupdated(self.devicesn)
-            _LOGGER.debug(f"Set state change: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Set state change: failed {error}")  # noqa: G004
 
     def start_mowing(self, zone=None):
         """Start Mowing."""
@@ -687,7 +769,7 @@ class SunseekerDevice:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
             self.dataupdated(self.devicesn)
-            _LOGGER.debug(f"Set_schedule: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Set_schedule: failed {error}")  # noqa: G004
 
     def set_zone_status(
         self,
@@ -755,7 +837,7 @@ class SunseekerDevice:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
             self.dataupdated(self.devicesn)
-            _LOGGER.debug(f"Set zone status: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Set zone status: failed {error}")  # noqa: G004
 
     def set_border_freq(self, freq: int):
         """Border freq."""
@@ -897,16 +979,19 @@ class SunseekerDevice:
         _LOGGER.debug(timedata)
         if self.model == MODEL_X:
             data = {
+                "action": 1,
                 "appId": self.userid,
+                "auto": False,
                 "deviceSn": self.devicesn,
                 "id": "setTimeTactics",
                 "key": "time_tactics",
-                "method": "setSchedule",
-                "time_custom_flag": timedata.get("user_defined"),
+                "method": "set_property",  # "setSchedule",
+                "pause": timedata.get("pause"),
                 "recommended_time_flag": timedata.get("recommended_time_work"),
                 "time": self.Schedule_new.generate_enabled_time_list(timedata),
+                "time_custom_flag": timedata.get("user_defined"),
+                "time_work_repeat": False,
                 "time_zone": self.Schedule_new.timezone,
-                "pause": timedata.get("pause"),
             }
         else:
             data = {
@@ -1005,6 +1090,18 @@ class SunseekerDevice:
             }
             # self.set_property(data)
 
+    def set_custom_flag_on(self):
+        """Set custom flag."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setCustomFlag",
+            "key": "custom_flag",
+            "method": "set_property",
+            "value": True,
+        }
+        self.set_property(data)
+
     def set_custom_flag(self, on: bool):
         """Set custom flag."""
         data = {
@@ -1066,7 +1163,7 @@ class SunseekerDevice:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
             self.dataupdated(self.devicesn)
-            _LOGGER.debug(f"Set action: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Set action: failed {error}")  # noqa: G004
 
     def set_property(self, data):
         """Set property status."""
@@ -1106,7 +1203,7 @@ class SunseekerDevice:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
             self.dataupdated(self.devicesn)
-            _LOGGER.debug(f"Set property: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Set property: failed {error}")  # noqa: G004
 
     def set_custon_property(self, zone: SunseekerZone):
         """Set custom zones."""
@@ -1160,7 +1257,7 @@ class SunseekerDevice:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
             self.dataupdated(self.devicesn)
-            _LOGGER.debug(f"Set property: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Set property: failed {error}")  # noqa: G004
 
     def set_return_path_V1(self, value: int):
         """Set return path V1."""

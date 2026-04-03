@@ -62,7 +62,6 @@ class SunseekermqttController:
     ) -> None:
         """Init."""
         self.Sunseeker: SunseekerRoboticmower = mower
-        self.firstMQTTmessage = True
         self.mqttdata = {}
         self.client_id = str(uuid.uuid4())
         self.mqtt_client = None
@@ -199,6 +198,17 @@ class SunseekermqttController:
         )
         self.mqtt_client_new.subscribe(sub, qos=0)
         _LOGGER.debug("MQTT new subscribe ok")
+
+        for device_ in self.Sunseeker.robotList:
+            device: SunseekerDevice = device_
+            thread = Thread(
+                target=device.get_dev_all_properties,
+            )
+            thread.start()
+            thread2 = Thread(
+                target=device.get_schedule_data,
+            )
+            thread2.start()
 
     def connect_mqtt(self):
         """Connect mqtt."""
@@ -596,6 +606,9 @@ class SunseekermqttController:
                     zone.plan_mode = self.setvalue(
                         nu, z, [], "plan_mode", zone.plan_mode
                     )
+                    zone.plan_angle = self.setvalue(
+                        nu, z, [], "plan_angle", zone.plan_angle
+                    )
                     zone.work_speed = self.setvalue(
                         nu, z, [], "work_speed", zone.work_speed
                     )
@@ -884,21 +897,6 @@ class SunseekermqttController:
 
     def handle_mqtt_message(self, message):
         """Thread to handle the messages."""
-
-        if (self.firstMQTTmessage) and self.apptype == APPTYPE_NEW:
-            _LOGGER.debug("First MQTT message")
-            self.firstMQTTmessage = False
-            for device_ in self.Sunseeker.robotList:
-                device: SunseekerDevice = device_
-                thread = Thread(
-                    target=device.get_dev_all_properties,
-                )
-                thread.start()
-                thread2 = Thread(
-                    target=self.Sunseeker.get_schedule_data,
-                    args=(device.devicesn,),
-                )
-                thread2.start()
 
         _LOGGER.debug("MQTT message: " + message.topic + " " + message.payload.decode())  # noqa: G003
         data = json.loads(message.payload.decode())

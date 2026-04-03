@@ -40,10 +40,11 @@ class SunseekerRoboticmower:
         #    "Old models", "Old"
         #    "X models", "New"
         #    "V models", "V1"
+        self.apptyoe = APPTYPE_OLD
         if apptype == "Old":
-            apptype = APPTYPE_OLD
+            self.apptype = APPTYPE_OLD
         else:
-            apptype = APPTYPE_NEW
+            self.apptype = APPTYPE_NEW
         self.username = email
         self.password = password
         self.deviceArray = []  # array of deviceSn
@@ -58,8 +59,8 @@ class SunseekerRoboticmower:
 
         self.login_ok: bool = False
         self.login_url = ""
-        self.url = self.getURL(apptype)
-        self.host = self.getHOST(apptype)
+        self.url = self.getURL(self.apptype)
+        self.host = self.getHOST(self.apptype)
 
         # if self.apptype == APPTYPE_V:
         #    self.cmdurl = CMDURL_V
@@ -107,7 +108,7 @@ class SunseekerRoboticmower:
             self.session = response_data
             return True  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"Login: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Login: failed {error}")  # noqa: G004
         return False
 
     def on_after_login(self):
@@ -116,24 +117,7 @@ class SunseekerRoboticmower:
         if self.apptype == APPTYPE_OLD:
             devicelist = self.get_device_list(APPTYPE_OLD, MODEL_OLD)
             if devicelist.get("data", []):
-                self.add_devices(devicelist)
-                mqtt_controller = SunseekermqttController(
-                    self,
-                    self.session["username"],
-                    self.session["user_id"],
-                    self.session["access_token"],
-                    self.region,
-                    self.apptype,
-                    MODEL_OLD,
-                    self.url,
-                )
-                self.mqtt_controllers.append(mqtt_controller)
-        else:
-            dtypes = [MODEL_V, MODEL_X]
-            for model in dtypes:
-                devicelist = self.get_device_list(self.apptype, model)
-                if devicelist.get("data", []):
-                    self.add_devices(devicelist, self.apptype, model)
+                if self.add_devices(devicelist):
                     mqtt_controller = SunseekermqttController(
                         self,
                         self.session["username"],
@@ -141,10 +125,27 @@ class SunseekerRoboticmower:
                         self.session["access_token"],
                         self.region,
                         self.apptype,
-                        model,
+                        MODEL_OLD,
                         self.url,
                     )
-                self.mqtt_controllers.append(mqtt_controller)
+                    self.mqtt_controllers.append(mqtt_controller)
+        else:
+            dtypes = [MODEL_X, MODEL_V]
+            for model in dtypes:
+                devicelist = self.get_device_list(self.apptype, model)
+                if devicelist.get("data", []):
+                    if self.add_devices(devicelist, self.apptype, model):
+                        mqtt_controller = SunseekermqttController(
+                            self,
+                            self.session["username"],
+                            self.session["user_id"],
+                            self.session["access_token"],
+                            self.region,
+                            self.apptype,
+                            model,
+                            self.url,
+                        )
+                        self.mqtt_controllers.append(mqtt_controller)
 
         for mc in self.mqtt_controllers:
             mc.Start_mqtt()
@@ -169,7 +170,7 @@ class SunseekerRoboticmower:
         """Get the host."""
         if apptype == APPTYPE_OLD:
             return HOST_OLD
-        if apptype == APPTYPE_OLD:
+        if apptype == APPTYPE_NEW:
             if self.region == "EU":
                 return HOST_XV_EU
             if self.region == "US":
@@ -184,38 +185,43 @@ class SunseekerRoboticmower:
             return CMDURL_X
         return ""
 
-    def add_devices(self, devicelist, apptype: str, model: str):
+    def add_devices(self, devicelist, apptype: str, model: str) -> bool:
         """Adds the devices from a devicelist."""
+        Added: bool = False
         for device in devicelist["data"]:
             device_sn = device["deviceSn"]
-            deviceId = device["deviceId"]
-            self.deviceArray.append(device_sn)
-            ad = SunseekerDevice(device_sn)
-            ad.access_token = self.session["access_token"]
-            ad.userid = self.session["user_id"]
-            ad.language = self.language
-            ad.deviceId = deviceId
-            ad.DeviceModel = device["deviceModelName"]
-            ad.ModelName = device.get("modelName", "")
-            ad.map.robot_image_url = device.get("picUrlDetail", None)
-            ad.DeviceName = device.get("deviceName", None)
-            # modelname = device.get("modelName", APPTYPE_OLD)
-            # if modelname in ["X3", "X5", "X7"]:
-            #     ad.apptype = APPTYPE_X
-            # elif modelname in ["V1", "V3", "V5"]:
-            #     ad.apptype = APPTYPE_V
-            # else:
-            #     ad.apptype = self.apptype
-            ad.apptype = apptype
-            ad.model = model
-            ad.url = self.getURL(apptype)
-            ad.host = self.getHOST(apptype)
-            ad.cmdurl = self.getCMDURL(model)
-            ad.DeviceWifiAddress = device.get("ipAddr", "")
-            ad.DeviceBluetooth = device.get("bluetoothMac", "")
-            self.robotList.append(ad)
-            ad.func_refesh_token = self.refresh_token_callback
-            ad.InitDevice()
+            # X models are on both servers, so only add it once
+            if device_sn not in self.deviceArray:
+                Added = True
+                deviceId = device["deviceId"]
+                self.deviceArray.append(device_sn)
+                ad = SunseekerDevice(device_sn)
+                ad.access_token = self.session["access_token"]
+                ad.userid = self.session["user_id"]
+                ad.language = self.language
+                ad.deviceId = deviceId
+                ad.DeviceModel = device["deviceModelName"]
+                ad.ModelName = device.get("modelName", "")
+                ad.map.robot_image_url = device.get("picUrlDetail", None)
+                ad.DeviceName = device.get("deviceName", None)
+                # modelname = device.get("modelName", APPTYPE_OLD)
+                # if modelname in ["X3", "X5", "X7"]:
+                #     ad.apptype = APPTYPE_X
+                # elif modelname in ["V1", "V3", "V5"]:
+                #     ad.apptype = APPTYPE_V
+                # else:
+                #     ad.apptype = self.apptype
+                ad.apptype = apptype
+                ad.model = model
+                ad.url = self.getURL(apptype)
+                ad.host = self.getHOST(apptype)
+                ad.cmdurl = self.getCMDURL(model)
+                ad.DeviceWifiAddress = device.get("ipAddr", "")
+                ad.DeviceBluetooth = device.get("bluetoothMac", "")
+                self.robotList.append(ad)
+                ad.func_refesh_token = self.refresh_token_callback
+                ad.InitDevice()
+        return Added
 
     def get_device_list(self, apptype: str, model: str):
         """Get device."""
@@ -225,7 +231,9 @@ class SunseekerRoboticmower:
         if model == MODEL_V:
             endpoint = "/app_wireless_mower/device-user/getCustomDevice?all=true"
         elif model == MODEL_X:
-            endpoint = "/app_wireless_mower/device-user/allDevice"
+            endpoint = (
+                "/app_wireless_mower/device-user/getCustomDevice?all=true"  # allDevice"
+            )
         try:
             url_ = url + endpoint
             headers_ = {
@@ -261,7 +269,7 @@ class SunseekerRoboticmower:
             return response_data  # noqa: TRY300
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"Get device list: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Get device list: failed {error}")  # noqa: G004
 
     def get_device(self, devicesn) -> SunseekerDevice | None:
         """Get the device object."""
@@ -333,7 +341,7 @@ class SunseekerRoboticmower:
             _LOGGER.debug("Refresh successful")
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"refresh_token failed {error}")  # noqa: G004
+            _LOGGER.error(f"refresh_token failed {error}")  # noqa: G004
 
     def unload(self):
         """Unload."""

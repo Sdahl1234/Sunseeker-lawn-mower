@@ -69,7 +69,7 @@ START_MOWING_SCHEMA = vol.Schema(
 )
 
 _LOGGER = logging.getLogger(__name__)
-# _LOGGER.level = logging.DEBUG
+_LOGGER.level = logging.DEBUG
 
 
 def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
@@ -102,8 +102,7 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: D103
                 if coordinator.devicesn == dsn:
                     device = coordinator.device
                     await hass.async_add_executor_job(
-                        coordinator.data_handler.set_schedule_new,
-                        device.devicesn,
+                        device.set_schedule_new,
                         schedule,
                     )
                     return
@@ -132,8 +131,7 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: D103
                     device = coordinator.device
                     zoneids = device.Schedule_new.get_id_by_name(zones)
                     await hass.async_add_executor_job(
-                        coordinator.data_handler.start_mowing,
-                        device.devicesn,
+                        device.start_mowing,
                         zoneids,
                     )
                     return
@@ -160,8 +158,7 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: D103
                 if coordinator.devicesn == dsn:
                     device = coordinator.device
                     await hass.async_add_executor_job(
-                        coordinator.data_handler.stop,
-                        device.devicesn,
+                        device.stop,
                     )
                     return
         raise HomeAssistantError(f"Device for {entity_id} not found")
@@ -466,7 +463,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         if need_update:
             self.hass.add_job(self.async_set_updated_data, None)
 
-        if self.device.map_updated and self.map_entity:
+        if self.device.map.map_updated and self.map_entity:
             _LOGGER.debug("map trigger update")
             self.hass.add_job(self.map_entity.trigger_update)
         if (

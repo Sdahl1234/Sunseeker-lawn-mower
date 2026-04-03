@@ -42,7 +42,7 @@ APPTYPE_NEW = "New app"
 # Mower models
 MODEL_OLD = "Old models"
 MODEL_X = "X models"
-MODEL_V = "Y models"
+MODEL_V = "V models"
 
 # URLS, HOST
 URL_OLD = "https://server.sk-robot.com/api"
