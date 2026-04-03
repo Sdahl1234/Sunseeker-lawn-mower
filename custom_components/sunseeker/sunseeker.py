@@ -3050,16 +3050,19 @@ class SunseekerRoboticmower:
         device = self.get_device(devicesn)
         if self.sub_apptype == "":
             data = {
+                "action": 1,
                 "appId": self.session["user_id"],
+                "auto": False,
                 "deviceSn": devicesn,
                 "id": "setTimeTactics",
                 "key": "time_tactics",
-                "method": "setSchedule",
-                "time_custom_flag": timedata.get("user_defined"),
+                "method": "set_property",  # "setSchedule",
+                "pause": timedata.get("pause"),
                 "recommended_time_flag": timedata.get("recommended_time_work"),
                 "time": device.Schedule_new.generate_enabled_time_list(timedata),
+                "time_custom_flag": timedata.get("user_defined"),
+                "time_work_repeat": False,
                 "time_zone": device.Schedule_new.timezone,
-                "pause": timedata.get("pause"),
             }
         else:
             data = {
