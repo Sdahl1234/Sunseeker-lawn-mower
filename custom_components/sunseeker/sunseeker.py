@@ -190,7 +190,14 @@ class SunseekerRoboticmower:
         Added: bool = False
         for device in devicelist["data"]:
             device_sn = device["deviceSn"]
-            # X models are on both servers, so only add it once
+            # X and V models are on both servers, so only add it once
+            if device["modelName"] in {"V1", "V3"} and model == MODEL_X:
+                continue
+            if (
+                device["modelName"] in {"X3", "X5", "X7", "S3", "S4", "S5"}
+                and model == MODEL_V
+            ):
+                continue
             if device_sn not in self.deviceArray:
                 Added = True
                 deviceId = device["deviceId"]
@@ -281,20 +288,6 @@ class SunseekerRoboticmower:
 
     def update(self):
         """Force HA to update sensors."""
-
-    def Update_single_day(
-        self, device: SunseekerDevice, daydata, dayindex: int
-    ) -> None:
-        """Update single day data."""
-        trim = daydata.get("Trimming")
-        index = 1
-        for slice_obj in daydata["slice"]:
-            day = device.Schedule_new.GetDay(dayindex, index)
-            day.enabled = True
-            day.start = slice_obj["start"] * 60
-            day.end = slice_obj["end"] * 60
-            day.need_fllow_boader = trim
-            index = index + 1
 
     def refresh_token_callback(self):
         """Callback from the device."""

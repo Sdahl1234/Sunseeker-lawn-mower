@@ -255,6 +255,20 @@ class SunseekermqttController:
         """On mqtt close."""
         _LOGGER.debug("MQTT closed")
 
+    def Update_single_day(
+        self, device: SunseekerDevice, daydata, dayindex: int
+    ) -> None:
+        """Update single day data."""
+        trim = daydata.get("Trimming")
+        index = 1
+        for slice_obj in daydata["slice"]:
+            day = device.Schedule_new.GetDay(dayindex, index)
+            day.enabled = True
+            day.start = slice_obj["start"] * 60
+            day.end = slice_obj["end"] * 60
+            day.need_fllow_boader = trim
+            index = index + 1
+
     def update_schedule_from_mqtt_v1(self, data, device: SunseekerDevice) -> None:
         """Update schedule on V models from mqqt using old format."""
         for day in device.Schedule_new.days:
