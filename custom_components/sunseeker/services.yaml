@@ -32,6 +32,31 @@ stop_mowing:
         entity:
           domain: lawn_mower
 
+set_pin:
+  name: Change pin
+  description: >
+    Change the mowers 4 digit pin code.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    old_pin:
+      name: Old pin code
+      description: The mowers old 4 digits pin code.
+      required: true
+      selector:
+        text:
+    new_pin:
+      name: New pin code
+      required: true
+      description: The mowers new 4 digits pin code.
+      selector:
+        text:
+
 set_schedule:
   name: Set schedule
   description: >

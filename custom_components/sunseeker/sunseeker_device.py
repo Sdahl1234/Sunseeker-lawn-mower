@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from threading import Timer
 
 import requests
@@ -351,6 +352,25 @@ class SunseekerDevice:
 
             _LOGGER.debug(url)
             _LOGGER.debug(error)
+
+    def change_pincode(self, oldpin: str, newpin: str):
+        """Change the pincode."""
+
+        def is_valid_pin(pin: str) -> bool:
+            return bool(re.fullmatch(r"[0-9]{4}", pin))
+
+        if not is_valid_pin(oldpin) or not is_valid_pin(newpin):
+            raise ValueError("PIN must be exactly 4 digits from 0 to 9")
+        data = {
+            "appId": self.userid,
+            "cmd": "set_password",
+            "deviceSn": self.devicesn,
+            "id": "resetPassword",
+            "method": "action",
+            "new_pwd": newpin,
+            "old_pwd": oldpin,
+        }
+        self.set_action(data)
 
     def get_dev_all_properties(self):
         """Get devAllProperties. Data received via mqtt."""
@@ -976,7 +996,7 @@ class SunseekerDevice:
 
     def set_schedule_new(self, timedata):
         """Set schedule from service call."""
-        _LOGGER.debug(timedata)
+        _LOGGER.debug(f"Servicecall data: {timedata}")  # noqa: G004
         if self.model == MODEL_X:
             data = {
                 "action": 1,
@@ -990,7 +1010,7 @@ class SunseekerDevice:
                 "recommended_time_flag": timedata.get("recommended_time_work"),
                 "time": self.Schedule_new.generate_enabled_time_list(timedata),
                 "time_custom_flag": timedata.get("user_defined"),
-                "time_work_repeat": False,
+                "time_work_repeat": self.time_work_repeat,
                 "time_zone": self.Schedule_new.timezone,
             }
         else:
@@ -1032,6 +1052,7 @@ class SunseekerDevice:
         if mode == 10:
             self.get_schedule_data()
 
+        # mode 0=no schedule, 1=recomended, 2=user_defined is Model X
         if mode == 0:
             data = {
                 "appId": self.userid,
@@ -1089,18 +1110,6 @@ class SunseekerDevice:
                 "value": False,
             }
             # self.set_property(data)
-
-    def set_custom_flag_on(self):
-        """Set custom flag."""
-        data = {
-            "appId": self.userid,
-            "deviceSn": self.devicesn,
-            "id": "setCustomFlag",
-            "key": "custom_flag",
-            "method": "set_property",
-            "value": True,
-        }
-        self.set_property(data)
 
     def set_custom_flag(self, on: bool):
         """Set custom flag."""

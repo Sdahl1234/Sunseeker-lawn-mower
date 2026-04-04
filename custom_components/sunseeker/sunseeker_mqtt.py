@@ -201,14 +201,16 @@ class SunseekermqttController:
 
         for device_ in self.Sunseeker.robotList:
             device: SunseekerDevice = device_
-            thread = Thread(
-                target=device.get_dev_all_properties,
-            )
-            thread.start()
-            thread2 = Thread(
-                target=device.get_schedule_data,
-            )
-            thread2.start()
+            if device.model in {MODEL_V, MODEL_X}:
+                thread2 = Thread(
+                    target=device.get_schedule_data,
+                )
+                thread2.start()
+                if device.model == MODEL_X:
+                    thread = Thread(
+                        target=device.get_dev_all_properties,
+                    )
+                    thread.start()
 
     def connect_mqtt(self):
         """Connect mqtt."""

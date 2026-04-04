@@ -46,6 +46,15 @@ PLATFORMS = [
 SERVICE_SET_SCHEDULE = "set_schedule"
 SERVICE_START_MOWING = "start_mowing"
 SERVICE_STOP_MOWING = "stop_mowing"
+SERVICE_SET_PIN = "set_pin"
+
+SET_PIN_SCHEMA = vol.Schema(
+    {
+        vol.Required("entity_id"): cv.entity_id,
+        vol.Required("old_pin"): cv.string,
+        vol.Required("new_pin"): cv.string,
+    }
+)
 
 SET_SCHEDULE_SCHEMA = vol.Schema(
     {
@@ -104,6 +113,34 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: D103
                     await hass.async_add_executor_job(
                         device.set_schedule_new,
                         schedule,
+                    )
+                    return
+        raise HomeAssistantError(f"Device for {entity_id} not found")
+
+    async def async_handle_set_pin(call: ServiceCall):
+        entity_id = call.data["entity_id"]
+        oldpin = call.data["old_pin"]
+        newpin = call.data["new_pin"]
+
+        # Find the entity and its coordinator
+        ent_reg = er.async_get(hass)
+        entry = ent_reg.async_get(entity_id)
+        if not entry:
+            raise HomeAssistantError(f"Entity {entity_id} not found")
+
+        # Find the coordinator/device for this entity
+        # The entity_id contains the device serial number (dsn)
+        dsn = entry.unique_id.split(".")[
+            2
+        ]  # Example: "Sunseeker_lawnmower.name.CE1234563534545"
+        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
+            robots = data.get(ROBOTS, [])
+            for coordinator_ in robots:
+                coordinator: SunseekerDataCoordinator = coordinator_
+                if coordinator.devicesn == dsn:
+                    device = coordinator.device
+                    await hass.async_add_executor_job(
+                        device.change_pincode, oldpin, newpin
                     )
                     return
         raise HomeAssistantError(f"Device for {entity_id} not found")
@@ -182,6 +219,12 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: D103
         SERVICE_STOP_MOWING,
         async_handle_mower_stop,
         schema=STOP_MOWING_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_PIN,
+        async_handle_set_pin,
+        schema=SET_PIN_SCHEMA,
     )
 
     return True
