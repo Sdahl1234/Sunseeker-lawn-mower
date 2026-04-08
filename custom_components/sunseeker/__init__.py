@@ -4,7 +4,6 @@ import asyncio
 import json
 import logging
 import os
-import time
 
 from PIL import Image
 import voluptuous as vol
@@ -594,24 +593,15 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
                 self.device.map.mower_pos_x,
                 self.device.map.mower_pos_y,
             )
-        mutex = 0
         if uv.fetch_new_map_data:
-            mutex = time.monotonic_ns()
-            self.device.map.get_map_data_done_loaded.append(mutex)
-            await self.hass.async_add_executor_job(self.device.map.get_map_info, mutex)
+            await self.hass.async_add_executor_job(self.device.map.get_map_info)
         if uv.livemap_update and uv.map_update:
-            await self.device.map.reload_maps(0, self.map_entity, mutex)
+            await self.device.map.reload_maps()
             await self.map_entity.trigger_update()
         elif uv.livemap_update:
             await self.device.map.generate_livemap()
         self.dataUpdating = False
         _LOGGER.debug(f"Image handler - end {self.devicesn}")  # noqa: G004
-
-    async def get_map_data(self, snr, mutex):
-        """Function to call none async."""
-        ad = self.data_handler.get_device(snr)
-        ad.map.get_map_data_done_loaded.append(mutex)
-        await self.hass.async_add_executor_job(ad.map.get_map_info, mutex)
 
     async def get_heat_map(self, snr):
         """Function to call none async."""

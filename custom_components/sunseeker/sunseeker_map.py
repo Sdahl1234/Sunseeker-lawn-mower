@@ -1,6 +1,5 @@
 """SunseekerMapPy."""
 
-import asyncio
 import importlib.resources
 from io import BytesIO
 import json
@@ -65,7 +64,6 @@ class SunseekerMap:
         self.work_color = (124, 252, 0)
         self.grass_color = (34, 139, 34)
         self.alert_color = (240, 128, 128)
-        self.get_map_data_done_loaded = []
 
     def load_charger_image(self) -> Image.Image:
         """Load robot.png from the integration folder."""
@@ -342,34 +340,18 @@ class SunseekerMap:
         self.image_state = "Loaded"
         self.map_updated = True
 
-    async def reload_maps(self, state, ImageEntity, mutex: int = 0):
+    async def reload_maps(self):
         """Reloads maps."""
-        # wait max 5 seconds for the map data to be loaded
-        _LOGGER.debug(
-            f"reload_maps: mutex: {mutex} mutexlist: {self.get_map_data_done_loaded}"  # noqa: G004
-        )
-        if mutex != 0:
-            for _ in range(50):
-                if mutex not in self.get_map_data_done_loaded:
-                    break
-                await asyncio.sleep(0.1)
-
-        if state == 0:  # Reload without requesting new map data
-            if self.image_data is not None:
-                _LOGGER.debug("reload_maps -> generate_map")
-                await self.generate_map()  # Opret nyt image med kort
-                _LOGGER.debug("reload_maps -> generate_path")
-                await self.generate_path()  # opret image med path på nyt kort
-                _LOGGER.debug("reload_maps -> generate_livemap")
-                await self.generate_livemap(
-                    self.mower_pos_x, self.mower_pos_y
-                )  # Opret live image med robot
-                self.image_state = "Loaded"
-                # if ImageEntity:
-                #    await ImageEntity.trigger_update()
-                #    # ImageEntity.state = datetime.now()
-                #    attributes = ImageEntity.extra_state_attributes
-                #    _LOGGER.debug(f"Image Atribute: {attributes}")
+        if self.image_data is not None:
+            _LOGGER.debug("reload_maps -> generate_map")
+            await self.generate_map()  # Opret nyt image med kort
+            _LOGGER.debug("reload_maps -> generate_path")
+            await self.generate_path()  # opret image med path på nyt kort
+            _LOGGER.debug("reload_maps -> generate_livemap")
+            await self.generate_livemap(
+                self.mower_pos_x, self.mower_pos_y
+            )  # Opret live image med robot
+            self.image_state = "Loaded"
 
     def get_heat_map(self):
         """Get heat map."""
@@ -429,7 +411,7 @@ class SunseekerMap:
         else:
             _LOGGER.debug("Skipping fetcing new map data, same url")
 
-    def get_map_info(self, mutex: int = 0):
+    def get_map_info(self):
         """Get map info data."""
         endpoint = f"/wireless_map/wireless_device/get?deviceSn={self.mower.devicesn}"
         try:
@@ -463,16 +445,11 @@ class SunseekerMap:
                 realPathFileUlr = response_data["data"].get("realPathFileUlr", None)
                 self.get_path_data(realPathFileUlr)
 
-            if mutex > 0:
-                _LOGGER.debug(
-                    f"mutex: {mutex} mutexlist: {self.get_map_data_done_loaded}"  # noqa: G004
-                )
-                self.get_map_data_done_loaded.remove(mutex)
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Get map for {self.mower.devicesn}: failed {error}")  # noqa: G004
 
-    def get_map_data2(self, mutex: int = 0):
+    def get_map_data2(self):
         """Get mapdata."""
         endpoint = f"/wireless_map/wireless_device/get?deviceSn={self.mower.devicesn}"
         try:
@@ -539,11 +516,6 @@ class SunseekerMap:
                         _LOGGER.debug(f"Map path data loaded for {self.mower.devicesn}")  # noqa: G004
 
                 # _LOGGER.debug(json.dumps(path_response_data))
-            if mutex > 0:
-                _LOGGER.debug(
-                    f"mutex: {mutex} mutexlist: {self.get_map_data_done_loaded}"  # noqa: G004
-                )
-                self.get_map_data_done_loaded.remove(mutex)
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Get map for {self.mower.devicesn}: failed {error}")  # noqa: G004
