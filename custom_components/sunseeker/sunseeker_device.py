@@ -140,7 +140,8 @@ class SunseekerDevice:
     def InitMapAndZoneData(self) -> None:
         """Init map and zone data."""
         if self.apptype == APPTYPE_NEW:
-            self.map.get_map_data()
+            # self.restore_map(1775429715801)
+            self.map.get_map_info()
             if self.map.image_data:
                 json_data = self.map.image_data
                 idata = json.loads(json_data)
@@ -625,11 +626,11 @@ class SunseekerDevice:
             response_data = response.json()
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
-                self.device.error_text = response_data.get("msg")
-                self.device.dataupdated(self.devicesn)
+                self.error_text = response_data.get("msg")
+                self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
-                self.device.error_text = ""
+                self.error_text = ""
 
             refresh_timeout = Timer(
                 10,
@@ -639,8 +640,8 @@ class SunseekerDevice:
             return  # noqa: TRY300
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-            self.device.error_text = error
-            self.device.dataupdated(self.devicesn)
+            self.error_text = error
+            self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set state change: failed {error}")  # noqa: G004
 
     def start_mowing(self, zone=None):
@@ -1267,6 +1268,222 @@ class SunseekerDevice:
             self.error_text = error
             self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set property: failed {error}")  # noqa: G004
+
+    def set_map(self, mapdata):
+        """Set map from service call."""
+        _LOGGER.debug(f"Servicecall data: {mapdata}")  # noqa: G004
+        self.set_obstacle_areas(mapdata)
+        self.set_forbidden_areas(mapdata)
+        self.set_safe_areas(mapdata)
+        self.set_passage_areas(mapdata)
+
+    def set_passage_areas(self, mapdata):
+        """Deletes the passage that has been deleted and add the one that is added."""
+        current_map = self.map.image_data
+        if not current_map:
+            return
+        current_data = json.loads(current_map)
+
+        # Create mapping of id -> points for old passages
+        old_passages = {}
+        for region in current_data.get("region_channel", []):
+            if "id" in region:
+                region_id = int(region["id"])
+                points = region.get("points", [])
+                # Normalize points to string for comparison
+                if isinstance(points, str):
+                    try:
+                        points = json.loads(points)
+                    except Exception:  # noqa: BLE001
+                        points = []
+                old_passages[region_id] = points
+
+        # Create mapping of id -> points for new passages
+        new_passages = {}
+        for region in mapdata.get("region_channel", []):
+            if "id" in region:
+                region_id = int(region["id"])
+                points = region.get("points", [])
+                # Normalize points to string for comparison
+                if isinstance(points, str):
+                    try:
+                        points = json.loads(points)
+                    except Exception:  # noqa: BLE001
+                        points = []
+                new_passages[region_id] = points
+
+        old_ids = set(old_passages.keys())
+        new_ids = set(new_passages.keys())
+
+        # Delete completely removed passages
+        removed_ids = old_ids - new_ids
+        for region_id in removed_ids:
+            self.delete_region(region=region_id, type=2)
+
+        # Handle new and modified passages
+        for region_id, new_points in new_passages.items():
+            if region_id not in old_ids:
+                # New passage: add it
+                self.add_passage(new_points)
+            elif old_passages[region_id] != new_points:
+                # Points changed: delete old and add new
+                self.delete_region(region=region_id, type=2)
+                self.add_passage(new_points)
+
+    def set_obstacle_areas(self, mapdata):
+        """Deletes the obstacle that has been deleted."""
+        current_map = self.map.image_data
+        if not current_map:
+            return
+        current_data = json.loads(current_map)
+        old_ids = {
+            int(region["id"])
+            for region in current_data.get("region_obstacle", [])
+            if "id" in region
+        }
+        new_ids = {
+            int(region["id"])
+            for region in mapdata.get("region_obstacle", [])
+            if "id" in region
+        }
+
+        removed_ids = old_ids - new_ids
+        for region_id in removed_ids:
+            self.delete_region(region=region_id, type=3)
+
+    def delete_region(self, region: int, type: int):
+        """Delete region on map."""
+        # type = 1 region_workzone
+        # type = 2 region_passage
+        # type = 3 region_obstacle
+        # type = 4 region_forbidden
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "deleteRegion",
+            "key": "region",
+            "method": "set_property",
+            "region_id": region,
+            "type": type,
+        }
+        _LOGGER.debug(f"delete region: {region} type: {type}")  # noqa: G004
+        self.set_property(data)
+
+    def rename_area(self, region_id: int, name: str, type: int):
+        """Rename area."""
+        # region_type = 4
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setRegionName",
+            "key": "region_name",
+            "method": "set_property",
+            "region_id": region_id,
+            "region_name": name,
+            "region_type": type,
+        }
+        self.set_property(data)
+
+    def backup_map(self, map_id: int):
+        """Backup map."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "cmd": "backup_map",
+            "id": "backupMap",
+            "map_id": map_id,
+            "method": "action",
+        }
+        self.set_action(data)
+
+    def restore_map(self, map_id: int):
+        """Backup map."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "cmd": "restore_map",
+            "id": "restoreMap",
+            "map_id": map_id,
+            "method": "action",
+        }
+        self.set_action(data)
+
+    def add_passage(self, points):
+        """Add passage."""
+        # points = [[-30.315, -12.273], [-21.944, -16.756]]
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "cmd": "draw_passage",
+            "id": "drawPassage",
+            "method": "action",
+            "points": points,
+        }
+        _LOGGER.debug(f"add passage, points: {points}")  # noqa: G004
+        self.set_action(data)
+
+    def set_forbidden_areas(self, mapdata):
+        """Set forbidden area."""
+        # allways a full list of all. old and new
+        # new map_id's is int(time() * 1000)
+        area_info = []
+        forbidden = mapdata.get("region_forbidden", [])
+        if forbidden:
+            for r in forbidden:
+                pts = r.get("points", [])
+                if isinstance(pts, str):
+                    try:
+                        pts = json.loads(pts)
+                    except Exception:  # noqa: BLE001
+                        pts = []
+                area_info.append(
+                    {
+                        "map_id": r["id"],
+                        "type": r.get("type", "normal"),
+                        "vertexs": pts,
+                    }
+                )
+        data = {
+            "appId": self.userid,
+            "area_info": area_info,
+            "deviceSn": self.devicesn,
+            "id": "setForbidArea",
+            "key": "forbid_area",
+            "method": "set_property",
+        }
+        _LOGGER.debug(f"set forbidden: {area_info}")  # noqa: G004
+        self.set_property(data)
+
+    def set_safe_areas(self, mapdata):
+        """Setting the region_placed_blank."""
+        # allways a full list of all. old and new
+        # new map_id's is int(time() * 1000)
+        area_info = []
+        safe = mapdata.get("region_placed_blank", [])
+        if safe:
+            for r in safe:
+                pts = r.get("points", [])
+                if isinstance(pts, str):
+                    try:
+                        pts = json.loads(pts)
+                    except Exception:  # noqa: BLE001
+                        pts = []
+                area_info.append(
+                    {
+                        "map_id": r["id"],
+                        "vertexs": pts,
+                    }
+                )
+        data = {
+            "appId": self.userid,
+            "area_info": area_info,
+            "deviceSn": self.devicesn,
+            "id": "setPlacedBlankArea",
+            "key": "placed_blank_area",
+            "method": "set_property",
+        }
+        _LOGGER.debug(f"set safe areas: {area_info}")  # noqa: G004
+        self.set_property(data)
 
     def set_return_path_V1(self, value: int):
         """Set return path V1."""

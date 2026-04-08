@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 import io
+import json
 import logging
 
 # from PIL import Image
 from homeassistant.components.image import ImageEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt as dt_util
 
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import MODEL_X
@@ -78,6 +79,8 @@ class MowerImage(SunseekerEntity, ImageEntity):
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
+        self.mapid = mapid
+        self.device = self._data_handler.get_device(self._sn)
         if mapid == 0:
             self.data_coordinator.map_entity = self
         elif mapid == 1:
@@ -92,13 +95,24 @@ class MowerImage(SunseekerEntity, ImageEntity):
         """State."""
         return self.image_last_updated
 
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        if self.mapid == 0 and self.device.map.image_data:
+            try:
+                return {"map_data": json.loads(self.device.map.image_data)}
+            except Exception:  # noqa: BLE001
+                return {}
+        return {}
+
     async def trigger_update(self) -> None:
         """Trigger a state update for this image entity."""
-
-        # self.async_write_ha_state()
-        self.image_last_updated = datetime.now()
+        self._attr_image_last_updated = dt_util.utcnow()
+        # self.image_last_updated = datetime.now()
         if self.mapid == 0:
             self.device.map.map_updated = False
+            _LOGGER.debug("Image trigger update done")
+        self.async_write_ha_state()
 
     async def async_image(self) -> bytes | None:
         """Return bytes of image."""

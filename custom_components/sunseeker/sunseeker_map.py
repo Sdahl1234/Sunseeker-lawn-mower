@@ -1,5 +1,6 @@
 """SunseekerMapPy."""
 
+import asyncio
 import importlib.resources
 from io import BytesIO
 import json
@@ -26,7 +27,10 @@ class SunseekerMap:
         """Init."""
 
         self.mower: SunseekerDevice
+        self.mapid = 0
         self.mapurl = ""
+        self.realPathFileUlr = ""
+        self.backupmap_data = None
         self.pathurl = ""
         self.image = None
         self.image_path = None
@@ -61,6 +65,7 @@ class SunseekerMap:
         self.work_color = (124, 252, 0)
         self.grass_color = (34, 139, 34)
         self.alert_color = (240, 128, 128)
+        self.get_map_data_done_loaded = []
 
     def load_charger_image(self) -> Image.Image:
         """Load robot.png from the integration folder."""
@@ -337,16 +342,34 @@ class SunseekerMap:
         self.image_state = "Loaded"
         self.map_updated = True
 
-    async def reload_maps(self, state):
+    async def reload_maps(self, state, ImageEntity, mutex: int = 0):
         """Reloads maps."""
+        # wait max 5 seconds for the map data to be loaded
+        _LOGGER.debug(
+            f"reload_maps: mutex: {mutex} mutexlist: {self.get_map_data_done_loaded}"  # noqa: G004
+        )
+        if mutex != 0:
+            for _ in range(50):
+                if mutex not in self.get_map_data_done_loaded:
+                    break
+                await asyncio.sleep(0.1)
+
         if state == 0:  # Reload without requesting new map data
             if self.image_data is not None:
+                _LOGGER.debug("reload_maps -> generate_map")
                 await self.generate_map()  # Opret nyt image med kort
+                _LOGGER.debug("reload_maps -> generate_path")
                 await self.generate_path()  # opret image med path på nyt kort
+                _LOGGER.debug("reload_maps -> generate_livemap")
                 await self.generate_livemap(
                     self.mower_pos_x, self.mower_pos_y
                 )  # Opret live image med robot
                 self.image_state = "Loaded"
+                # if ImageEntity:
+                #    await ImageEntity.trigger_update()
+                #    # ImageEntity.state = datetime.now()
+                #    attributes = ImageEntity.extra_state_attributes
+                #    _LOGGER.debug(f"Image Atribute: {attributes}")
 
     def get_heat_map(self):
         """Get heat map."""
@@ -366,7 +389,90 @@ class SunseekerMap:
             except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
                 _LOGGER.debug(f"Get wifimap failed {error}")  # noqa: G004
 
-    def get_map_data(self):
+    def get_path_data(self, url):
+        """Fetch path data."""
+        _LOGGER.debug(
+            f"Old map_path_url: {self.realPathFileUlr} new map_path_url: {url}"  # noqa: G004
+        )
+        if self.realPathFileUlr != url:
+            self.realPathFileUlr = url
+            _LOGGER.debug("Fetcing new map path data")
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                self.realPathmapdata = response.json()
+                # _LOGGER.debug(
+                #    f"Map path data from realPathFileUlr: {json.dumps(self.realPathmapdata)}"
+                # )
+                _LOGGER.debug(f"Map path data loaded for {self.mower.devicesn}")  # noqa: G004
+        else:
+            _LOGGER.debug("Skipping fetcing new map path data, same url")
+
+    def get_map_data(self, url):
+        """Fetch map data."""
+        _LOGGER.debug(f"Old mapurl: {self.mapurl} new mapurl: {url}")  # noqa: G004
+        if self.mapurl != url:
+            self.mapurl = url
+            _LOGGER.debug("Fetcing new map data")
+            _LOGGER.debug(url)
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                response_data = response.json()
+                mapid = response_data.get("update_time", 0)
+                _LOGGER.debug(f"mapid expected : {self.mapid}")  # noqa: G004
+                _LOGGER.debug(f"mapid from data: {mapid}")  # noqa: G004
+                _LOGGER.debug(
+                    f"Map data from mapUrl: {json.dumps(response_data)}"  # noqa: G004
+                )
+                self.image_data = response.content
+                self.image_state = "Loaded"
+                _LOGGER.debug(f"Map data loaded for {self.mower.devicesn}")  # noqa: G004
+        else:
+            _LOGGER.debug("Skipping fetcing new map data, same url")
+
+    def get_map_info(self, mutex: int = 0):
+        """Get map info data."""
+        endpoint = f"/wireless_map/wireless_device/get?deviceSn={self.mower.devicesn}"
+        try:
+            url_ = self.mower.url + endpoint
+            headers_ = {
+                "Accept-Language": self.mower.language,
+                "Authorization": "bearer " + self.mower.access_token,
+                "Host": self.mower.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get mapinfo header: {headers_} url: {url_}")  # noqa: G004
+            response = requests.get(
+                url=url_,
+                headers=headers_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(f"Mapinfo data: {json.dumps(response_data)}")  # noqa: G004
+            if response.status_code == 200:
+                mapid = response_data["data"].get("mapModifyTime", 0)
+                _LOGGER.debug(f"Old mapid: {self.mapid} new mapid: {mapid}")  # noqa: G004
+                self.mapid = mapid
+                # Get map data
+                mapurl = response_data["data"].get("mapPathFileUrl", None)
+                self.get_map_data(mapurl)
+
+                self.mappathdata = response_data["data"].get("realPathData", None)
+
+                # Get map path data
+                realPathFileUlr = response_data["data"].get("realPathFileUlr", None)
+                self.get_path_data(realPathFileUlr)
+
+            if mutex > 0:
+                _LOGGER.debug(
+                    f"mutex: {mutex} mutexlist: {self.get_map_data_done_loaded}"  # noqa: G004
+                )
+                self.get_map_data_done_loaded.remove(mutex)
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"Get map for {self.mower.devicesn}: failed {error}")  # noqa: G004
+
+    def get_map_data2(self, mutex: int = 0):
         """Get mapdata."""
         endpoint = f"/wireless_map/wireless_device/get?deviceSn={self.mower.devicesn}"
         try:
@@ -388,30 +494,56 @@ class SunseekerMap:
             response_data = response.json()
             _LOGGER.debug(f"Map data: {json.dumps(response_data)}")  # noqa: G004
             if response.status_code == 200:
+                mapid = response_data["data"].get("mapModifyTime", 0)
+                # if self.mapid != mapid:
+                _LOGGER.debug(f"Old mapid: {self.mapid} new mapid: {mapid}")  # noqa: G004
+                self.mapid = mapid
+                map_url_changed = False
                 mapurl = response_data["data"].get("mapPathFileUrl", None)
-                realPathFileUlr = response_data["data"].get("realPathFileUlr", None)
+                # if self.mapurl != mapurl: # vi kalder den 2 gange
+                map_url_changed = True
+                _LOGGER.debug(f"Old mapurl: {self.mapurl} new mapurl: {mapurl}")  # noqa: G004
+                self.mapurl = mapurl
                 self.mappathdata = response_data["data"].get("realPathData", None)
-                if mapurl:
-                    response = requests.get(mapurl, timeout=10)
-                    if response.status_code == 200:
-                        response_data = response.json()
-                        # _LOGGER.debug(
-                        #    f"Map data mapPathFileUrl: {json.dumps(response_data)}"
-                        # )
-                        self.image_data = response.content
+                if mapurl and map_url_changed:
+                    _LOGGER.debug("Fetcing new map data")
+                    map_response = requests.get(mapurl, timeout=10)
+                    if map_response.status_code == 200:
+                        map_response_data = map_response.json()
+                        _LOGGER.debug(
+                            f"Map data from mapUrl: {json.dumps(map_response_data)}"  # noqa: G004
+                        )
+                        self.image_data = map_response.content
                         self.image_state = "Loaded"
                         _LOGGER.debug(f"Map data loaded for {self.mower.devicesn}")  # noqa: G004
-                if realPathFileUlr:
-                    response = requests.get(realPathFileUlr, timeout=10)
-                    if response.status_code == 200:
-                        self.realPathmapdata = response.json()
+                else:
+                    _LOGGER.debug("Skipping fetcing new map data")
+
+                # Fetching Path data.
+                realPathFileUlr_changed = False
+                realPathFileUlr = response_data["data"].get("realPathFileUlr", None)
+                if self.realPathFileUlr != realPathFileUlr:
+                    realPathFileUlr_changed = True
+                _LOGGER.debug(
+                    f"Old realPathFileUlr: {self.realPathFileUlr} new realPathFileUlr: {realPathFileUlr}"  # noqa: G004
+                )
+                self.realPathFileUlr = realPathFileUlr
+
+                if realPathFileUlr and realPathFileUlr_changed:
+                    path_response = requests.get(realPathFileUlr, timeout=10)
+                    if path_response.status_code == 200:
+                        self.realPathmapdata = path_response.json()
                         # _LOGGER.debug(
                         #    f"Map data realPathFileUlr: {json.dumps(self.realPathmapdata)}"
                         # )
                         _LOGGER.debug(f"Map path data loaded for {self.mower.devicesn}")  # noqa: G004
 
-                _LOGGER.debug(json.dumps(response_data))
-
+                # _LOGGER.debug(json.dumps(path_response_data))
+            if mutex > 0:
+                _LOGGER.debug(
+                    f"mutex: {mutex} mutexlist: {self.get_map_data_done_loaded}"  # noqa: G004
+                )
+                self.get_map_data_done_loaded.remove(mutex)
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Get map for {self.mower.devicesn}: failed {error}")  # noqa: G004
@@ -452,6 +584,33 @@ class SunseekerMap:
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Get heatmap: failed {error}")  # noqa: G004
+
+    def get_backup_map_data(self):
+        """Get mapdata."""
+        endpoint = f"/wireless_map/backup_map/get?sn={self.mower.devicesn}"
+        try:
+            url_ = self.mower.url + endpoint
+            headers_ = {
+                "Accept-Language": self.mower.language,
+                "Authorization": "bearer " + self.mower.access_token,
+                "Host": self.mower.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get backup map header: {headers_} url: {url_}")  # noqa: G004
+            response = requests.get(
+                url=url_,
+                headers=headers_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(f"Backup map data: {json.dumps(response_data)}")  # noqa: G004
+            if response.status_code == 200:
+                self.backupmap_data = response_data
+
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"Get backup map for {self.mower.devicesn}: failed {error}")  # noqa: G004
 
     def InitValues(self, settings) -> None:
         """Init values at upstart."""

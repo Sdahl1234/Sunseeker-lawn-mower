@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 
 from PIL import Image
 import voluptuous as vol
@@ -47,6 +48,7 @@ SERVICE_SET_SCHEDULE = "set_schedule"
 SERVICE_START_MOWING = "start_mowing"
 SERVICE_STOP_MOWING = "stop_mowing"
 SERVICE_SET_PIN = "set_pin"
+SERVICE_SET_MAP = "set_map"
 
 SET_PIN_SCHEMA = vol.Schema(
     {
@@ -55,6 +57,14 @@ SET_PIN_SCHEMA = vol.Schema(
         vol.Required("new_pin"): cv.string,
     }
 )
+
+SET_MAP_SCHEMA = vol.Schema(
+    {
+        vol.Required("entity_id"): cv.entity_id,
+        vol.Required("map"): dict,
+    }
+)
+
 
 SET_SCHEDULE_SCHEMA = vol.Schema(
     {
@@ -89,7 +99,7 @@ def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
     yield from coordinators
 
 
-async def async_setup(hass: HomeAssistant, config):  # noqa: D103
+async def async_setup(hass: HomeAssistant, config):  # noqa: C901, D103
     # Register the set_schedule service
     async def async_handle_set_schedule(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -113,6 +123,32 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: D103
                     await hass.async_add_executor_job(
                         device.set_schedule_new,
                         schedule,
+                    )
+                    return
+        raise HomeAssistantError(f"Device for {entity_id} not found")
+
+    async def async_handle_set_map(call: ServiceCall):
+        entity_id = call.data["entity_id"]
+        map_data = call.data["map"]
+
+        # Find the entity and its coordinator
+        ent_reg = er.async_get(hass)
+        entry = ent_reg.async_get(entity_id)
+        if not entry:
+            raise HomeAssistantError(f"Entity {entity_id} not found")
+
+        # Find the coordinator/device for this entity
+        # The entity_id contains the device serial number (dsn)
+        dsn = entry.unique_id.split("_")[1]  # Example: "mower_CE1234563534545"
+        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
+            robots = data.get(ROBOTS, [])
+            for coordinator_ in robots:
+                coordinator: SunseekerDataCoordinator = coordinator_
+                if coordinator.devicesn == dsn:
+                    device = coordinator.device
+                    await hass.async_add_executor_job(
+                        device.set_map,
+                        map_data,
                     )
                     return
         raise HomeAssistantError(f"Device for {entity_id} not found")
@@ -199,6 +235,13 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: D103
                     )
                     return
         raise HomeAssistantError(f"Device for {entity_id} not found")
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_MAP,
+        async_handle_set_map,
+        schema=SET_MAP_SCHEMA,
+    )
 
     hass.services.async_register(
         DOMAIN,
@@ -326,6 +369,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             # Polling interval. Will only be polled if there are subscribers.
             # update_interval=timedelta(seconds=5),  # 60 * 60),
         )
+        self.dataUpdating: bool = False
         self.region = region
         # self.apptype = apptype
         self.brand = brand
@@ -360,7 +404,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.add_job(self.set_schedule_data)
             self.hass.add_job(self.schedule_file_exits)
             self.hass.add_job(self.schedule_load_data)
-        self.hass.add_job(self.device.map.reload_maps, 0)
+        self.hass.add_job(self.device.map.reload_maps, 0, None, 0)
         self.forceheat = False
         self.forcewifi = False
         getheat = False
@@ -500,33 +544,21 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         """Func Callback when data is updated."""
         if self.devicesn != devicesn:
             return
-        _LOGGER.debug(f"callback - Sunseeker {self.devicesn} data updated")  # noqa: G004
+
+        _LOGGER.debug(f"callback - start - Sunseeker {self.devicesn}")  # noqa: G004
         if not uv:
             uv = mqtt_update_values()
         if need_update:
             self.hass.add_job(self.async_set_updated_data, None)
 
-        if self.device.map.map_updated and self.map_entity:
-            _LOGGER.debug("map trigger update")
-            self.hass.add_job(self.map_entity.trigger_update)
         if (
             self.device.apptype == APPTYPE_OLD
             and uv.schedule
             and not self.device.Schedule.IsEmpty()
         ):
             self.hass.add_job(self.save_schedule_data)
-        if uv.live_move_update:
-            self.hass.add_job(
-                self.device.map.generate_livemap,
-                self.device.map.mower_pos_x,
-                self.device.map.mower_pos_y,
-            )
-        if uv.fetch_new_map_data:
-            self.hass.add_job(self.get_map_data, devicesn)
-        if uv.livemap_update and uv.map_update:
-            self.hass.add_job(self.device.map.reload_maps, 0)
-        elif uv.livemap_update:
-            self.hass.add_job(self.device.map.generate_livemap)
+        self.hass.add_job(self.Handle_image_update, devicesn, uv)
+
         if uv.heatmap:
             self.hass.add_job(self.get_heat_map, devicesn)
             if self.heatmap_entity:
@@ -544,11 +576,42 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         if self.forcewifi:
             self.hass.add_job(self.wifimap_entity.trigger_update)
             self.forcewifi = False
+        _LOGGER.debug(f"callback - end - Sunseeker {self.devicesn}")  # noqa: G004
 
-    async def get_map_data(self, snr):
+    async def Handle_image_update(self, snr, uv: mqtt_update_values):
+        """Function to call none async."""
+        _LOGGER.debug(f"Image handler - check mutex {self.devicesn}")  # noqa: G004
+
+        for _ in range(50):
+            if not self.dataUpdating:
+                break
+            await asyncio.sleep(0.1)
+
+        _LOGGER.debug(f"Image handler - start {self.devicesn}")  # noqa: G004
+        self.dataUpdating = True
+        if uv.live_move_update:
+            await self.device.map.generate_livemap(
+                self.device.map.mower_pos_x,
+                self.device.map.mower_pos_y,
+            )
+        mutex = 0
+        if uv.fetch_new_map_data:
+            mutex = time.monotonic_ns()
+            self.device.map.get_map_data_done_loaded.append(mutex)
+            await self.hass.async_add_executor_job(self.device.map.get_map_info, mutex)
+        if uv.livemap_update and uv.map_update:
+            await self.device.map.reload_maps(0, self.map_entity, mutex)
+            await self.map_entity.trigger_update()
+        elif uv.livemap_update:
+            await self.device.map.generate_livemap()
+        self.dataUpdating = False
+        _LOGGER.debug(f"Image handler - end {self.devicesn}")  # noqa: G004
+
+    async def get_map_data(self, snr, mutex):
         """Function to call none async."""
         ad = self.data_handler.get_device(snr)
-        await self.hass.async_add_executor_job(ad.map.get_map_data)
+        ad.map.get_map_data_done_loaded.append(mutex)
+        await self.hass.async_add_executor_job(ad.map.get_map_info, mutex)
 
     async def get_heat_map(self, snr):
         """Function to call none async."""

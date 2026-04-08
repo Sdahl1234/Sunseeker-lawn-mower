@@ -98,3 +98,23 @@ set_schedule:
           "wednesday": [],
           "thursday": [],
           "friday": [],
+        }
+set_map:
+  name: Set map
+  description: >
+    Set the map data for your Sunseeker mower. You must provide the mower entity and a complete map object.
+  fields:
+    entity_id:
+      name: Image entity with map add to attributes
+      description: The mowers Image entity to set the map for.
+      required: true
+      selector:
+        entity:
+          domain: image
+    schedule:
+      name: Map data
+      description: >
+        The map data to apply. This must be a dictionary matching the expected map format.
+      required: true
+      example: |
+        Use the sunseeker-map-edit-card.
