@@ -1390,8 +1390,8 @@ class SunseekerDevice:
         data = {
             "appId": self.userid,
             "deviceSn": self.devicesn,
-            "cmd": "backup_map",
-            "id": "backupMap",
+            "cmd": "delete_backup_map",
+            "id": "deleteBackupMap",
             "map_id": map_id,
             "method": "action",
         }

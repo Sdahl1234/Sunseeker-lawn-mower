@@ -111,7 +111,7 @@ START_MOWING_SCHEMA = vol.Schema(
 )
 
 _LOGGER = logging.getLogger(__name__)
-# _LOGGER.level = logging.DEBUG
+_LOGGER.level = logging.DEBUG
 
 
 def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
@@ -726,6 +726,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             )
         if uv.fetch_new_map_data:
             await self.hass.async_add_executor_job(self.device.map.get_map_info)
+            await self.hass.async_add_executor_job(self.device.map.get_backup_map_data)
         if uv.livemap_update and uv.map_update:
             await self.device.map.reload_maps()
             await self.map_entity.trigger_update()
