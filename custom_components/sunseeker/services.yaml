@@ -156,3 +156,21 @@ backup_map:
       required: true
       selector:
         text:
+delete_backup:
+  name: Delete backup map
+  description: >
+    Delete backup the curret map for your Sunseeker mower.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    mapid:
+      name: Mapid to delete
+      description: The backup mapid to delete.
+      required: true
+      selector:
+        text:

@@ -1385,6 +1385,18 @@ class SunseekerDevice:
         }
         self.set_property(data)
 
+    def delete_backup(self, map_id: int):
+        """Backup map."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "cmd": "backup_map",
+            "id": "backupMap",
+            "map_id": map_id,
+            "method": "action",
+        }
+        self.set_action(data)
+
     def backup_map(self, map_id: int):
         """Backup map."""
         data = {

@@ -50,7 +50,14 @@ SERVICE_SET_PIN = "set_pin"
 SERVICE_SET_MAP = "set_map"
 SERVICE_RESTORE_MAP = "restore_map"
 SERVICE_BACKUP_MAP = "backup_map"
+SERVICE_DELETE_BACKUP = "delete_backup"
 
+SET_DELETE_BACKUP = vol.Schema(
+    {
+        vol.Required("entity_id"): cv.entity_id,
+        vol.Required("mapid"): cv.string,
+    }
+)
 SET_RESTORE_MAP = vol.Schema(
     {
         vol.Required("entity_id"): cv.entity_id,
@@ -104,7 +111,7 @@ START_MOWING_SCHEMA = vol.Schema(
 )
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.level = logging.DEBUG
+# _LOGGER.level = logging.DEBUG
 
 
 def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
@@ -117,6 +124,32 @@ def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
 
 async def async_setup(hass: HomeAssistant, config):  # noqa: C901
     """Setup servicecall."""
+
+    async def async_handle_delete_bckup(call: ServiceCall):
+        entity_id = call.data["entity_id"]
+        mapid = call.data["mapid"]
+
+        # Find the entity and its coordinator
+        ent_reg = er.async_get(hass)
+        entry = ent_reg.async_get(entity_id)
+        if not entry:
+            raise HomeAssistantError(f"Entity {entity_id} not found")
+
+        # Find the coordinator/device for this entity
+        # The entity_id contains the device serial number (dsn)
+        dsn = entry.unique_id.split("_")[1]  # Example: "mower_CE1234563534545"
+        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
+            robots = data.get(ROBOTS, [])
+            for coordinator_ in robots:
+                coordinator: SunseekerDataCoordinator = coordinator_
+                if coordinator.devicesn == dsn:
+                    device = coordinator.device
+                    await hass.async_add_executor_job(
+                        device.delete_backup,
+                        int(mapid),
+                    )
+                    return
+        raise HomeAssistantError(f"Device for {entity_id} not found")
 
     async def async_handle_restore_map(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -308,6 +341,12 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: C901
 
     hass.services.async_register(
         DOMAIN,
+        SERVICE_DELETE_BACKUP,
+        async_handle_delete_bckup,
+        schema=SET_DELETE_BACKUP,
+    )
+    hass.services.async_register(
+        DOMAIN,
         SERVICE_BACKUP_MAP,
         async_handle_backup_map,
         schema=SET_BACKUP_MAP,
@@ -495,7 +534,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.add_job(self.set_schedule_data)
             self.hass.add_job(self.schedule_file_exits)
             self.hass.add_job(self.schedule_load_data)
-        self.hass.add_job(self.device.map.reload_maps, 0, None, 0)
+        self.hass.add_job(self.device.map.reload_maps)
         self.forceheat = False
         self.forcewifi = False
         getheat = False
