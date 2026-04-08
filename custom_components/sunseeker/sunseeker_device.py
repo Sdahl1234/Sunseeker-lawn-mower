@@ -155,6 +155,7 @@ class SunseekerDevice:
                     self.zonelist.append(zone)
                     self.Schedule_new.zones.append([zoneid, zonename])
             self.map.get_heat_map_data()
+            self.map.get_backup_map_data()
 
     def InitValues(self) -> None:
         """Init values at upstart."""

@@ -1,0 +1,11 @@
+{
+  "services": {
+    "start_mowing": { "service": "mdi:robot-mower" },
+    "stop_mowing": { "service": "mdi:stop-circle" },
+    "set_pin": { "service": "mdi:lock-reset" },
+    "set_schedule": { "service": "mdi:calendar-clock" },
+    "set_map": { "service": "mdi:map-check" },
+    "restore_map": { "service": "mdi:backup-restore" },
+    "backup_map": { "service": "mdi:content-save" }
+  }
+}

@@ -100,7 +100,11 @@ class MowerImage(SunseekerEntity, ImageEntity):
         """Return the state attributes."""
         if self.mapid == 0 and self.device.map.image_data:
             try:
-                return {"map_data": json.loads(self.device.map.image_data)}
+                return {
+                    "map_backup": self.device.map.backupmap_data,
+                    "map_id": self.device.map.mapid,
+                    "map_data": json.loads(self.device.map.image_data),
+                }
             except Exception:  # noqa: BLE001
                 return {}
         return {}

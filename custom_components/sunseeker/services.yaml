@@ -99,6 +99,7 @@ set_schedule:
           "thursday": [],
           "friday": [],
         }
+
 set_map:
   name: Set map
   description: >
@@ -118,3 +119,40 @@ set_map:
       required: true
       example: |
         Use the sunseeker-map-edit-card.
+
+restore_map:
+  name: Restore map
+  description: >
+    Restores map from backup for your Sunseeker mower.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    mapid:
+      name: Mapid to restore
+      description: The backup mapid to restore.
+      required: true
+      selector:
+        text:
+backup_map:
+  name: Backup map
+  description: >
+    Backup the curret map for your Sunseeker mower.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    mapid:
+      name: Mapid to restore
+      description: The backup mapid to restore.
+      required: true
+      selector:
+        text:
