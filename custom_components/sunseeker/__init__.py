@@ -729,7 +729,8 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             await self.hass.async_add_executor_job(self.device.map.get_backup_map_data)
         if uv.livemap_update and uv.map_update:
             await self.device.map.reload_maps()
-            await self.map_entity.trigger_update()
+            if self.map_entity:
+                await self.map_entity.trigger_update()
         elif uv.livemap_update:
             await self.device.map.generate_livemap()
         self.dataUpdating = False
