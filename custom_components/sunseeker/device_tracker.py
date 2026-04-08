@@ -44,17 +44,18 @@ class SunseekerDeviceTracker(SunseekerEntity, TrackerEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
         self._icon = "mdi:map-marker-radius"
+        self.device = self._data_handler.get_device(self._sn)
 
     @property
     def latitude(self) -> float | None:
         """Return latitude value of the device."""
-        val = self._data_handler.get_device(self._sn).devicedata["data"].get("lat")
+        val = self.device.devicedata["data"].get("lat")
         return val  # noqa: RET504
 
     @property
     def longitude(self) -> float | None:
         """Return longitude value of the device."""
-        val = self._data_handler.get_device(self._sn).devicedata["data"].get("lng")
+        val = self.device.devicedata["data"].get("lng")
         return val  # noqa: RET504
 
     @property

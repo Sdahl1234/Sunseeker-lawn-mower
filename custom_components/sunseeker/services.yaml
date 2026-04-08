@@ -32,6 +32,31 @@ stop_mowing:
         entity:
           domain: lawn_mower
 
+set_pin:
+  name: Change pin
+  description: >
+    Change the mowers 4 digit pin code.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    old_pin:
+      name: Old pin code
+      description: The mowers old 4 digits pin code.
+      required: true
+      selector:
+        text:
+    new_pin:
+      name: New pin code
+      required: true
+      description: The mowers new 4 digits pin code.
+      selector:
+        text:
+
 set_schedule:
   name: Set schedule
   description: >
@@ -73,3 +98,79 @@ set_schedule:
           "wednesday": [],
           "thursday": [],
           "friday": [],
+        }
+
+set_map:
+  name: Set map
+  description: >
+    Set the map data for your Sunseeker mower. You must provide the mower entity and a complete map object.
+  fields:
+    entity_id:
+      name: Image entity with map add to attributes
+      description: The mowers Image entity to set the map for.
+      required: true
+      selector:
+        entity:
+          domain: image
+    schedule:
+      name: Map data
+      description: >
+        The map data to apply. This must be a dictionary matching the expected map format.
+      required: true
+      example: |
+        Use the sunseeker-map-edit-card.
+
+restore_map:
+  name: Restore map
+  description: >
+    Restores map from backup for your Sunseeker mower.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    mapid:
+      name: Mapid to restore
+      description: The backup mapid to restore.
+      required: true
+      selector:
+        text:
+backup_map:
+  name: Backup map
+  description: >
+    Backup the curret map for your Sunseeker mower.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    mapid:
+      name: Mapid to restore
+      description: The backup mapid to restore.
+      required: true
+      selector:
+        text:
+delete_backup:
+  name: Delete backup map
+  description: >
+    Delete backup the curret map for your Sunseeker mower.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    mapid:
+      name: Mapid to delete
+      description: The backup mapid to delete.
+      required: true
+      selector:
+        text:

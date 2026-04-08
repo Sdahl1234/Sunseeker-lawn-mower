@@ -9,6 +9,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
+from .const import MODEL_OLD, MODEL_V, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,87 +18,47 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
 
-    AppNew = False
-    SubApp = ""
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.data_handler.apptype == "New":
-            # Skip if the app type is New, as these sensors are not supported
-            AppNew = True
-            break
+        async_add_entities(
+            [SunseekerRainSwitch(coordinator, "Rain sensor", "sunseeker_rain_sensor")]
+        )
+        if coordinator.model == MODEL_X:
+            async_add_entities(
+                [
+                    SunseekerCustomEnableSwitch(
+                        coordinator, "Custom zones", "sunseeker_custom_enable"
+                    ),
+                    SunseekerBorderFirstSwitch(
+                        coordinator, "Cut edge first", "sunseeker_border_first"
+                    ),
+                    SunseekerTimeWorkRepeatSwitch(
+                        coordinator, "Repeat time work", "sunseeker_time_work_repeat"
+                    ),
+                ]
+            )
+        if coordinator.model in {MODEL_X, MODEL_V}:
+            async_add_entities(
+                [
+                    SunseekerSchedulePauseSwitch(
+                        coordinator, "Pause schedule", "sunseeker_pause_schedule"
+                    )
+                ]
+            )
 
-    for coordinator in robot_coordinators(hass, entry):
-        SubApp = coordinator.data_handler.sub_apptype
-        break
-
-    async_add_entities(
-        [
-            SunseekerRainSwitch(coordinator, "Rain sensor", "sunseeker_rain_sensor")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-
-    if AppNew and SubApp == "":
-        async_add_entities(
-            [
-                SunseekerCustomEnableSwitch(
-                    coordinator, "Custom zones", "sunseeker_custom_enable"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerBorderFirstSwitch(
-                    coordinator, "Cut edge first", "sunseeker_border_first"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerTimeWorkRepeatSwitch(
-                    coordinator, "Repeat time work", "sunseeker_time_work_repeat"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-    if AppNew:
-        async_add_entities(
-            [
-                SunseekerSchedulePauseSwitch(
-                    coordinator, "Pause schedule", "sunseeker_pause_schedule"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-
-    if not AppNew:
-        async_add_entities(
-            [
-                SunseekerMultiZoneSwitch(
-                    coordinator, "MultiZone", "sunseeker_multi_zone"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-
-        async_add_entities(
-            [
-                SunseekerMultiZoneAutoSwitch(
-                    coordinator, "MultiZone auto", "sunseeker_multi_zone_auto"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-
-        async_add_entities(
-            [
-                SunseekerScheduleSwitch(
-                    coordinator, "Schedule active", "schedule_active"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+        if coordinator.model == MODEL_OLD:
+            async_add_entities(
+                [
+                    SunseekerMultiZoneSwitch(
+                        coordinator, "MultiZone", "sunseeker_multi_zone"
+                    ),
+                    SunseekerMultiZoneAutoSwitch(
+                        coordinator, "MultiZone auto", "sunseeker_multi_zone_auto"
+                    ),
+                    SunseekerScheduleSwitch(
+                        coordinator, "Schedule active", "schedule_active"
+                    ),
+                ]
+            )
 
 
 class SunseekerRainSwitch(SunseekerEntity, SwitchEntity):
@@ -119,42 +80,40 @@ class SunseekerRainSwitch(SunseekerEntity, SwitchEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
         self.icon = "mdi:weather-pouring"
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_rain_status,
+            self.device.set_rain_status,
             True,
-            self._data_handler.get_device(self._sn).rain_delay_set,
-            self._sn,
+            self.device.rain_delay_set,
         )
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_rain_status,
+            self.device.set_rain_status,
             False,
-            self._data_handler.get_device(self._sn).rain_delay_set,
-            self._sn,
+            self.device.rain_delay_set,
         )
 
     async def async_toggle(self, **kwargs):
         """Toggle the entity."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_rain_status,
+            self.device.set_rain_status,
             not self.is_on,
-            self._data_handler.get_device(self._sn).rain_delay_set,
-            self._sn,
+            self.device.rain_delay_set,
         )
 
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
-        self.is_on = await self._data_handler.get_device(self._sn).rain_en
+        self.is_on = await self.device.rain_en
 
     @property
     def is_on(self):
         """IsOn."""
-        return self._data_handler.get_device(self._sn).rain_en
+        return self.device.rain_en
 
 
 class SunseekerMultiZoneSwitch(SunseekerEntity, SwitchEntity):
@@ -175,66 +134,64 @@ class SunseekerMultiZoneSwitch(SunseekerEntity, SwitchEntity):
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_zone_status,
-            self._data_handler.get_device(self._sn).mul_auto,
+            self.device.set_zone_status,
+            self.device.mul_auto,
             True,
-            self._data_handler.get_device(self._sn).mul_zon1,
-            self._data_handler.get_device(self._sn).mul_zon2,
-            self._data_handler.get_device(self._sn).mul_zon3,
-            self._data_handler.get_device(self._sn).mul_zon4,
-            self._data_handler.get_device(self._sn).mulpro_zon1,
-            self._data_handler.get_device(self._sn).mulpro_zon2,
-            self._data_handler.get_device(self._sn).mulpro_zon3,
-            self._data_handler.get_device(self._sn).mulpro_zon4,
-            self._sn,
+            self.device.mul_zon1,
+            self.device.mul_zon2,
+            self.device.mul_zon3,
+            self.device.mul_zon4,
+            self.device.mulpro_zon1,
+            self.device.mulpro_zon2,
+            self.device.mulpro_zon3,
+            self.device.mulpro_zon4,
         )
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_zone_status,
-            self._data_handler.get_device(self._sn).mul_auto,
+            self.device.set_zone_status,
+            self.device.mul_auto,
             False,
-            self._data_handler.get_device(self._sn).mul_zon1,
-            self._data_handler.get_device(self._sn).mul_zon2,
-            self._data_handler.get_device(self._sn).mul_zon3,
-            self._data_handler.get_device(self._sn).mul_zon4,
-            self._data_handler.get_device(self._sn).mulpro_zon1,
-            self._data_handler.get_device(self._sn).mulpro_zon2,
-            self._data_handler.get_device(self._sn).mulpro_zon3,
-            self._data_handler.get_device(self._sn).mulpro_zon4,
-            self._sn,
+            self.device.mul_zon1,
+            self.device.mul_zon2,
+            self.device.mul_zon3,
+            self.device.mul_zon4,
+            self.device.mulpro_zon1,
+            self.device.mulpro_zon2,
+            self.device.mulpro_zon3,
+            self.device.mulpro_zon4,
         )
 
     async def async_toggle(self, **kwargs):
         """Toggle the entity."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_zone_status,
-            self._data_handler.get_device(self._sn).mul_auto,
-            not self._data_handler.get_device(self._sn).mul_en,
-            self._data_handler.get_device(self._sn).mul_zon1,
-            self._data_handler.get_device(self._sn).mul_zon2,
-            self._data_handler.get_device(self._sn).mul_zon3,
-            self._data_handler.get_device(self._sn).mul_zon4,
-            self._data_handler.get_device(self._sn).mulpro_zon1,
-            self._data_handler.get_device(self._sn).mulpro_zon2,
-            self._data_handler.get_device(self._sn).mulpro_zon3,
-            self._data_handler.get_device(self._sn).mulpro_zon4,
-            self._sn,
+            self.device.set_zone_status,
+            self.device.mul_auto,
+            not self.device.mul_en,
+            self.device.mul_zon1,
+            self.device.mul_zon2,
+            self.device.mul_zon3,
+            self.device.mul_zon4,
+            self.device.mulpro_zon1,
+            self.device.mulpro_zon2,
+            self.device.mulpro_zon3,
+            self.device.mulpro_zon4,
         )
 
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
-        self.is_on = await self._data_handler.get_device(self._sn).mul_en
+        self.is_on = await self.device.mul_en
 
     @property
     def is_on(self):
         """IsOn."""
-        return self._data_handler.get_device(self._sn).mul_en
+        return self.device.mul_en
 
 
 class SunseekerMultiZoneAutoSwitch(SunseekerEntity, SwitchEntity):
@@ -255,66 +212,64 @@ class SunseekerMultiZoneAutoSwitch(SunseekerEntity, SwitchEntity):
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_zone_status,
+            self.device.set_zone_status,
             True,
-            self._data_handler.get_device(self._sn).mul_en,
-            self._data_handler.get_device(self._sn).mul_zon1,
-            self._data_handler.get_device(self._sn).mul_zon2,
-            self._data_handler.get_device(self._sn).mul_zon3,
-            self._data_handler.get_device(self._sn).mul_zon4,
-            self._data_handler.get_device(self._sn).mulpro_zon1,
-            self._data_handler.get_device(self._sn).mulpro_zon2,
-            self._data_handler.get_device(self._sn).mulpro_zon3,
-            self._data_handler.get_device(self._sn).mulpro_zon4,
-            self._sn,
+            self.device.mul_en,
+            self.device.mul_zon1,
+            self.device.mul_zon2,
+            self.device.mul_zon3,
+            self.device.mul_zon4,
+            self.device.mulpro_zon1,
+            self.device.mulpro_zon2,
+            self.device.mulpro_zon3,
+            self.device.mulpro_zon4,
         )
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_zone_status,
+            self.device.set_zone_status,
             False,
-            self._data_handler.get_device(self._sn).mul_en,
-            self._data_handler.get_device(self._sn).mul_zon1,
-            self._data_handler.get_device(self._sn).mul_zon2,
-            self._data_handler.get_device(self._sn).mul_zon3,
-            self._data_handler.get_device(self._sn).mul_zon4,
-            self._data_handler.get_device(self._sn).mulpro_zon1,
-            self._data_handler.get_device(self._sn).mulpro_zon2,
-            self._data_handler.get_device(self._sn).mulpro_zon3,
-            self._data_handler.get_device(self._sn).mulpro_zon4,
-            self._sn,
+            self.device.mul_en,
+            self.device.mul_zon1,
+            self.device.mul_zon2,
+            self.device.mul_zon3,
+            self.device.mul_zon4,
+            self.device.mulpro_zon1,
+            self.device.mulpro_zon2,
+            self.device.mulpro_zon3,
+            self.device.mulpro_zon4,
         )
 
     async def async_toggle(self, **kwargs):
         """Toggle the entity."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_zone_status,
-            not self._data_handler.get_device(self._sn).mul_auto,
-            self._data_handler.get_device(self._sn).mul_en,
-            self._data_handler.get_device(self._sn).mul_zon1,
-            self._data_handler.get_device(self._sn).mul_zon2,
-            self._data_handler.get_device(self._sn).mul_zon3,
-            self._data_handler.get_device(self._sn).mul_zon4,
-            self._data_handler.get_device(self._sn).mulpro_zon1,
-            self._data_handler.get_device(self._sn).mulpro_zon2,
-            self._data_handler.get_device(self._sn).mulpro_zon3,
-            self._data_handler.get_device(self._sn).mulpro_zon4,
-            self._sn,
+            self.device.set_zone_status,
+            not self.device.mul_auto,
+            self.device.mul_en,
+            self.device.mul_zon1,
+            self.device.mul_zon2,
+            self.device.mul_zon3,
+            self.device.mul_zon4,
+            self.device.mulpro_zon1,
+            self.device.mulpro_zon2,
+            self.device.mulpro_zon3,
+            self.device.mulpro_zon4,
         )
 
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
-        self.is_on = await self._data_handler.get_device(self._sn).mul_auto
+        self.is_on = await self.device.mul_auto
 
     @property
     def is_on(self):
         """IsOn."""
-        return self._data_handler.get_device(self._sn).mul_auto
+        return self.device.mul_auto
 
 
 class SunseekerScheduleSwitch(SunseekerEntity, SwitchEntity):
@@ -336,6 +291,7 @@ class SunseekerScheduleSwitch(SunseekerEntity, SwitchEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
         self.icon = "mdi:calendar"
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_set_schedule_value(self, daynumber: int, value: str) -> None:
         """Set the value."""
@@ -358,89 +314,76 @@ class SunseekerScheduleSwitch(SunseekerEntity, SwitchEntity):
             .replace("False", "false")
         )
         val = json.loads(retval3)
-        self._data_handler.get_device(self._sn).Schedule.GetDay(daynumber).start = val[
-            "start"
-        ]
-        self._data_handler.get_device(self._sn).Schedule.GetDay(daynumber).end = val[
-            "stop"
-        ]
-        self._data_handler.get_device(self._sn).Schedule.GetDay(daynumber).trim = val[
-            "trim"
-        ]
+        self.device.Schedule.GetDay(daynumber).start = val["start"]
+        self.device.Schedule.GetDay(daynumber).end = val["stop"]
+        self.device.Schedule.GetDay(daynumber).trim = val["trim"]
 
     async def SetSchedule(self, on: bool):
         """Set schedule value."""
         if not on:
             for x in range(1, 8):
-                self._data_handler.get_device(self._sn).Schedule.GetDay(
-                    x
-                ).start = "00:00"
-                self._data_handler.get_device(self._sn).Schedule.GetDay(x).end = "00:00"
-                self._data_handler.get_device(self._sn).Schedule.GetDay(x).trim = ""
+                self.device.Schedule.GetDay(x).start = "00:00"
+                self.device.Schedule.GetDay(x).end = "00:00"
+                self.device.Schedule.GetDay(x).trim = ""
 
         else:
             await self.async_set_schedule_value(
-                1, self._data_handler.get_device(self._sn).Schedule.SavedData["Monday"]
+                1, self.device.Schedule.SavedData["Monday"]
             )
             await self.async_set_schedule_value(
-                2, self._data_handler.get_device(self._sn).Schedule.SavedData["Tuesday"]
+                2, self.device.Schedule.SavedData["Tuesday"]
             )
             await self.async_set_schedule_value(
                 3,
-                self._data_handler.get_device(self._sn).Schedule.SavedData["Wednesday"],
+                self.device.Schedule.SavedData["Wednesday"],
             )
             await self.async_set_schedule_value(
                 4,
-                self._data_handler.get_device(self._sn).Schedule.SavedData["Thursday"],
+                self.device.Schedule.SavedData["Thursday"],
             )
             await self.async_set_schedule_value(
-                5, self._data_handler.get_device(self._sn).Schedule.SavedData["Friday"]
+                5, self.device.Schedule.SavedData["Friday"]
             )
             await self.async_set_schedule_value(
                 6,
-                self._data_handler.get_device(self._sn).Schedule.SavedData["Saturday"],
+                self.device.Schedule.SavedData["Saturday"],
             )
             await self.async_set_schedule_value(
-                7, self._data_handler.get_device(self._sn).Schedule.SavedData["Sunday"]
+                7, self.device.Schedule.SavedData["Sunday"]
             )
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         await self.SetSchedule(True)
         await self.hass.async_add_executor_job(
-            self._data_handler.set_schedule,
-            self._data_handler.get_device(self._sn).Schedule.days,
-            self._sn,
+            self.device.set_schedule,
+            self.device.Schedule.days,
         )
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         await self.SetSchedule(False)
         await self.hass.async_add_executor_job(
-            self._data_handler.set_schedule,
-            self._data_handler.get_device(self._sn).Schedule.days,
-            self._sn,
+            self.device.set_schedule,
+            self.device.Schedule.days,
         )
 
     async def async_toggle(self, **kwargs):
         """Toggle the entity."""
         await self.SetSchedule(not self.is_on)
         await self.hass.async_add_executor_job(
-            self._data_handler.set_schedule,
-            self._data_handler.get_device(self._sn).Schedule.days,
-            self._sn,
+            self.device.set_schedule,
+            self.device.Schedule.days,
         )
 
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
-        self.is_on = not await self._data_handler.get_device(
-            self._sn
-        ).Schedule.IsEmpty()
+        self.is_on = not await self.device.Schedule.IsEmpty()
 
     @property
     def is_on(self):
         """IsOn."""
-        return not self._data_handler.get_device(self._sn).Schedule.IsEmpty()
+        return not self.device.Schedule.IsEmpty()
 
 
 class SunseekerBorderFirstSwitch(SunseekerEntity, SwitchEntity):
@@ -462,39 +405,37 @@ class SunseekerBorderFirstSwitch(SunseekerEntity, SwitchEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
         self.icon = "mdi:border-none-variant"
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_border_first,
+            self.device.set_border_first,
             True,
-            self._sn,
         )
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_border_first,
+            self.device.set_border_first,
             False,
-            self._sn,
         )
 
     async def async_toggle(self, **kwargs):
         """Toggle the entity."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_border_first,
+            self.device.set_border_first,
             not self.is_on,
-            self._sn,
         )
 
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
-        self.is_on = await self._data_handler.get_device(self._sn).border_first
+        self.is_on = await self.device.border_first
 
     @property
     def is_on(self):
         """IsOn."""
-        return self._data_handler.get_device(self._sn).border_first
+        return self.device.border_first
 
 
 class SunseekerTimeWorkRepeatSwitch(SunseekerEntity, SwitchEntity):
@@ -516,39 +457,37 @@ class SunseekerTimeWorkRepeatSwitch(SunseekerEntity, SwitchEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
         self.icon = "mdi:repeat"
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_time_work_repeat,
+            self.device.set_time_work_repeat,
             True,
-            self._sn,
         )
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_time_work_repeat,
+            self.device.set_time_work_repeat,
             False,
-            self._sn,
         )
 
     async def async_toggle(self, **kwargs):
         """Toggle the entity."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_time_work_repeat,
+            self.device.set_time_work_repeat,
             not self.is_on,
-            self._sn,
         )
 
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
-        self.is_on = await self._data_handler.get_device(self._sn).time_work_repeat
+        self.is_on = await self.device.time_work_repeat
 
     @property
     def is_on(self):
         """IsOn."""
-        return self._data_handler.get_device(self._sn).time_work_repeat
+        return self.device.time_work_repeat
 
 
 class SunseekerCustomEnableSwitch(SunseekerEntity, SwitchEntity):
@@ -570,39 +509,37 @@ class SunseekerCustomEnableSwitch(SunseekerEntity, SwitchEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
         self.icon = "mdi:account-arrow-right"
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_custom_flag,
+            self.device.set_custom_flag,
             True,
-            self._sn,
         )
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_custom_flag,
+            self.device.set_custom_flag,
             False,
-            self._sn,
         )
 
     async def async_toggle(self, **kwargs):
         """Toggle the entity."""
         await self.hass.async_add_executor_job(
-            self._data_handler.set_custom_flag,
+            self.device.set_custom_flag,
             not self.is_on,
-            self._sn,
         )
 
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
-        self.is_on = await self._data_handler.get_device(self._sn).custom_zones
+        self.is_on = await self.device.custom_zones
 
     @property
     def is_on(self):
         """IsOn."""
-        return self._data_handler.get_device(self._sn).custom_zones
+        return self.device.custom_zones
 
 
 class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
@@ -624,63 +561,54 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
         self.icon = "mdi:timer-pause"
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
-        self._data_handler.get_device(self._sn).Schedule_new.schedule_pause = True
-        if self._data_handler.sub_apptype == "V1":
+        self.device.Schedule_new.schedule_pause = True
+        if self.device.model == MODEL_V:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_schedule_on_off_V1,
+                self.device.set_schedule_on_off_V1,
                 True,
-                self._sn,
             )
         else:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_schedule_data,
-                self._sn,
+                self.device.set_schedule_data,
             )
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
-        self._data_handler.get_device(self._sn).Schedule_new.schedule_pause = False
-        if self._data_handler.sub_apptype == "V1":
+        self.device.Schedule_new.schedule_pause = False
+        if self.device.model == MODEL_V:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_schedule_on_off_V1,
+                self.device.set_schedule_on_off_V1,
                 False,
-                self._sn,
             )
         else:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_schedule_data,
-                self._sn,
+                self.device.set_schedule_data,
             )
 
     async def async_toggle(self, **kwargs):
         """Toggle the entity."""
-        self._data_handler.get_device(
-            self._sn
-        ).Schedule_new.schedule_pause = not self._data_handler.get_device(
-            self._sn
-        ).Schedule_new.schedule_pause
-        if self._data_handler.sub_apptype == "V1":
+        self.device.Schedule_new.schedule_pause = (
+            not self.device.Schedule_new.schedule_pause
+        )
+        if self.device.model == MODEL_V:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_schedule_on_off_V1,
-                self._data_handler.get_device(self._sn).Schedule_new.schedule_pause,
-                self._sn,
+                self.device.set_schedule_on_off_V1,
+                self.device.Schedule_new.schedule_pause,
             )
         else:
             await self.hass.async_add_executor_job(
-                self._data_handler.set_schedule_data,
-                self._sn,
+                self.device.set_schedule_data,
             )
 
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
-        self.is_on = await self._data_handler.get_device(
-            self._sn
-        ).Schedule_new.schedule_pause
+        self.is_on = await self.device.Schedule_new.schedule_pause
 
     @property
     def is_on(self):
         """IsOn."""
-        return self._data_handler.get_device(self._sn).Schedule_new.schedule_pause
+        return self.device.Schedule_new.schedule_pause

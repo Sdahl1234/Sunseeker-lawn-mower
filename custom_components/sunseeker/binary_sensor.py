@@ -7,33 +7,28 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
+from .const import MODEL_OLD, MODEL_V, MODEL_X
 from .entity import SunseekerEntity
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     """Async Setup entry."""
 
-    AppNew = False
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.data_handler.apptype == "New":
-            # Skip if the app type is New, as these sensors are not supported
-            AppNew = True
-            break
-    if not AppNew:
-        async_add_devices(
-            [
-                SunseekerBinarySensor(
-                    coordinator,
-                    BinarySensorDeviceClass.PRESENCE,
-                    "Dock",
-                    None,
-                    "Station",
-                    "",
-                    "sunseeker_dock",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+        if coordinator.model == MODEL_OLD:
+            async_add_devices(
+                [
+                    SunseekerBinarySensor(
+                        coordinator,
+                        BinarySensorDeviceClass.PRESENCE,
+                        "Dock",
+                        None,
+                        "Station",
+                        "",
+                        "sunseeker_dock",
+                    )
+                ]
+            )
 
     async_add_devices(
         [
@@ -50,36 +45,37 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
         ]
     )
 
-    if not AppNew:
-        async_add_devices(
-            [
-                SunseekerBinarySensor(
-                    coordinator,
-                    None,
-                    "Multizone",
-                    None,
-                    "mul_en",
-                    "",
-                    "sunseeker_multizone",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_OLD:
+            async_add_devices(
+                [
+                    SunseekerBinarySensor(
+                        coordinator,
+                        None,
+                        "Multizone",
+                        None,
+                        "mul_en",
+                        "",
+                        "sunseeker_multizone",
+                    )
+                ]
+            )
 
-        async_add_devices(
-            [
-                SunseekerBinarySensor(
-                    coordinator,
-                    None,
-                    "Multizone auto",
-                    None,
-                    "mul_auto",
-                    "",
-                    "sunseeker_multizoneauto",
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_OLD:
+            async_add_devices(
+                [
+                    SunseekerBinarySensor(
+                        coordinator,
+                        None,
+                        "Multizone auto",
+                        None,
+                        "mul_auto",
+                        "",
+                        "sunseeker_multizoneauto",
+                    )
+                ]
+            )
 
     async_add_devices(
         [
@@ -123,6 +119,7 @@ class SunseekerBinarySensor(SunseekerEntity, BinarySensorEntity):
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
 
     # This property is important to let HA know if this entity is online or not.
     # If an entity is offline (return False), the UI will reflect this.
@@ -135,22 +132,19 @@ class SunseekerBinarySensor(SunseekerEntity, BinarySensorEntity):
     def is_on(self):
         """Return true if the binary sensor is on."""
         if self._valuepair == "Station":
-            return self._data_handler.get_device(self._sn).station
+            return self.device.station
         if self._valuepair == "rain_en":
-            return self._data_handler.get_device(self._sn).rain_en
+            return self.device.rain_en
         if self._valuepair == "mul_en":
-            return self._data_handler.get_device(self._sn).mul_en
+            return self.device.mul_en
         if self._valuepair == "mul_auto":
-            return self._data_handler.get_device(self._sn).mul_auto
-        if self.coordinator.data_handler.apptype == "Old":
+            return self.device.mul_auto
+        if self.device.model == MODEL_OLD:
             if self._valuepair == "deviceOnlineFlag":
-                return (
-                    self._data_handler.get_device(self._sn).deviceOnlineFlag
-                    == '{"online":"1"}'
-                )
-        elif self.coordinator.data_handler.apptype == "New":
+                return self.device.deviceOnlineFlag == '{"online":"1"}'
+        elif self.device.model in [MODEL_V, MODEL_X]:
             if self._valuepair == "deviceOnlineFlag":
-                return self._data_handler.get_device(self._sn).deviceOnlineFlag
+                return self.device.deviceOnlineFlag
         return False
 
     @property

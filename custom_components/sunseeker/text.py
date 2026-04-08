@@ -9,6 +9,7 @@ from homeassistant.components.text import TextEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
+from .const import MODEL_OLD
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,70 +18,36 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
 
-    AppNew = False
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.data_handler.apptype == "New":
-            # Skip if the app type is New, as these sensors are not supported
-            AppNew = True
-            break
-
-    if not AppNew:
-        async_add_entities(
-            [
-                SunseekerScheduleText(
-                    coordinator, "Schedule Monday", 1, "sunseeker_schedule_text_1"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerScheduleText(
-                    coordinator, "Schedule Tuesday", 2, "sunseeker_schedule_text_2"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerScheduleText(
-                    coordinator, "Schedule Wednesday", 3, "sunseeker_schedule_text_3"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerScheduleText(
-                    coordinator, "Schedule Thursday", 4, "sunseeker_schedule_text_4"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerScheduleText(
-                    coordinator, "Schedule Fridays", 5, "sunseeker_schedule_text_5"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerScheduleText(
-                    coordinator, "Schedule Saturday", 6, "sunseeker_schedule_text_6"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
-        async_add_entities(
-            [
-                SunseekerScheduleText(
-                    coordinator, "Schedule Sunday", 7, "sunseeker_schedule_text_7"
-                )
-                for coordinator in robot_coordinators(hass, entry)
-            ]
-        )
+        if coordinator.model == MODEL_OLD:
+            async_add_entities(
+                [
+                    SunseekerScheduleText(
+                        coordinator, "Schedule Monday", 1, "sunseeker_schedule_text_1"
+                    ),
+                    SunseekerScheduleText(
+                        coordinator, "Schedule Tuesday", 2, "sunseeker_schedule_text_2"
+                    ),
+                    SunseekerScheduleText(
+                        coordinator,
+                        "Schedule Wednesday",
+                        3,
+                        "sunseeker_schedule_text_3",
+                    ),
+                    SunseekerScheduleText(
+                        coordinator, "Schedule Thursday", 4, "sunseeker_schedule_text_4"
+                    ),
+                    SunseekerScheduleText(
+                        coordinator, "Schedule Fridays", 5, "sunseeker_schedule_text_5"
+                    ),
+                    SunseekerScheduleText(
+                        coordinator, "Schedule Saturday", 6, "sunseeker_schedule_text_6"
+                    ),
+                    SunseekerScheduleText(
+                        coordinator, "Schedule Sunday", 7, "sunseeker_schedule_text_7"
+                    ),
+                ]
+            )
 
 
 class SunseekerScheduleText(SunseekerEntity, TextEntity):
@@ -106,6 +73,7 @@ class SunseekerScheduleText(SunseekerEntity, TextEntity):
         self._attr_translation_key = translationkey
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
 
     async def async_set_value(self, value: str) -> None:
         """Set the text value."""
@@ -129,43 +97,30 @@ class SunseekerScheduleText(SunseekerEntity, TextEntity):
                 .replace("False", "false")
             )
             val = json.loads(retval3)
-            self._data_handler.get_device(self._sn).Schedule.GetDay(
-                self.daynumber
-            ).start = val["start"]
-            self._data_handler.get_device(self._sn).Schedule.GetDay(
-                self.daynumber
-            ).end = val["stop"]
-            self._data_handler.get_device(self._sn).Schedule.GetDay(
-                self.daynumber
-            ).trim = val["trim"]
+            self.device.Schedule.GetDay(self.daynumber).start = val["start"]
+            self.device.Schedule.GetDay(self.daynumber).end = val["stop"]
+            self.device.Schedule.GetDay(self.daynumber).trim = val["trim"]
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(error)
 
         await self.hass.async_add_executor_job(
-            self._data_handler.set_schedule,
-            self._data_handler.get_device(self._sn).Schedule.days,
-            self._sn,
+            self.device.set_schedule,
+            self.device.Schedule.days,
         )
 
     @property
     def native_value(self):
         """Return value."""
-        b_trim = (
-            self._data_handler.get_device(self._sn).Schedule.GetDay(self.daynumber).trim
-        )
+        b_trim = self.device.Schedule.GetDay(self.daynumber).trim
         if b_trim:
             s_trim = " Trim"
         else:
             s_trim = ""
         retval = {
-            self._data_handler.get_device(self._sn)
-            .Schedule.GetDay(self.daynumber)
-            .start
+            self.device.Schedule.GetDay(self.daynumber).start
             + " - "
-            + self._data_handler.get_device(self._sn)
-            .Schedule.GetDay(self.daynumber)
-            .end
+            + self.device.Schedule.GetDay(self.daynumber).end
             + s_trim
         }
 
