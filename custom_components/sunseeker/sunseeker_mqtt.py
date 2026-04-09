@@ -655,7 +655,7 @@ class SunseekermqttController:
                 nu, datanode, [], "event_code", device.eventcode
             )
             if device.eventtype == "report_event":
-                if device.eventcode == 7:
+                if device.eventcode == 7:  # new map
                     if datanode.get("url"):
                         code7url = datanode.get("url")
                         # if code7url != device.map.mapurl:
@@ -665,13 +665,22 @@ class SunseekermqttController:
                             upd.fetch_new_map_data = True
                             upd.map_update = True
                             upd.livemap_update = True
-                if device.eventcode == 17:
+                if device.eventcode == 17:  # new path
                     if datanode.get("url"):
                         code17url = datanode.get("url")
                         if code17url != device.map.pathurl:
                             # device.map.pathurl = code17url
                             nu.need_update = True
                             upd.fetch_new_map_data = False
+                            upd.map_update = True
+                            upd.livemap_update = True
+                if device.eventcode == 63:  # restor map
+                    if datanode.get("url"):
+                        code17url = datanode.get("url")
+                        if code17url != device.map.pathurl:
+                            # device.map.pathurl = code17url
+                            nu.need_update = True
+                            upd.fetch_new_map_data = True
                             upd.map_update = True
                             upd.livemap_update = True
                 # Starting new schedule run
