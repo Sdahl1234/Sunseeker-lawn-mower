@@ -464,7 +464,7 @@ class SunseekerDevice:
                 "deviceSn": self.devicesn,
                 "id": "getSelectRegionID",
                 "key": "all_path",
-                "map_file": "Wireless_Serialnum_num.json",
+                "map_file": "Wireless_Serialnum_mapid.json",
                 "method": "get_property",
             }
             headers_ = {
@@ -1273,10 +1273,71 @@ class SunseekerDevice:
     def set_map(self, mapdata):
         """Set map from service call."""
         _LOGGER.debug(f"Servicecall data: {mapdata}")  # noqa: G004
+        if self.handle_merge(mapdata):
+            return
+        if self.handle_split(mapdata):
+            return
+        self.rename_workarea(mapdata)
         self.set_obstacle_areas(mapdata)
         self.set_forbidden_areas(mapdata)
         self.set_safe_areas(mapdata)
         self.set_passage_areas(mapdata)
+
+    def handle_split(self, mapdata) -> bool:
+        """Handles map split."""
+        if mapdata.get("split_region_id", None) and mapdata.get("split_line", None):
+            region = mapdata.get("split_region_id")
+            points = mapdata.get("split_line")
+            self.split_work_area(region, points)
+            return True
+        return False
+
+    def handle_merge(self, mapdata) -> bool:
+        """Handles map merge."""
+        if mapdata.get("merge_region_ids", None):
+            regions = mapdata.get("merge_region_ids")
+            self.merge_work_area(regions)
+            return True
+        return False
+
+    def rename_workarea(self, mapdata) -> bool:
+        """Rename changed workareas by comparing incoming and current map data."""
+        current_map = self.map.image_data
+        if not current_map:
+            return False
+        current_data = json.loads(current_map)
+
+        current_workareas = {}
+        for region in current_data.get("region_work", []):
+            if "id" not in region:
+                continue
+            region_id = int(region["id"])
+            current_workareas[region_id] = str(region.get("name") or "").strip()
+
+        new_workareas = {}
+        for region in mapdata.get("region_work", []):
+            if "id" not in region:
+                continue
+            region_id = int(region["id"])
+            new_workareas[region_id] = str(region.get("name") or "").strip()
+
+        changed_ids = [
+            region_id
+            for region_id, new_name in new_workareas.items()
+            if region_id in current_workareas
+            and new_name != current_workareas[region_id]
+        ]
+
+        if not changed_ids:
+            return False
+
+        for region_id in changed_ids:
+            new_name = new_workareas[region_id]
+            # Workarea type is 4 for this API endpoint.
+            self.rename_area(region_id=region_id, name=new_name, type=4)
+
+        _LOGGER.debug(f"Renamed workareas: {changed_ids}")  # noqa: G004
+        return True
 
     def set_passage_areas(self, mapdata):
         """Deletes the passage that has been deleted and add the one that is added."""
@@ -1354,7 +1415,7 @@ class SunseekerDevice:
 
     def delete_region(self, region: int, type: int):
         """Delete region on map."""
-        # type = 1 region_workzone
+        # type = 0 region_workzone
         # type = 2 region_passage
         # type = 3 region_obstacle
         # type = 4 region_forbidden
@@ -1422,7 +1483,7 @@ class SunseekerDevice:
         self.set_action(data)
 
     def add_passage(self, points):
-        """Add passage."""
+        """Add passage. Max 10m."""
         # points = [[-30.315, -12.273], [-21.944, -16.756]]
         data = {
             "appId": self.userid,
@@ -1496,6 +1557,60 @@ class SunseekerDevice:
             "method": "set_property",
         }
         _LOGGER.debug(f"set safe areas: {area_info}")  # noqa: G004
+        self.set_property(data)
+
+    def split_work_area(self, regionid, points):
+        """Splits 2 work areas. Need to be at least 1.5m2."""
+        data = {
+            "appId": self.userid,
+            "cmd": "split_region",
+            "deviceSn": self.devicesn,
+            "id": "splitRegion",
+            "method": "action",
+            "points": points,  # [[-1.269,-17.454], [-8.25, -18.668]],
+            "region_id": regionid,
+        }
+        _LOGGER.debug(f"Split region points: {points} region {regionid}")  # noqa: G004
+        self.set_action(data)
+
+    def merge_work_area(self, regionids):
+        """Merge 2 work areas."""
+        data = {
+            "appId": self.userid,
+            "cmd": "merge_region",
+            "deviceSn": self.devicesn,
+            "id": "mergeRegion",
+            "method": "action",
+            "region_id": regionids,  # [id1, id2]
+        }
+        _LOGGER.debug(f"Merge regions: regions {regionids}")  # noqa: G004
+        self.set_action(data)
+
+    def set_region_name(self, regionid, name, type: int = 0):
+        """Rename region."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setRegionName",
+            "key": "region_name",
+            "method": "set_property",
+            "region_id": regionid,
+            "region_name": name,
+            "region_type": type,
+        }
+        _LOGGER.debug(f"Set regionname: {name} region {regionid}")  # noqa: G004
+        self.set_property(data)
+
+    def set_device_model(self, value: str):
+        """Set return path V1."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setDevModel",
+            "key": "dev_model",
+            "method": "set_prperty",
+            "value": value,  # RMX800N20V-DGSJZD
+        }
         self.set_property(data)
 
     def set_return_path_V1(self, value: int):
