@@ -549,7 +549,8 @@ class SunseekermqttController:
                     self.handle_mqtt_schedule_ctime_data(upd, nu, ctime, device)
         if "time" in datanode:
             ctime = datanode.get("time")
-            self.handle_mqtt_schedule_ctime_data(upd, nu, ctime, device)
+            if isinstance(ctime, list):
+                self.handle_mqtt_schedule_ctime_data(upd, nu, ctime, device)
 
     def handle_mqtt_map_data(
         self,
