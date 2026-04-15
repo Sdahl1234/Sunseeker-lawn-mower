@@ -326,7 +326,8 @@ class SunseekerRoboticmower:
             _LOGGER.debug(json.dumps(response_data))
             self.session = response_data
             access_token = self.session["access_token"]
-            self.mqtt_controller.access_token = access_token
+            for mc in self.mqtt_controllers:
+                mc.access_token = access_token
             for device_sn in self.deviceArray:
                 ad = self.get_device(device_sn)
                 ad.access_token = access_token
