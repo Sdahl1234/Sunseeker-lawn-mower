@@ -123,6 +123,7 @@ class SunseekerDevice:
         self.base_firmware: str = ""
         self.base_firmware_new: str = ""
         self.base_ota_desc: str = ""
+        self.ota_timer = None
 
         # V1
         self.border_distance = 0
@@ -144,8 +145,7 @@ class SunseekerDevice:
         if self.model == MODEL_V:
             self.Schedule_new.Get_schedule_data_V1()
         if self.model == MODEL_X:
-            self.check_ota_version(self.devicesn, self.device_firmware, 0)
-            self.check_ota_version(self.base_sn, self.base_firmware, 2)
+            self.check_ota()
 
     def InitMapAndZoneData(self) -> None:
         """Init map and zone data."""
@@ -272,6 +272,15 @@ class SunseekerDevice:
             self.rain_delay_left = self.settings["data"].get("rainCountdown")
         else:
             self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
+
+    def check_ota(self) -> None:
+        """Timer to fetch firmware versions."""
+        self.check_ota_version(self.devicesn, self.device_firmware, 0)
+        self.check_ota_version(self.base_sn, self.base_firmware, 2)
+        if self.ota_timer:
+            self.ota_timer.cancel()
+        self.ota_timer = Timer(21600, self.check_ota)
+        self.ota_timer.start()
 
     def get_zone(self, id) -> SunseekerZone:
         """Get the zone obj."""
@@ -1712,6 +1721,8 @@ class SunseekerDevice:
                 self.error_text = ""
                 if response_data.get("data"):
                     if devicetype == 0:
+                        # Test force new version
+                        # self.device_firmware = "1.0.5.2722"
                         self.device_firmware_new = response_data.get("data").get(
                             "currentVersion", ""
                         )

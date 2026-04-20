@@ -397,3 +397,7 @@ class SunseekerRoboticmower:
             self.refresh_token_interval.cancel()
         for mc in self.mqtt_controllers:
             mc.unload()
+        for device_sn in self.deviceArray:
+            ad = self.get_device(device_sn)
+            if ad.ota_timer:
+                ad.ota_timer.cancel()

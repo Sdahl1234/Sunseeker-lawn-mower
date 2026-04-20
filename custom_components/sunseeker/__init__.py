@@ -41,6 +41,7 @@ PLATFORMS = [
     Platform.SENSOR,
     Platform.SWITCH,
     Platform.TEXT,
+    Platform.UPDATE,
 ]
 
 SERVICE_SET_SCHEDULE = "set_schedule"
