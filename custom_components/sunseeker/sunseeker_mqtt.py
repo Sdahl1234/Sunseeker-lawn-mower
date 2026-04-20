@@ -743,6 +743,13 @@ class SunseekermqttController:
             self.handle_mqtt_consumable_data(upd, nu, data, datanode, device)
         if "id" in data:
             self.handle_mqtt_data_id(upd, nu, data, datanode, device)
+        # firmware_version
+        device.device_firmware = self.setvalue(
+            nu, datanode, [], "firmware_version", device.device_firmware
+        )
+        device.base_firmware = self.setvalue(
+            nu, datanode, [], "station_firmware_version", device.base_firmware
+        )
 
         device.avoid_objects = self.setvalue(
             nu, datanode, [], "work_touch_mode", device.avoid_objects

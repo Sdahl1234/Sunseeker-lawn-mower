@@ -115,7 +115,14 @@ class SunseekerDevice:
         zone.name = "Global"
         self.zonelist.append(zone)
         self.selected_zone = 0
-        self.custom_zones = bool
+        self.custom_zones: bool = False
+        self.device_firmware: str = ""
+        self.device_firmware_new: str = ""
+        self.device_ota_desc: str = ""
+        self.base_sn: str = ""
+        self.base_firmware: str = ""
+        self.base_firmware_new: str = ""
+        self.base_ota_desc: str = ""
 
         # V1
         self.border_distance = 0
@@ -136,6 +143,9 @@ class SunseekerDevice:
 
         if self.model == MODEL_V:
             self.Schedule_new.Get_schedule_data_V1()
+        if self.model == MODEL_X:
+            self.check_ota_version(self.devicesn, self.device_firmware, 0)
+            self.check_ota_version(self.base_sn, self.base_firmware, 2)
 
     def InitMapAndZoneData(self) -> None:
         """Init map and zone data."""
@@ -159,6 +169,10 @@ class SunseekerDevice:
 
     def InitValues(self) -> None:
         """Init values at upstart."""
+        self.base_firmware = self.settings["data"].get(
+            "wirelessStationFirmwareVersion", ""
+        )
+        self.device_firmware = self.settings["data"].get("wirelessFirmwareVersion", "")
         self.power = self.devicedata["data"].get("electricity")
         self.mode = int(self.devicedata["data"].get("workStatusCode"))
         self.rain_en = self.devicedata["data"].get("rainFlag")
@@ -1612,6 +1626,112 @@ class SunseekerDevice:
             "value": value,  # RMX800N20V-DGSJZD
         }
         self.set_property(data)
+
+    def ota_upgrade_X_models(self):
+        """Start OTA."""
+        try:
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "deviceType": 0,
+                "id": "upgradeOTA",
+                "method": "upgrade",
+                "mode": "1",
+            }
+            cmd = "otaUpgrade"
+            url = self.url + self.cmdurl + cmd
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            _LOGGER.debug(
+                f"OTA upgrade X models url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            self.dataupdated(self.devicesn)
+            _LOGGER.error(f"OTA upgrade failed: {error}")  # noqa: G004
+
+    def check_ota_version(self, sn: str, version: str, devicetype: int):
+        """Check device version. Devicetype 0 is the mower. Devicetype 2 is the base."""
+        if version == "" or sn == "":
+            return
+        try:
+            data = {
+                "deviceSn": sn,  # devicesn or base_sn
+                "deviceSpecies": 0,
+                "deviceType": devicetype,
+                "version": version,  # "1.0.5.1234" device firmware robot, "2.1.0.5" base
+            }
+            cmd = "/ota/firmware-large/wireless/check"
+            url = self.url + cmd
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            _LOGGER.debug(
+                f"OTA version check: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+                if response_data.get("data"):
+                    if devicetype == 0:
+                        self.device_firmware_new = response_data.get("data").get(
+                            "currentVersion", ""
+                        )
+                        self.device_ota_desc = response_data.get("data").get(
+                            "currentVersionDesc", ""
+                        )
+                    elif devicetype == 2:
+                        self.base_firmware_new = response_data.get("data").get(
+                            "currentVersion", ""
+                        )
+                        self.base_ota_desc = response_data.get("data").get(
+                            "currentVersionDesc", ""
+                        )
+
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            self.dataupdated(self.devicesn)
+            _LOGGER.error(f"Check device version: {error}")  # noqa: G004
 
     def set_return_path_V1(self, value: int):
         """Set return path V1."""

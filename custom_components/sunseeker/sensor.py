@@ -375,6 +375,56 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:saw-blade",
                         "sunseeker_blade_height",
                     ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Mower firmware",
+                        "",
+                        "mower_firmware",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_mower_firmware",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Mower new firmware",
+                        "",
+                        "mower_new_firmware",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_mower_new_firmware",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Base firmware",
+                        "",
+                        "base_firmware",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_base_firmware",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Base new firmware",
+                        "",
+                        "base_new_firmware",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_base_new_firmware",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Base serialnumber",
+                        "",
+                        "base_serialnumber",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_base_serialnumber",
+                    ),
                 ]
             )
         if coordinator.model in [MODEL_OLD, MODEL_X]:
@@ -657,6 +707,16 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             # if val != self._oldevent:
             #    self.save_to_logbook(f"New event: {val}")
             #    self._oldevent = val
+        elif self._valuepair == "mower_firmware":
+            val = self.device.device_firmware
+        elif self._valuepair == "mower_new_firmware":
+            val = self.device.device_firmware_new
+        elif self._valuepair == "base_firmware":
+            val = self.device.base_firmware
+        elif self._valuepair == "base_new_firmware":
+            val = self.device.base_firmware_new
+        elif self._valuepair == "base_serialnumber":
+            val = self.device.base_sn
 
         return val
 
@@ -664,7 +724,11 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
     def extra_state_attributes(self):
         """Attributes to schedule."""
         attributes = {}
-        if self._valuepair == "Schedule":
+        if self._valuepair == "mower_new_firmware":
+            attributes["Update description"] = self.device.device_ota_desc
+        elif self._valuepair == "base_new_firmware":
+            attributes["Update description"] = self.device.base_ota_desc
+        elif self._valuepair == "Schedule":
             data = self.device.Schedule.GetDay(1).mqtt_day
             self.AddAttributes("Monday", data, attributes)
             data = self.device.Schedule.GetDay(2).mqtt_day
@@ -679,7 +743,6 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             self.AddAttributes("Saturday", data, attributes)
             data = self.device.Schedule.GetDay(7).mqtt_day
             self.AddAttributes("Sunday", data, attributes)
-
         return attributes
 
     @property

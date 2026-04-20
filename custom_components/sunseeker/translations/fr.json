@@ -135,6 +135,21 @@
             }
         },
         "sensor": {
+			"sunseeker_mower_firmware": {
+				"name": "Mower firmware"
+			},
+			"sunseeker_mower_new_firmware": {
+				"name": "Mower new firmware"
+			},
+			"sunseeker_base_firmware": {
+				"name": "Base firmware"
+			},
+			"sunseeker_base_new_firmware": {
+				"name": "Base new firmware"
+			},
+			"sunseeker_base_serialnumber": {
+				"name": "Base serialnumber"
+			},
 			"sunseeker_blade_health": {
 				"name": "Blade health"
 			},

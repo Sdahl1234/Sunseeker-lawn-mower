@@ -143,6 +143,21 @@
 
 		},
 		"sensor": {
+			"sunseeker_mower_firmware": {
+				"name": "Robot firmware"
+			},
+			"sunseeker_mower_new_firmware": {
+				"name": "Robot ny firmware"
+			},
+			"sunseeker_base_firmware": {
+				"name": "Ladestation firmware"
+			},
+			"sunseeker_base_new_firmware": {
+				"name": "Ladestation ny firmware"
+			},
+			"sunseeker_base_serialnumber": {
+				"name": "Ladestation serialnumber"
+			},
 			"sunseeker_blade_health": {
 				"name": "knive helbred"
 			},

@@ -225,6 +225,8 @@ class SunseekerRoboticmower:
                 ad.cmdurl = self.getCMDURL(model)
                 ad.DeviceWifiAddress = device.get("ipAddr", "")
                 ad.DeviceBluetooth = device.get("bluetoothMac", "")
+                ad.base_sn = device.get("stationSn", "")
+                ad.device_version = device.get("firmwareVersion", "")
                 self.robotList.append(ad)
                 ad.func_refesh_token = self.refresh_token_callback
                 ad.InitDevice()
@@ -336,6 +338,56 @@ class SunseekerRoboticmower:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"refresh_token failed {error}")  # noqa: G004
+        finally:
+            if self.refresh_token_interval:
+                self.refresh_token_interval.cancel()
+            self.refresh_token_interval = Timer(
+                (self.session.get("expires_in") or 3600), self.refresh_token
+            )
+            self.refresh_token_interval.start()
+
+    def refresh_token_new(self):
+        """Refresh token new."""
+        _LOGGER.debug("Refresh token new")
+
+        try:
+            url = (
+                self.url
+                + f"/admin/new-oauth/oauth2-new/token?refresh_token={self.session['refresh_token']}"
+            )
+            headers = {
+                "Authorization": "Basic YXBwOmFwcA==",
+                "accept-encoding": "gzip",
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            _LOGGER.debug(f"Refresh token header: {headers} url: {url}")  # noqa: G004
+            response = requests.post(
+                url=url,
+                headers=headers,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            self.session = response_data
+            access_token = self.session["access_token"]
+            for mc in self.mqtt_controllers:
+                mc.access_token = access_token
+            for device_sn in self.deviceArray:
+                ad = self.get_device(device_sn)
+                ad.access_token = access_token
+
+            _LOGGER.debug("Refresh successful")
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"refresh_token failed {error}")  # noqa: G004
+        finally:
+            if self.refresh_token_interval:
+                self.refresh_token_interval.cancel()
+            self.refresh_token_interval = Timer(
+                (self.session.get("expires_in") or 3600), self.refresh_token
+            )
+            self.refresh_token_interval.start()
 
     def unload(self):
         """Unload."""
