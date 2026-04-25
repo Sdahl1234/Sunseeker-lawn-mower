@@ -52,6 +52,8 @@ SERVICE_SET_MAP = "set_map"
 SERVICE_RESTORE_MAP = "restore_map"
 SERVICE_BACKUP_MAP = "backup_map"
 SERVICE_DELETE_BACKUP = "delete_backup"
+SERVICE_START_MOWING_SELECTED_AREA = "start_mowing_selected_area"
+SERVICE_STOP_TASK = "stop_task"
 
 SET_DELETE_BACKUP = vol.Schema(
     {
@@ -108,6 +110,28 @@ START_MOWING_SCHEMA = vol.Schema(
     {
         vol.Required("entity_id"): cv.entity_id,
         vol.Required("zones"): vol.All(cv.ensure_list, [cv.string]),
+    }
+)
+
+START_MOWING_SELECTED_AREA_SCHEMA = vol.Schema(
+    {
+        vol.Required("entity_id"): cv.entity_id,
+        vol.Required("points"): vol.All(
+            cv.ensure_list,
+            [
+                vol.All(
+                    cv.ensure_list,
+                    vol.Length(min=2, max=2),
+                    [vol.Coerce(float)],
+                )
+            ],
+        ),
+    }
+)
+
+STOP_TASK_SCHEMA = vol.Schema(
+    {
+        vol.Required("entity_id"): cv.entity_id,
     }
 )
 
@@ -340,6 +364,60 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: C901
                     return
         raise HomeAssistantError(f"Device for {entity_id} not found")
 
+    async def async_handle_mower_start_selected_area(call: ServiceCall):
+        entity_id = call.data["entity_id"]
+        points = call.data["points"]
+
+        # Find the entity and its coordinator
+        ent_reg = er.async_get(hass)
+        entry = ent_reg.async_get(entity_id)
+        if not entry:
+            raise HomeAssistantError(f"Entity {entity_id} not found")
+
+        # Find the coordinator/device for this entity
+        # The entity_id contains the device serial number (dsn)
+        dsn = entry.unique_id.split(".")[
+            2
+        ]  # Example: "Sunseeker_lawnmower.name.CE1234563534545"
+        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
+            robots = data.get(ROBOTS, [])
+            for coordinator_ in robots:
+                coordinator: SunseekerDataCoordinator = coordinator_
+                if coordinator.devicesn == dsn:
+                    device = coordinator.device
+                    await hass.async_add_executor_job(
+                        device.start_mowing_selected_area,
+                        points,
+                    )
+                    return
+        raise HomeAssistantError(f"Device for {entity_id} not found")
+
+    async def async_handle_mower_stop_task(call: ServiceCall):
+        entity_id = call.data["entity_id"]
+
+        # Find the entity and its coordinator
+        ent_reg = er.async_get(hass)
+        entry = ent_reg.async_get(entity_id)
+        if not entry:
+            raise HomeAssistantError(f"Entity {entity_id} not found")
+
+        # Find the coordinator/device for this entity
+        # The entity_id contains the device serial number (dsn)
+        dsn = entry.unique_id.split(".")[
+            2
+        ]  # Example: "Sunseeker_lawnmower.name.CE1234563534545"
+        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
+            robots = data.get(ROBOTS, [])
+            for coordinator_ in robots:
+                coordinator: SunseekerDataCoordinator = coordinator_
+                if coordinator.devicesn == dsn:
+                    device = coordinator.device
+                    await hass.async_add_executor_job(
+                        device.stop_task,
+                    )
+                    return
+        raise HomeAssistantError(f"Device for {entity_id} not found")
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_DELETE_BACKUP,
@@ -386,6 +464,21 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: C901
         async_handle_mower_stop,
         schema=STOP_MOWING_SCHEMA,
     )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_START_MOWING_SELECTED_AREA,
+        async_handle_mower_start_selected_area,
+        schema=START_MOWING_SELECTED_AREA_SCHEMA,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_STOP_TASK,
+        async_handle_mower_stop_task,
+        schema=STOP_TASK_SCHEMA,
+    )
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_SET_PIN,

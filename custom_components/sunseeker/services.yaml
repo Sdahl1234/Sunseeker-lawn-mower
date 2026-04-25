@@ -32,6 +32,40 @@ stop_mowing:
         entity:
           domain: lawn_mower
 
+start_mowing_selected_area:
+  name: Start mowing selected area
+  description: >
+    Start mowing a manually selected polygon area.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity to control.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    points:
+      name: Area points
+      description: >
+        Polygon points for the selected area in order. Each point must be [x, y].
+      required: true
+      example: [[-2.815, -3.892], [9.636, -3.892], [9.636, -7.401], [2.215, -7.401]]
+      selector:
+        object: {}
+
+stop_task:
+  name: Stop task
+  description: >
+    Stop the current mower task.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity to control.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+
 set_pin:
   name: Change pin
   description: >
