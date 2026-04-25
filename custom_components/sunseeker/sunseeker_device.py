@@ -722,16 +722,6 @@ class SunseekerDevice:
         """Start Mowing selected area."""
         _LOGGER.debug("Start mowing selected area")
         mapid = self.map.mapid
-        # points = [[-2.815, -3.892], [9.636, -3.892], [9.636, -7,401], [2.215, -7,401]]
-        # mapid = 1777100027728
-        # "area_info": [
-        #   {
-        #   "map_id": 1777100027728, #mapid
-        #   "vertexs": [
-        #     [-2.815, -3.892], [9.636, -3.892], [9.636, -7,401], [2.215, -7,401] #points
-        #   ]
-        #   }
-        # ]
         area = [
             {
                 "map_id": mapid,
