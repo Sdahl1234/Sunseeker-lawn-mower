@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from homeassistant.components.update import (
@@ -15,8 +14,6 @@ from homeassistant.core import HomeAssistant
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import MODEL_V, MODEL_X
 from .entity import SunseekerEntity
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:

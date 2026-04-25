@@ -64,6 +64,7 @@ class SunseekerMap:
         self.work_color = (124, 252, 0)
         self.grass_color = (34, 139, 34)
         self.alert_color = (240, 128, 128)
+        self.forbidden_color = (240, 128, 128)
 
     def load_charger_image(self) -> Image.Image:
         """Load robot.png from the integration folder."""
@@ -261,6 +262,10 @@ class SunseekerMap:
             min_y = min(gmin_y, min_y)
             max_y = max(gmax_y, max_y)
 
+        for work in data.get("divide_area_work", []):
+            pts = parse_points(work["points"])
+            get_min_max(pts)
+
         for work in data.get("region_work", []):
             pts = parse_points(work["points"])
             get_min_max(pts)
@@ -314,22 +319,25 @@ class SunseekerMap:
                 transformed_points, outline=self.grass_color, fill=self.grass_color
             )
 
-        for obstacle in data.get("region_obstacle", []):
-            pts = parse_points(obstacle["points"])
-            transformed_points = [transform(p) for p in pts]
-            draw.polygon(
-                transformed_points, outline=self.alert_color, fill=self.alert_color
-            )
-
         for forb in data.get("region_forbidden", []):
             pts = parse_points(forb["points"])
             transformed_points = [transform(p) for p in pts]
-            draw.polygon(transformed_points, outline="black", fill="black")
+            draw.polygon(transformed_points, outline="red", fill=self.forbidden_color)
 
         for rb in data.get("region_placed_blank", []):
             pts = parse_points(rb["points"])
             transformed_points = [transform(p) for p in pts]
-            draw.polygon(transformed_points, outline="blue", fill=None)  # "blue")
+            draw.polygon(transformed_points, outline="blue", fill=None)
+
+        for rb in data.get("divide_area_work", []):
+            pts = parse_points(rb["points"])
+            transformed_points = [transform(p) for p in pts]
+            draw.polygon(transformed_points, outline="black", fill=None, width=2)
+
+        for obstacle in data.get("region_obstacle", []):
+            pts = parse_points(obstacle["points"])
+            transformed_points = [transform(p) for p in pts]
+            draw.polygon(transformed_points, outline="darkgray", fill="gray")
 
         # for charger in data.get("region_charger_channel", []):
         #    pts = parse_points(charger["points"])

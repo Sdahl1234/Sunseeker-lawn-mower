@@ -672,7 +672,6 @@ class SunseekerDevice:
         """Start Mowing."""
         _LOGGER.debug("Start mowing")
         # custom = zone is not None
-        # self.set_custom_flag(custom, devicesn)
         self.set_state_change("mode", 1, zone)
 
     def dock(self):
@@ -694,6 +693,61 @@ class SunseekerDevice:
         """Stop."""
         _LOGGER.debug("Stop")
         self.set_state_change("mode", 4)
+
+    def stop_task(self):
+        """Stops current task."""
+        _LOGGER.debug("Stopping task")
+        data = {
+            "appId": self.userid,
+            "cmd": "stop_task",
+            "deviceSn": self.devicesn,
+            "id": "stopTask",
+            "method": "action",
+        }
+        self.set_action(data)
+
+    def start_find_charger(self):
+        """Returns home."""
+        _LOGGER.debug("Finding charger")
+        data = {
+            "appId": self.userid,
+            "cmd": "start_find_charger",
+            "deviceSn": self.devicesn,
+            "id": "startFindCharger",
+            "method": "action",
+        }
+        self.set_action(data)
+
+    def start_mowing_selected_area(self, points):
+        """Start Mowing selected area."""
+        _LOGGER.debug("Start mowing selected area")
+        mapid = self.map.mapid
+        # points = [[-2.815, -3.892], [9.636, -3.892], [9.636, -7,401], [2.215, -7,401]]
+        # mapid = 1777100027728
+        # "area_info": [
+        #   {
+        #   "map_id": 1777100027728, #mapid
+        #   "vertexs": [
+        #     [-2.815, -3.892], [9.636, -3.892], [9.636, -7,401], [2.215, -7,401] #points
+        #   ]
+        #   }
+        # ]
+        area = [
+            {
+                "map_id": mapid,
+                "vertexs": points,
+            }
+        ]
+        data = {
+            "appId": self.userid,
+            "area_info": area,
+            "deviceSn": self.devicesn,
+            "id": "setDivideArea",
+            "key": "divide_area",
+            "method": "set_property",
+        }
+        _LOGGER.debug(f"Mowe selected area, mapid: {mapid}, vertexs: {points}")  # noqa: G004
+        self.set_property(data)
 
     def refresh(self):
         """Refresh data."""
