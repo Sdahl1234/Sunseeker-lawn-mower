@@ -331,6 +331,9 @@
         }
       },
       "button": {
+				"sunseeker_end_task": {
+					"name": "End task"
+				},
         "sunseeker_reset_bladeplade": {
           "name": "Reset bladeplade"
         },

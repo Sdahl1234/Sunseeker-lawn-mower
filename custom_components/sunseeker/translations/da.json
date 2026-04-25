@@ -330,6 +330,9 @@
 			}
 		},
 		"button": {
+			"sunseeker_end_task": {
+				"name": "Afslut opgave"
+			},
 	        "sunseeker_reset_bladeplade": {
     	      "name": "Reset knivplade"
         	},

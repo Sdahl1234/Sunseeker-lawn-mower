@@ -54,6 +54,12 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 [
                     SunseekerButton(
                         coordinator,
+                        "End task",
+                        "end_task",
+                        "sunseeker_end_task",
+                    ),
+                    SunseekerButton(
+                        coordinator,
                         "Reset blade",
                         "reset_blade",
                         "sunseeker_reset_blade",
@@ -103,6 +109,8 @@ class SunseekerButton(SunseekerEntity, ButtonEntity):
             await self.hass.async_add_executor_job(self.device.border)
         elif self._valuepair == "stop":
             await self.hass.async_add_executor_job(self.device.stop)
+        elif self._valuepair == "end_task":
+            await self.hass.async_add_executor_job(self.device.stop_task)
         elif self._valuepair == "reset_bladeplade":
             await self.hass.async_add_executor_job(self.device.set_reset_bladeplade)
         elif self._valuepair == "reset_blade":
