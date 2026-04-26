@@ -1,7 +1,7 @@
 # Sunseeker lawn mower integration for Home Assistant
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.0
+#### V1.2.1
 
 ## Tested models
   - Adano RM6
@@ -38,7 +38,8 @@ English, Danish, German, Finnish and French
 - Mower zones card: https://github.com/Sdahl1234/sunseeker-zone-card
 - Mower map-edit card: https://github.com/Sdahl1234/sunseeker-map-edit-card
 
-# Entities new models (wireless)
+# Entities new models (wireless) 
+Not all are availeble for V models
 ## Lawn mower
 #### States
 - Going home
@@ -66,6 +67,7 @@ English, Danish, German, Finnish and French
 - **Home** - Sending the mower home
 - **Pause** - Pause the mower
 - **Stop** - Stops the mower
+- **End task** - Ends the current task
 ## Consumable items
 - **Buttons**
   - **Reset blade** - Resets the blade healt to 100%
@@ -75,7 +77,6 @@ English, Danish, German, Finnish and French
   - **Blade change** - Time left to change blade
   - **Bladeplate healt** - Bladeplate healt in %
   - **Bladepate cleaning** - Time left to cleaning bladeplade
-  
 ## Rain sensor and controls
 - **Switches**
   - **Rain sensor** - Turn on/off the rain sensor
@@ -125,13 +126,13 @@ English, Danish, German, Finnish and French
   - **{zonename}Blade speed** - Speed of the blades
   - **{zonename}Blade height** - Height of the blades
 - Easy way to control the zones is using the zone card https://github.com/Sdahl1234/sunseeker-zone-card
-<img width="422" height="603" alt="image" src="https://github.com/user-attachments/assets/28b69571-d458-4d1a-929e-d5d2830d8228" />
+<img width="1004" height="853" alt="image" src="https://github.com/user-attachments/assets/e5e50298-bd6f-44fe-b570-79ac30f8e55d" />
 
 ## Schedule
 - **Pause schedule** - Turns on/off the schedule
 - **Repeat time work** - If enabled the mower continues mowing after end cycle
 - **Schedule** - Sensor with attribues containing the schedule. This is the one you must use in the schedule card https://github.com/Sdahl1234/sunseeker-schedule-card
-<img width="421" height="784" alt="image" src="https://github.com/user-attachments/assets/b472987a-10dd-4673-ab17-e073bcc7001d" />
+<img width="905" height="854" alt="image" src="https://github.com/user-attachments/assets/f8674bcc-1afd-4ef4-9890-8c9e57b1ca72" />
 
 
 ## Map
@@ -142,13 +143,17 @@ English, Danish, German, Finnish and French
 
 ## Mower Map edit card
 https://github.com/Sdahl1234/sunseeker-map-edit-card
-<img width="1559" height="613" alt="image" src="https://github.com/user-attachments/assets/be760bc0-f9de-40fd-9a2d-fa45312b2a76" />
+<img width="1612" height="539" alt="image" src="https://github.com/user-attachments/assets/c7018b9c-1d94-495f-b47d-ab00c1029020" />
 
 ## Mower control card
-<img width="425" height="457" alt="image" src="https://github.com/user-attachments/assets/22a139e3-ac74-44f8-8d68-18bc11fcc60f" />
+https://github.com/Sdahl1234/sunseeker-mower-control-card
+<img width="901" height="714" alt="image" src="https://github.com/user-attachments/assets/78235dbd-8555-4bed-b386-7da1a846735f" />
 
 ## Device tracker
 - **Mower location** - Anti theft location. Returns the latitude and longitude coordinates of the device.
+
+## Device update
+- **Notification** - Notification when mower or basestation has firmware updates**
 
 ## Actions
 - **Change pin** - Action to change pin code
@@ -159,6 +164,9 @@ https://github.com/Sdahl1234/sunseeker-map-edit-card
 - **Delete backup** - Action to delete backedup map
 - **Restore map** - Action to restore map from backup
 - **Backup map** - Action to backup current map
+- **Start mowing selected area** - Action to start mowing a custom area
+- **Stop task** - Action to stop current task
+- **Change PIN** - Action to change PIN code
 
 #
 **This section is for the old wired models.**
