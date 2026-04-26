@@ -113,16 +113,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 SunseekerSensor(
                     coordinator,
                     None,
-                    "Wifi level",
-                    "dBm",
-                    "wifi_lv",
-                    "",
-                    "mdi:wifi",
-                    "sunseeker_wifi_level",
-                ),
-                SunseekerSensor(
-                    coordinator,
-                    None,
                     "State change error",
                     None,
                     "state_error",
@@ -259,7 +249,17 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "",
                         "mdi:calendar",
                         "sunseeker_schedule",
-                    )
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Wifi level",
+                        "dBm",
+                        "wifi_lv",
+                        "",
+                        "mdi:wifi",
+                        "sunseeker_wifi_level",
+                    ),
                 ]
             )
         if coordinator.model == MODEL_X:

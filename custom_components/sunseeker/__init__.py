@@ -682,7 +682,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             f.close()
         except FileNotFoundError:
             # save a new file
-            await self.save_data(False)
+            await self.schedule_save_data(False)
 
     async def schedule_save_data(self, append: bool):
         """Save data."""

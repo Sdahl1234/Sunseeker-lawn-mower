@@ -12,7 +12,7 @@ from homeassistant.components.update import (
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_V, MODEL_X
+from .const import MODEL_X
 from .entity import SunseekerEntity
 
 
@@ -21,7 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     entities: list[SunseekerFirmwareUpdate] = []
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model not in {MODEL_V, MODEL_X}:
+        if coordinator.model != MODEL_X:
             continue
 
         entities.append(

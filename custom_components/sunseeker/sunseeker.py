@@ -40,8 +40,8 @@ class SunseekerRoboticmower:
         #    "Old models", "Old"
         #    "X models", "New"
         #    "V models", "V1"
-        self.apptyoe = APPTYPE_OLD
-        if apptype == "Old":
+        self.apptype = APPTYPE_OLD
+        if apptype in ("Old", APPTYPE_OLD):
             self.apptype = APPTYPE_OLD
         else:
             self.apptype = APPTYPE_NEW
@@ -117,7 +117,7 @@ class SunseekerRoboticmower:
         if self.apptype == APPTYPE_OLD:
             devicelist = self.get_device_list(APPTYPE_OLD, MODEL_OLD)
             if devicelist.get("data", []):
-                if self.add_devices(devicelist):
+                if self.add_devices(devicelist, APPTYPE_OLD, MODEL_OLD):
                     mqtt_controller = SunseekermqttController(
                         self,
                         self.session["username"],
