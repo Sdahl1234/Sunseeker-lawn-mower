@@ -561,6 +561,14 @@ class SunseekermqttController:
         device: SunseekerDevice,
     ):
         """Handle map data."""
+        # Check if map_backup needs updated
+        if datanode.get("backup_map_amount", None) or datanode.get(
+            "map_temp_name", None
+        ):
+            nu.need_update = True
+            upd.fetch_new_map_data = True
+            upd.map_update = True
+            upd.livemap_update = True
         # "charge_pos":{"angle":-3.127,"point":[-0.018,0.261]}
         device.map.charger_orientation = self.setvalue(
             nu, datanode, ["charge_pos"], "angle", device.map.charger_orientation
