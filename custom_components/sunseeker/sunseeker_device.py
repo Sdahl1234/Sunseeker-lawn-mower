@@ -1755,7 +1755,8 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
                 self.error_text = response_data.get("msg")
-                self.dataupdated(self.devicesn)
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
                 self.error_text = ""
@@ -1781,7 +1782,8 @@ class SunseekerDevice:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
-            self.dataupdated(self.devicesn)
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"Check device version: {error}")  # noqa: G004
 
     def set_return_path_V1(self, value: int):
