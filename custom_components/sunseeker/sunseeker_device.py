@@ -174,10 +174,10 @@ class SunseekerDevice:
         )
         self.device_firmware = self.settings["data"].get("wirelessFirmwareVersion", "")
         self.power = self.devicedata["data"].get("electricity")
-        self.mode = int(self.devicedata["data"].get("workStatusCode"))
+        self.mode = int(self.devicedata["data"].get("workStatusCode") or 0)
         self.rain_en = self.devicedata["data"].get("rainFlag")
-        self.rain_delay_set = int(self.devicedata["data"].get("rainDelayDuration", 0))
-        self.rain_status = int(self.devicedata["data"].get("rainStatusCode", 0))
+        self.rain_delay_set = int(self.devicedata["data"].get("rainDelayDuration") or 0)
+        self.rain_status = int(self.devicedata["data"].get("rainStatusCode") or 0)
 
         self.InitMapAndZoneData()
 
