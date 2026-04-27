@@ -580,8 +580,8 @@ class SunseekerDevice:
         # New Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Stop.
         # V models state 4=start
         # device_id = self.DeviceSn  # self.devicedata["data"].get("id")
-        if self.mode == MODEL_V:
-            self.set_workmode_V1(state, self.devicesn)
+        if self.model == MODEL_V:
+            self.set_workmode_V1(state)
             return
         endpoint = "/app_mower/device/setWorkStatus"
         if self.apptype == APPTYPE_NEW:
