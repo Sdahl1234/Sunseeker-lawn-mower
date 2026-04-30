@@ -369,8 +369,11 @@ class Sunseeker_new_schedule:
                     else:
                         index = 1
                     oldday = day_of_week
-
-                    dayobj = self.GetDay(day_of_week, index)
+                    # 1-7 -> 0-6 where 0 is 7
+                    converted_day_of_week = day_of_week
+                    if day_of_week == 7:
+                        converted_day_of_week = 0
+                    dayobj = self.GetDay(converted_day_of_week, index)
                     if dayobj:
                         dayobj.enabled = True
                         dayobj.need_fllow_boader = update_var_if_changed(

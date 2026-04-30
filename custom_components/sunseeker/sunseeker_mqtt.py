@@ -288,7 +288,7 @@ class SunseekermqttController:
         if "Sat" in data:
             self.Update_single_day(device, data.get("Sat"), 6)
         if "Sun" in data:
-            self.Update_single_day(device, data.get("Sun"), 7)
+            self.Update_single_day(device, data.get("Sun"), 0)
         if "pause" in data:
             device.Schedule_new.schedule_pause = data.get("pause")
 
@@ -929,13 +929,13 @@ class SunseekermqttController:
                     nu.need_update = True
                 if data.get("cmd") == 536 and "type" in data:
                     if data.get("type") == 0:
-                        device.docking_path = self.setvalue(
-                            nu, data, [], "docking_path", 0
-                        )
+                        if device.docking_path == 1:
+                            device.docking_path = 0
+                            nu.need_update = True
                     if data.get("type") == 1:
-                        device.docking_path = self.setvalue(
-                            nu, data, [], "docking_path", 1
-                        )
+                        if device.docking_path == 0:
+                            device.docking_path = 1
+                            nu.need_update = True
 
     def handle_mqtt_message(self, message):
         """Thread to handle the messages."""
