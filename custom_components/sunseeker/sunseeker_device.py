@@ -125,10 +125,6 @@ class SunseekerDevice:
         self.base_firmware: str = ""
         self.base_firmware_new: str = ""
         self.base_ota_desc: str = ""
-        self.antenna_firmware: str = ""
-        self.antenna_firmware_new: str = ""
-        self.antenna_ota_desc: str = ""
-
         self.ota_timer = None
 
         # V1
@@ -177,13 +173,13 @@ class SunseekerDevice:
         self.base_firmware = self.settings["data"].get(
             "wirelessStationFirmwareVersion", ""
         )
-        self.antenna_firmware = self.base_firmware
         if self.model == MODEL_X:
             self.device_firmware = self.settings["data"].get(
                 "wirelessFirmwareVersion", ""
             )
         elif self.model == MODEL_V:
             self.device_firmware = self.devicedata["data"].get("firmwareVersion", "")
+        self.device_firmware_new = self.device_firmware
         self.power = self.devicedata["data"].get("electricity")
         self.mode = int(self.devicedata["data"].get("workStatusCode") or 0)
         self.rain_en = self.devicedata["data"].get("rainFlag")
@@ -1880,12 +1876,21 @@ class SunseekerDevice:
             deviceSpecies = 0
             if self.model == MODEL_V:
                 deviceSpecies = 3
-                # version = 40701 test V model OTA
+                # version = 40701  # test V model OTA
+                # self.device_firmware = version
+            else:
+                deviceSpecies = 0
+                # if devicetype == 0:
+                #    version = "1.0.5.1234"  # device firmware robot
+                #    self.device_firmware = version
+                # if devicetype == 2:
+                #    version = "2.1.0.5"  # base
+                #    self.base_firmware = version
             data = {
                 "deviceSn": sn,  # devicesn or base_sn
                 "deviceSpecies": deviceSpecies,
                 "deviceType": devicetype,
-                "version": version,  # "1.0.5.1234" device firmware robot, "2.1.0.5" base
+                "version": version,
             }
             cmd = "/ota/firmware-large/wireless/check"
             url = self.url + cmd
@@ -1917,22 +1922,33 @@ class SunseekerDevice:
                 self.error_text = ""
                 if response_data.get("data"):
                     if devicetype == 0:
-                        # Test force new version
-                        # self.device_firmware = "1.0.5.2722"
                         if deviceSpecies == 3:  # V models
-                            self.device_firmware_new = response_data.get("data").get(
-                                "version", ""
+                            self.device_firmware_new = (
+                                response_data.get("data").get(
+                                    "version", self.device_firmware
+                                )
+                                or self.device_firmware
                             )
                             self.device_ota_desc = response_data.get("data").get(
                                 "description", ""
                             )
                         else:  # X models
-                            self.device_firmware_new = response_data.get("data").get(
-                                "currentVersion", ""
+                            wireless_version = (
+                                response_data.get("data").get("wirelessVersion", 0) or 0
                             )
-                            self.device_ota_desc = response_data.get("data").get(
-                                "currentVersionDesc", ""
+                            current_version = (
+                                response_data.get("data").get("currentVersion", 0) or 0
                             )
+                            if _is_higher_version(wireless_version, current_version):
+                                self.device_firmware_new = wireless_version
+                                self.device_ota_desc = response_data.get("data").get(
+                                    "description", ""
+                                )
+                            else:
+                                self.device_firmware_new = current_version
+                                self.device_ota_desc = response_data.get("data").get(
+                                    "currentVersionDesc", ""
+                                )
                     elif devicetype == 2:
                         wireless_version = (
                             response_data.get("data").get("wirelessVersion", 0) or 0
@@ -1941,18 +1957,12 @@ class SunseekerDevice:
                             response_data.get("data").get("currentVersion", 0) or 0
                         )
                         if _is_higher_version(wireless_version, current_version):
-                            self.antenna_firmware_new = wireless_version
-                            self.antenna_ota_desc = response_data.get("data").get(
+                            self.base_firmware_new = wireless_version
+                            self.base_ota_desc = response_data.get("data").get(
                                 "description", ""
                             )
                         else:
-                            self.antenna_firmware_new = current_version
-                        self.base_firmware_new = response_data.get("data").get(
-                            "currentVersion", ""
-                        )
-                        self.base_ota_desc = response_data.get("data").get(
-                            "currentVersionDesc", ""
-                        )
+                            self.base_firmware_new = current_version
 
             return  # noqa: TRY300
 

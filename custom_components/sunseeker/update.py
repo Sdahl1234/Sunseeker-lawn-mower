@@ -48,18 +48,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 )
             )
 
-            entities.append(
-                SunseekerFirmwareUpdate(
-                    coordinator,
-                    name="Antenna firmware",
-                    unique_suffix="antenna_firmware_update",
-                    installed_attr="antenna_firmware",
-                    latest_attr="antenna_firmware_new",
-                    release_notes_attr="antenna_ota_desc",
-                    can_install=coordinator.model == MODEL_X,
-                )
-            )
-
     async_add_entities(entities)
 
 
@@ -140,7 +128,7 @@ class SunseekerFirmwareUpdate(SunseekerEntity, UpdateEntity):
         """Install firmware update."""
         if not self._can_install:
             return
-        if self.name in ("Antenna firmware", "Base firmware"):
+        if self.name == "Base firmware":
             await self.hass.async_add_executor_job(
                 self.device.base_ota_upgrade_X_models
             )
