@@ -37,7 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     )
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_OLD:
+        if coordinator.model in [MODEL_V, MODEL_OLD]:
             async_add_entities(
                 [SunseekerButton(coordinator, "Border", "border", "sunseeker_border")]
             )
