@@ -398,6 +398,21 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     ),
                 ]
             )
+        if coordinator.model in (MODEL_V, MODEL_X):
+            async_add_devices(
+                [
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Mower firmware",
+                        "",
+                        "mower_firmware",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_mower_firmware",
+                    ),
+                ]
+            )
         if coordinator.model == MODEL_X and coordinator.submodel == SUB_MODEL_GEN1:
             async_add_devices(
                 [

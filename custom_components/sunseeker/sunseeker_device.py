@@ -155,8 +155,7 @@ class SunseekerDevice:
 
     def InitMapAndZoneData(self) -> None:
         """Init map and zone data."""
-        if self.apptype == APPTYPE_NEW:
-            # self.restore_map(1775429715801)
+        if self.apptype == APPTYPE_NEW and self.model == MODEL_X:
             self.map.get_map_info()
             if self.map.image_data:
                 json_data = self.map.image_data
@@ -179,7 +178,12 @@ class SunseekerDevice:
             "wirelessStationFirmwareVersion", ""
         )
         self.antenna_firmware = self.base_firmware
-        self.device_firmware = self.settings["data"].get("wirelessFirmwareVersion", "")
+        if self.model == MODEL_X:
+            self.device_firmware = self.settings["data"].get(
+                "wirelessFirmwareVersion", ""
+            )
+        elif self.model == MODEL_V:
+            self.device_firmware = self.devicedata["data"].get("firmwareVersion", "")
         self.power = self.devicedata["data"].get("electricity")
         self.mode = int(self.devicedata["data"].get("workStatusCode") or 0)
         self.rain_en = self.devicedata["data"].get("rainFlag")
