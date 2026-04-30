@@ -233,6 +233,8 @@ class SunseekerRoboticmower:
                 self.robotList.append(ad)
                 ad.func_refesh_token = self.refresh_token_callback
                 ad.InitDevice()
+                lg = f"Added device model: {ad.model} Gen: {ad.submodel}"
+                _LOGGER.info(lg)
         return Added
 
     def get_device_list(self, apptype: str, model: str):
@@ -276,7 +278,7 @@ class SunseekerRoboticmower:
                 _LOGGER.debug("Error getting device list")
                 _LOGGER.debug(json.dumps(response_data))
                 return None
-            lg = f"Found {len(response_data['data'])} devices: {model}"
+            lg = f"Found {len(response_data['data'])} devices on server: {model}"
             _LOGGER.info(lg)
             return response_data  # noqa: TRY300
 
