@@ -386,16 +386,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:chip",
                         "sunseeker_mower_firmware",
                     ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Mower new firmware",
-                        "",
-                        "mower_new_firmware",
-                        "",
-                        "mdi:chip",
-                        "sunseeker_mower_new_firmware",
-                    ),
                 ]
             )
         if coordinator.model in (MODEL_V, MODEL_X):
@@ -410,6 +400,16 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "",
                         "mdi:chip",
                         "sunseeker_mower_firmware",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Mower new firmware",
+                        "",
+                        "mower_new_firmware",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_mower_new_firmware",
                     ),
                 ]
             )

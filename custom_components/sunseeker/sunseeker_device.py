@@ -150,7 +150,7 @@ class SunseekerDevice:
 
         if self.model == MODEL_V:
             self.Schedule_new.Get_schedule_data_V1()
-        if self.model == MODEL_X:
+        if self.model in (MODEL_X, MODEL_V):
             self.check_ota()
 
     def InitMapAndZoneData(self) -> None:
@@ -284,7 +284,7 @@ class SunseekerDevice:
     def check_ota(self) -> None:
         """Timer to fetch firmware versions."""
         self.check_ota_version(self.devicesn, self.device_firmware, 0)
-        if self.submodel == SUB_MODEL_GEN1:
+        if self.model == MODEL_X and self.submodel == SUB_MODEL_GEN1:
             self.check_ota_version(self.base_sn, self.base_firmware, 2)
         if self.ota_timer:
             self.ota_timer.cancel()
@@ -1877,9 +1877,13 @@ class SunseekerDevice:
         if version == "" or sn == "":
             return
         try:
+            deviceSpecies = 0
+            if self.model == MODEL_V:
+                deviceSpecies = 3
+                # version = 40701 test V model OTA
             data = {
                 "deviceSn": sn,  # devicesn or base_sn
-                "deviceSpecies": 0,
+                "deviceSpecies": deviceSpecies,
                 "deviceType": devicetype,
                 "version": version,  # "1.0.5.1234" device firmware robot, "2.1.0.5" base
             }
@@ -1915,12 +1919,20 @@ class SunseekerDevice:
                     if devicetype == 0:
                         # Test force new version
                         # self.device_firmware = "1.0.5.2722"
-                        self.device_firmware_new = response_data.get("data").get(
-                            "currentVersion", ""
-                        )
-                        self.device_ota_desc = response_data.get("data").get(
-                            "currentVersionDesc", ""
-                        )
+                        if deviceSpecies == 3:  # V models
+                            self.device_firmware_new = response_data.get("data").get(
+                                "version", ""
+                            )
+                            self.device_ota_desc = response_data.get("data").get(
+                                "description", ""
+                            )
+                        else:  # X models
+                            self.device_firmware_new = response_data.get("data").get(
+                                "currentVersion", ""
+                            )
+                            self.device_ota_desc = response_data.get("data").get(
+                                "currentVersionDesc", ""
+                            )
                     elif devicetype == 2:
                         wireless_version = (
                             response_data.get("data").get("wirelessVersion", 0) or 0

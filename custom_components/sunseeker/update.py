@@ -12,7 +12,7 @@ from homeassistant.components.update import (
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_X, SUB_MODEL_GEN1
+from .const import MODEL_OLD, MODEL_X, SUB_MODEL_GEN1
 from .entity import SunseekerEntity
 
 
@@ -21,7 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     entities: list[SunseekerFirmwareUpdate] = []
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model != MODEL_X:
+        if coordinator.model == MODEL_OLD:
             continue
 
         entities.append(
@@ -35,32 +35,30 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 can_install=coordinator.model == MODEL_X,
             )
         )
-        if coordinator.submodel != SUB_MODEL_GEN1:
-            continue
-
-        entities.append(
-            SunseekerFirmwareUpdate(
-                coordinator,
-                name="Base firmware",
-                unique_suffix="base_firmware_update",
-                installed_attr="base_firmware",
-                latest_attr="base_firmware_new",
-                release_notes_attr="base_ota_desc",
-                can_install=coordinator.model == MODEL_X,
+        if coordinator.model == MODEL_X and coordinator.submodel == SUB_MODEL_GEN1:
+            entities.append(
+                SunseekerFirmwareUpdate(
+                    coordinator,
+                    name="Base firmware",
+                    unique_suffix="base_firmware_update",
+                    installed_attr="base_firmware",
+                    latest_attr="base_firmware_new",
+                    release_notes_attr="base_ota_desc",
+                    can_install=coordinator.model == MODEL_X,
+                )
             )
-        )
 
-        entities.append(
-            SunseekerFirmwareUpdate(
-                coordinator,
-                name="Antenna firmware",
-                unique_suffix="antenna_firmware_update",
-                installed_attr="antenna_firmware",
-                latest_attr="antenna_firmware_new",
-                release_notes_attr="antenna_ota_desc",
-                can_install=coordinator.model == MODEL_X,
+            entities.append(
+                SunseekerFirmwareUpdate(
+                    coordinator,
+                    name="Antenna firmware",
+                    unique_suffix="antenna_firmware_update",
+                    installed_attr="antenna_firmware",
+                    latest_attr="antenna_firmware_new",
+                    release_notes_attr="antenna_ota_desc",
+                    can_install=coordinator.model == MODEL_X,
+                )
             )
-        )
 
     async_add_entities(entities)
 
