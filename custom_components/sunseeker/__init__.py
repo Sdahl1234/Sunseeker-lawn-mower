@@ -602,6 +602,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.devicesn = devicesn
         self.device: SunseekerDevice = self.data_handler.get_device(devicesn)
         self.model = self.device.model
+        self.submodel = self.device.submodel
         self.apptype = self.device.apptype
         self.device.dataupdated = self.dataupdated
         self.schedulefilepath = os.path.join(  # noqa: PTH118
