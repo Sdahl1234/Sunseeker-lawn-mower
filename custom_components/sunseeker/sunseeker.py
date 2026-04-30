@@ -191,10 +191,10 @@ class SunseekerRoboticmower:
         for device in devicelist["data"]:
             device_sn = device["deviceSn"]
             # X and V models are on both servers, so only add it once
-            if device["modelName"] in {"V1", "V3"} and model == MODEL_X:
+            if device["modelName"].startswith(("V1", "V3")) and model == MODEL_X:
                 continue
             if (
-                device["modelName"] in {"X3", "X5", "X7", "S3", "S4", "S5"}
+                device["modelName"].startswith(("X3", "X5", "X7", "S3", "S4", "S5"))
                 and model == MODEL_V
             ):
                 continue
@@ -211,13 +211,6 @@ class SunseekerRoboticmower:
                 ad.ModelName = device.get("modelName", "")
                 ad.map.robot_image_url = device.get("picUrlDetail", None)
                 ad.DeviceName = device.get("deviceName", None)
-                # modelname = device.get("modelName", APPTYPE_OLD)
-                # if modelname in ["X3", "X5", "X7"]:
-                #     ad.apptype = APPTYPE_X
-                # elif modelname in ["V1", "V3", "V5"]:
-                #     ad.apptype = APPTYPE_V
-                # else:
-                #     ad.apptype = self.apptype
                 ad.apptype = apptype
                 ad.model = model
                 ad.url = self.getURL(apptype)
