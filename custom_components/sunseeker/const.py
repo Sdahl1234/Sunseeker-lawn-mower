@@ -44,6 +44,11 @@ MODEL_OLD = "Old models"
 MODEL_X = "X models"
 MODEL_V = "V models"
 
+SUB_MODEL_NONE = ""
+SUB_MODEL_GEN1 = "GEN1"
+SUB_MODEL_GEN2 = "GEN2"
+
+
 # URLS, HOST
 URL_OLD = "https://server.sk-robot.com/api"
 HOST_OLD = "server.sk-robot.com"

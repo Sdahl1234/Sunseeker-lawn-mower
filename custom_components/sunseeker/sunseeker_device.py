@@ -7,7 +7,7 @@ from threading import Timer
 
 import requests
 
-from .const import APPTYPE_NEW, APPTYPE_OLD, MODEL_OLD, MODEL_V, MODEL_X
+from .const import APPTYPE_NEW, APPTYPE_OLD, MODEL_OLD, MODEL_V, MODEL_X, SUB_MODEL_GEN1
 from .sunseeker_consumable_items import SunseekerConsumableItems
 from .sunseeker_map import SunseekerMap
 from .sunseeker_schedule import Sunseeker_new_schedule, SunseekerSchedule
@@ -30,6 +30,7 @@ class SunseekerDevice:
         self.userid = ""
         self.apptype = APPTYPE_OLD
         self.model = MODEL_OLD
+        self.submodel = SUB_MODEL_GEN1
         self.devicesn = Devicesn
         self.deviceId = None
         self.devicedata = {}  # device status
@@ -279,7 +280,8 @@ class SunseekerDevice:
     def check_ota(self) -> None:
         """Timer to fetch firmware versions."""
         self.check_ota_version(self.devicesn, self.device_firmware, 0)
-        self.check_ota_version(self.base_sn, self.base_firmware, 2)
+        if self.submodel == SUB_MODEL_GEN1:
+            self.check_ota_version(self.base_sn, self.base_firmware, 2)
         if self.ota_timer:
             self.ota_timer.cancel()
         self.ota_timer = Timer(21600, self.check_ota)

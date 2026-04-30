@@ -19,6 +19,9 @@ from .const import (
     MODEL_X,
     REGION_EU,
     REGION_US,
+    SUB_MODEL_GEN1,
+    SUB_MODEL_GEN2,
+    SUB_MODEL_NONE,
     URL_OLD,
     URL_XV_EU,
     URL_XV_US,
@@ -209,6 +212,13 @@ class SunseekerRoboticmower:
                 ad.deviceId = deviceId
                 ad.DeviceModel = device["deviceModelName"]
                 ad.ModelName = device.get("modelName", "")
+                if apptype == APPTYPE_NEW:
+                    if "Gen 2" in ad.ModelName:
+                        ad.submodel = SUB_MODEL_GEN2
+                    else:
+                        ad.submodel = SUB_MODEL_GEN1
+                else:
+                    ad.submodel = SUB_MODEL_NONE
                 ad.map.robot_image_url = device.get("picUrlDetail", None)
                 ad.DeviceName = device.get("deviceName", None)
                 ad.apptype = apptype
