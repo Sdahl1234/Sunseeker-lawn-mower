@@ -116,6 +116,7 @@ class SunseekerDevice:
         self.zonelist.append(zone)
         self.selected_zone = 0
         self.custom_zones: bool = False
+        self.DeviceTypeId: str = ""
         self.device_firmware: str = ""
         self.device_firmware_new: str = ""
         self.device_ota_desc: str = ""
@@ -123,6 +124,10 @@ class SunseekerDevice:
         self.base_firmware: str = ""
         self.base_firmware_new: str = ""
         self.base_ota_desc: str = ""
+        self.antenna_firmware: str = ""
+        self.antenna_firmware_new: str = ""
+        self.antenna_ota_desc: str = ""
+
         self.ota_timer = None
 
         # V1
@@ -172,6 +177,7 @@ class SunseekerDevice:
         self.base_firmware = self.settings["data"].get(
             "wirelessStationFirmwareVersion", ""
         )
+        self.antenna_firmware = self.base_firmware
         self.device_firmware = self.settings["data"].get("wirelessFirmwareVersion", "")
         self.power = self.devicedata["data"].get("electricity")
         self.mode = int(self.devicedata["data"].get("workStatusCode") or 0)
@@ -198,6 +204,7 @@ class SunseekerDevice:
             self.mulpro_zon4 = self.settings["data"].get("proFour")
             self.updateschedule()
         elif self.apptype == APPTYPE_NEW:
+            self.DeviceTypeId = self.devicedata["data"].get("deviceTypeId", "")
             if self.devicedata["data"].get("timeCustomFlag"):
                 self.Schedule_new.schedule_custom = self.devicedata["data"].get(
                     "timeCustomFlag"
@@ -328,6 +335,66 @@ class SunseekerDevice:
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Get settings: failed {error}")  # noqa: G004
+
+    def device_skin(self):
+        """Get skin. X models. Return on mqtt."""
+        endpoint = f"/app_wireless_mower/device-skin/userId={self.userid}"
+        # endpoint = f"/app_wireless_mower/device-skin/list?type=2&userId={self.userid}"
+        try:
+            url_ = self.url + endpoint
+            headers_ = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get skin header: {headers_} url: {url_}")  # noqa: G004
+            response = requests.get(
+                url=url_,
+                headers=headers_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+
+            if response_data["code"] != 0:
+                _LOGGER.debug(f"Error getting skin for {self.userid}")  # noqa: G004
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"Get skin: failed {error}")  # noqa: G004
+
+    def getCustomDevice(self):
+        """Get CustomDevice X models. Return on mqtt."""
+        endpoint = "/app_wireless_mower/device-user/getCustomDevice?all=false"
+        # endpoint = "/app_wireless_mower/device-user/getCustomDevice?all=true"
+        try:
+            url_ = self.url + endpoint
+            headers_ = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get CustomDevice: {headers_} url: {url_}")  # noqa: G004
+            response = requests.get(
+                url=url_,
+                headers=headers_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+
+            if response_data["code"] != 0:
+                _LOGGER.debug("Error getting customDevice")
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"Get CustomDevice: failed {error}")  # noqa: G004
 
     def update_devices(self):
         """Update device."""
@@ -1721,8 +1788,86 @@ class SunseekerDevice:
             self.dataupdated(self.devicesn)
             _LOGGER.error(f"OTA upgrade failed: {error}")  # noqa: G004
 
+    def base_ota_upgrade_X_models(self):
+        """Start OTA."""
+        try:
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.base_sn,
+                "deviceType": 2,
+                "id": "baseStationOTA",
+                "method": "upgrade",
+            }
+            cmd = "otaUpgrade"
+            url = self.url + self.cmdurl + cmd
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            _LOGGER.debug(
+                f"Base OTA upgrade X models url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            self.dataupdated(self.devicesn)
+            _LOGGER.error(f"Base OTA upgrade failed: {error}")  # noqa: G004
+
     def check_ota_version(self, sn: str, version: str, devicetype: int):
         """Check device version. Devicetype 0 is the mower. Devicetype 2 is the base."""
+
+        def _to_version_tuple(value: str | int | None) -> tuple[int, ...]:
+            """Convert mixed version values like 1.3.2.1 or 1032 into comparable tuples."""
+            if value is None:
+                return (0,)
+            if isinstance(value, int):
+                return (value,)
+
+            raw = str(value).strip()
+            if not raw:
+                return (0,)
+
+            if "." in raw:
+                parts = [int(part) if part.isdigit() else 0 for part in raw.split(".")]
+                return tuple(parts)
+
+            if raw.isdigit():
+                return (int(raw),)
+
+            # Fallback for unexpected formats: compare using extracted numeric groups.
+            numbers = [int(num) for num in re.findall(r"\d+", raw)]
+            return tuple(numbers) if numbers else (0,)
+
+        def _is_higher_version(
+            new_value: str | int | None, old_value: str | int | None
+        ) -> bool:
+            """Return True if new_value is a higher semantic version than old_value."""
+            new_parts = _to_version_tuple(new_value)
+            old_parts = _to_version_tuple(old_value)
+            max_len = max(len(new_parts), len(old_parts))
+            padded_new = new_parts + (0,) * (max_len - len(new_parts))
+            padded_old = old_parts + (0,) * (max_len - len(old_parts))
+            return padded_new > padded_old
+
         if version == "" or sn == "":
             return
         try:
@@ -1771,6 +1916,19 @@ class SunseekerDevice:
                             "currentVersionDesc", ""
                         )
                     elif devicetype == 2:
+                        wireless_version = (
+                            response_data.get("data").get("wirelessVersion", 0) or 0
+                        )
+                        current_version = (
+                            response_data.get("data").get("currentVersion", 0) or 0
+                        )
+                        if _is_higher_version(wireless_version, current_version):
+                            self.antenna_firmware_new = wireless_version
+                            self.antenna_ota_desc = response_data.get("data").get(
+                                "description", ""
+                            )
+                        else:
+                            self.antenna_firmware_new = current_version
                         self.base_firmware_new = response_data.get("data").get(
                             "currentVersion", ""
                         )

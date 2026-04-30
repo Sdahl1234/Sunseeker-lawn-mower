@@ -35,19 +35,29 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 can_install=coordinator.model == MODEL_X,
             )
         )
-
-        if coordinator.model == MODEL_X:
-            entities.append(
-                SunseekerFirmwareUpdate(
-                    coordinator,
-                    name="Base firmware",
-                    unique_suffix="base_firmware_update",
-                    installed_attr="base_firmware",
-                    latest_attr="base_firmware_new",
-                    release_notes_attr="base_ota_desc",
-                    can_install=False,
-                )
+        entities.append(
+            SunseekerFirmwareUpdate(
+                coordinator,
+                name="Base firmware",
+                unique_suffix="base_firmware_update",
+                installed_attr="base_firmware",
+                latest_attr="base_firmware_new",
+                release_notes_attr="base_ota_desc",
+                can_install=coordinator.model == MODEL_X,
             )
+        )
+
+        entities.append(
+            SunseekerFirmwareUpdate(
+                coordinator,
+                name="Antenna firmware",
+                unique_suffix="antenna_firmware_update",
+                installed_attr="antenna_firmware",
+                latest_attr="antenna_firmware_new",
+                release_notes_attr="antenna_ota_desc",
+                can_install=coordinator.model == MODEL_X,
+            )
+        )
 
     async_add_entities(entities)
 
@@ -129,5 +139,9 @@ class SunseekerFirmwareUpdate(SunseekerEntity, UpdateEntity):
         """Install firmware update."""
         if not self._can_install:
             return
-
-        await self.hass.async_add_executor_job(self.device.ota_upgrade_X_models)
+        if self.name in ("Antenna firmware", "Base firmware"):
+            await self.hass.async_add_executor_job(
+                self.device.base_ota_upgrade_X_models
+            )
+        else:
+            await self.hass.async_add_executor_job(self.device.ota_upgrade_X_models)
