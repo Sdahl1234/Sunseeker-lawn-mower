@@ -167,6 +167,8 @@ class SunseekerDevice:
                     self.Schedule_new.zones.append([zoneid, zonename])
             self.map.get_heat_map_data()
             self.map.get_backup_map_data()
+            if self.submodel == SUB_MODEL_GEN1:
+                self.get_work_records(1, 10)
 
     def InitValues(self) -> None:
         """Init values at upstart."""
@@ -337,6 +339,35 @@ class SunseekerDevice:
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Get settings: failed {error}")  # noqa: G004
+
+    def get_work_records(self, pos: int = 1, count: int = 10):
+        """Get workrecords."""
+        endpoint = f"/app_wireless_mower/work_record/page?sn={self.devicesn}&current={pos}&size={count}"
+        try:
+            url_ = self.url + endpoint
+            headers_ = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get workrecords header: {headers_} url: {url_}")  # noqa: G004
+            response = requests.get(
+                url=url_,
+                headers=headers_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+
+            if response_data["code"] != 0:
+                _LOGGER.debug(f"Error getting workrecords for {self.devicesn}")  # noqa: G004
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"Get work_records: failed {error}")  # noqa: G004
 
     def device_skin(self):
         """Get skin. X models. Return on mqtt."""
