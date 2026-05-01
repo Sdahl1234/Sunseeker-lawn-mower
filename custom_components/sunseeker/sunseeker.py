@@ -21,6 +21,7 @@ from .const import (
     REGION_US,
     SUB_MODEL_GEN1,
     SUB_MODEL_GEN2,
+    SUB_MODEL_GEN3,
     SUB_MODEL_NONE,
     URL_OLD,
     URL_XV_EU,
@@ -194,10 +195,12 @@ class SunseekerRoboticmower:
         for device in devicelist["data"]:
             device_sn = device["deviceSn"]
             # X and V models are on both servers, so only add it once
-            if device["modelName"].startswith(("V1", "V3")) and model == MODEL_X:
+            if device["modelName"].startswith(("V1", "V18", "V3")) and model == MODEL_X:
                 continue
             if (
-                device["modelName"].startswith(("X3", "X5", "X7", "S3", "S4", "S5"))
+                device["modelName"].startswith(
+                    ("X3", "X4", "X5", "X7", "X9", "S3", "S4", "S5")
+                )
                 and model == MODEL_V
             ):
                 continue
@@ -213,7 +216,9 @@ class SunseekerRoboticmower:
                 ad.DeviceModel = device["deviceModelName"]
                 ad.ModelName = device.get("modelName", "")
                 if apptype == APPTYPE_NEW:
-                    if "Gen 2" in ad.ModelName:
+                    if "Gen 3" in ad.ModelName:
+                        ad.submodel = SUB_MODEL_GEN3
+                    elif "Gen 2" in ad.ModelName:
                         ad.submodel = SUB_MODEL_GEN2
                     else:
                         ad.submodel = SUB_MODEL_GEN1

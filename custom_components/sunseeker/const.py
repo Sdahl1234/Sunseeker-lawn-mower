@@ -41,12 +41,65 @@ APPTYPE_NEW = "New app"
 
 # Mower models
 MODEL_OLD = "Old models"
-MODEL_X = "X models"
-MODEL_V = "V models"
+MODEL_X = "X models"  # X3, X4, X5, X7, X9
+MODEL_V = "V models"  # V1, V18, V3
+MODEL_S = "S models"  # S4, S5
+
+
+S3 = "S3"
+S4 = "S4"
+S5 = "S5"
+S5GEN2 = "S5 Gen 2"
+V1 = "V1"
+V18 = "V18"
+V3 = "V3"
+X3 = "X3"
+X3GEN2 = "X3 Gen 2"
+X4 = "X4"
+X5 = "X5"
+X5GEN2 = "X5 Gen 2"
+X5GEN3 = "X5 Gen 3"
+X7 = "X7"
+X7GEN2 = "X7 Gen 2"
+X7GEN3 = "X7 Gen 3"
+X7PLUSGEN3 = "X7 Plus Gen 3"
+X9 = "X9"
+
+MODELS = [
+    S3,
+    S4,
+    S5,
+    S5GEN2,
+    V1,
+    V18,
+    V3,
+    X3,
+    X3GEN2,
+    X4,
+    X5,
+    X5GEN2,
+    X5GEN3,
+    X7,
+    X7GEN2,
+    X7GEN3,
+    X7PLUSGEN3,
+    X9,
+]
+
+MODEL_X_GEN1_LIST = [X3, X4, X5, X7, X9]
+MODEL_X_GEN2_LIST = [X3GEN2, X5GEN2, X7GEN2]
+MODEL_X_GEN3_LIST = [X5GEN3, X7GEN3, X7PLUSGEN3]
+
+MODEL_V_GEN1_LIST = [V1, V18, V3]
+
+MODEL_S_GEN1_LIST = [S3, S4, S5]
+MODEL_S_GEN2_LIST = [S5GEN2]
+
 
 SUB_MODEL_NONE = ""
 SUB_MODEL_GEN1 = "GEN1"
 SUB_MODEL_GEN2 = "GEN2"
+SUB_MODEL_GEN3 = "GEN3"
 
 
 # URLS, HOST
