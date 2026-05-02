@@ -1,5 +1,6 @@
 """SunseekerPy."""
 
+import gzip
 import json
 import logging
 import re
@@ -137,6 +138,10 @@ class SunseekerDevice:
         self.map = SunseekerMap()
         self.map.mower = self
         self.func_refesh_token = None
+
+        # Work records (MODEL_X only)
+        self.work_records: list = []
+        self.work_record_detail: dict | None = None
 
     def InitDevice(self) -> None:
         """Setup the device."""
@@ -365,9 +370,27 @@ class SunseekerDevice:
                 _LOGGER.debug(f"Error getting workrecords for {self.devicesn}")  # noqa: G004
                 _LOGGER.debug(json.dumps(response_data))
                 return
+            records = response_data.get("data", {}).get("records", [])
+            self.work_records = records
+            if self.dataupdated is not None:
+                self.dataupdated(self.devicesn)
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Get work_records: failed {error}")  # noqa: G004
+
+    def load_work_record_detail(self, url: str):
+        """Fetch and decompress a work record detail gz file."""
+        try:
+            _LOGGER.debug(f"Load work record detail: {url}")  # noqa: G004
+            response = requests.get(url=url, timeout=30)
+            response.raise_for_status()
+            decompressed = gzip.decompress(response.content)
+            self.work_record_detail = json.loads(decompressed)
+            if self.dataupdated is not None:
+                self.dataupdated(self.devicesn)
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"Load work record detail: failed {error}")  # noqa: G004
 
     def device_skin(self):
         """Get skin. X models. Return on mqtt."""

@@ -274,6 +274,9 @@
         },
         "sunseeker_schedule": {
           "name": "Schedule"
+        },
+        "sunseeker_work_records": {
+          "name": "Work Records"
         }
       },
       "binary_sensor": {

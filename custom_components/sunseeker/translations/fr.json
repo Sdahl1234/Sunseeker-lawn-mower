@@ -265,6 +265,9 @@
             },
             "sunseeker_schedule": {
                 "name": "Planning"
+            },
+            "sunseeker_work_records": {
+                "name": "Historique des sessions"
             }
         },
         "binary_sensor": {

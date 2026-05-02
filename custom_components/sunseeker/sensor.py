@@ -376,16 +376,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:saw-blade",
                         "sunseeker_blade_height",
                     ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Mower firmware",
-                        "",
-                        "mower_firmware",
-                        "",
-                        "mdi:chip",
-                        "sunseeker_mower_firmware",
-                    ),
                 ]
             )
         if coordinator.model in (MODEL_V, MODEL_X):
@@ -446,6 +436,22 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:chip",
                         "sunseeker_base_serialnumber",
                     ),
+                ]
+            )
+
+        if coordinator.model == MODEL_X:
+            async_add_devices(
+                [
+                    SunseekerWorkRecordSensor(
+                        coordinator,
+                        None,
+                        "Work Records",
+                        None,
+                        "work_records",
+                        "",
+                        "mdi:clipboard-list",
+                        "sunseeker_work_records",
+                    )
                 ]
             )
 
@@ -892,3 +898,52 @@ class SunseekerCustomZoneSizeSensor(SunseekerEntity, SensorEntity):
         """Return the state of the sensor."""
         # A simple state, could be a timestamp or a status
         return self.zone.region_size
+
+
+class SunseekerWorkRecordSensor(SunseekerEntity, SensorEntity):
+    """Sunseeker Work Record Sensor (MODEL_X only)."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        device_class: SensorDeviceClass,
+        name: str,
+        unit: str,
+        valuepair: str,
+        source: str,
+        icon: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_device_class = device_class
+        self._attr_native_unit_of_measurement = unit
+        self._valuepair = valuepair
+        self._source = source
+        self._icon = icon
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+
+    @property
+    def state(self):
+        """Return the number of available work records."""
+        return len(self.device.work_records)
+
+    @property
+    def extra_state_attributes(self):
+        """Return records list and current loaded detail."""
+        return {
+            "records": self.device.work_records,
+            "current_record_detail": self.device.work_record_detail,
+        }
+
+    @property
+    def icon(self):
+        """Icon."""
+        return self._icon

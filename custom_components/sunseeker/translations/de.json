@@ -266,6 +266,9 @@
       },
       "sunseeker_schedule": {
         "name": "Arbeitsplan"
+      },
+      "sunseeker_work_records": {
+        "name": "Arbeitsprotokolle"
       }
     },
     "binary_sensor": {

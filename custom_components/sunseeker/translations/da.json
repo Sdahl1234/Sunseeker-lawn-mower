@@ -273,6 +273,9 @@
 			},
 			"sunseeker_schedule": {
 				"name": "Tidsstyrring"
+			},
+			"sunseeker_work_records": {
+				"name": "Arbejdsregistreringer"
 			}
 		},
 		"binary_sensor": {

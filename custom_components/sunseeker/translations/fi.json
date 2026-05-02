@@ -254,6 +254,9 @@
             },
             "sunseeker_schedule": {
                 "name": "Ajastus"
+            },
+            "sunseeker_work_records": {
+                "name": "Työtiedot"
             }
         },
         "binary_sensor": {

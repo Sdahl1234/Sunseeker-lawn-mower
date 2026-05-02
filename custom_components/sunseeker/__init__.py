@@ -54,6 +54,7 @@ SERVICE_BACKUP_MAP = "backup_map"
 SERVICE_DELETE_BACKUP = "delete_backup"
 SERVICE_START_MOWING_SELECTED_AREA = "start_mowing_selected_area"
 SERVICE_STOP_TASK = "stop_task"
+SERVICE_LOAD_WORK_RECORD = "load_work_record"
 
 SET_DELETE_BACKUP = vol.Schema(
     {
@@ -132,6 +133,13 @@ START_MOWING_SELECTED_AREA_SCHEMA = vol.Schema(
 STOP_TASK_SCHEMA = vol.Schema(
     {
         vol.Required("entity_id"): cv.entity_id,
+    }
+)
+
+LOAD_WORK_RECORD_SCHEMA = vol.Schema(
+    {
+        vol.Required("entity_id"): cv.entity_id,
+        vol.Required("url"): cv.string,
     }
 )
 
@@ -418,6 +426,29 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: C901
                     return
         raise HomeAssistantError(f"Device for {entity_id} not found")
 
+    async def async_handle_load_work_record(call: ServiceCall):
+        entity_id = call.data["entity_id"]
+        url = call.data["url"]
+
+        ent_reg = er.async_get(hass)
+        entry = ent_reg.async_get(entity_id)
+        if not entry:
+            raise HomeAssistantError(f"Entity {entity_id} not found")
+
+        dsn = entry.unique_id.split("_")[1]
+        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
+            robots = data.get(ROBOTS, [])
+            for coordinator_ in robots:
+                coordinator: SunseekerDataCoordinator = coordinator_
+                if coordinator.devicesn == dsn:
+                    device = coordinator.device
+                    await hass.async_add_executor_job(
+                        device.load_work_record_detail,
+                        url,
+                    )
+                    return
+        raise HomeAssistantError(f"Device for {entity_id} not found")
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_DELETE_BACKUP,
@@ -477,6 +508,13 @@ async def async_setup(hass: HomeAssistant, config):  # noqa: C901
         SERVICE_STOP_TASK,
         async_handle_mower_stop_task,
         schema=STOP_TASK_SCHEMA,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LOAD_WORK_RECORD,
+        async_handle_load_work_record,
+        schema=LOAD_WORK_RECORD_SCHEMA,
     )
 
     hass.services.async_register(
