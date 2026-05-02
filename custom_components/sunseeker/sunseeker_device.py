@@ -345,7 +345,7 @@ class SunseekerDevice:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Get settings: failed {error}")  # noqa: G004
 
-    def get_work_records(self, pos: int = 1, count: int = 10):
+    def get_work_records(self, pos: int = 1, count: int = 10, append: bool = False):
         """Get workrecords."""
         endpoint = f"/app_wireless_mower/work_record/page?sn={self.devicesn}&current={pos}&size={count}"
         try:
@@ -371,7 +371,13 @@ class SunseekerDevice:
                 _LOGGER.debug(json.dumps(response_data))
                 return
             records = response_data.get("data", {}).get("records", [])
-            self.work_records = records
+            if append:
+                existing_ids = {r.get("id") for r in self.work_records}
+                self.work_records = self.work_records + [
+                    r for r in records if r.get("id") not in existing_ids
+                ]
+            else:
+                self.work_records = records
             if self.dataupdated is not None:
                 self.dataupdated(self.devicesn)
             return  # noqa: TRY300
