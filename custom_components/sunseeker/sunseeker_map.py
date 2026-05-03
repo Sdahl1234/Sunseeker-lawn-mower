@@ -5,6 +5,7 @@ from io import BytesIO
 import json
 import logging
 import math
+import re
 from typing import TYPE_CHECKING
 
 from PIL import Image, ImageDraw
@@ -245,7 +246,7 @@ class SunseekerMap:
         def parse_points(points_str):
             """Convert points string to list of tuples."""
             points_str = points_str.strip()
-            # Use eval safely
+            points_str = re.sub(r",\s*([\]\}])", r"\1", points_str)
             points_list = json.loads(points_str)
             return [(float(p[0]), float(p[1])) for p in points_list]
 

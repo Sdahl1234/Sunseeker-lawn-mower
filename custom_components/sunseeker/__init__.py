@@ -156,7 +156,7 @@ GET_WORK_RECORDS_SCHEMA = vol.Schema(
 )
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.level = logging.DEBUG
+# _LOGGER.level = logging.DEBUG
 
 
 def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
@@ -618,7 +618,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     upd.map_update = True
 
     for dc in robots:
-        await dc.Handle_image_update(upd)
+        try:
+            await dc.Handle_image_update(upd)
+        except Exception:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(
+                "Initial map refresh failed for %s", dc.devicesn, exc_info=True
+            )
 
     return True
 
@@ -898,21 +903,25 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
 
         _LOGGER.debug(f"Image handler - start {self.devicesn}")  # noqa: G004
         self.dataUpdating = True
-        if uv.live_move_update:
-            await self.device.map.generate_livemap(
-                self.device.map.mower_pos_x,
-                self.device.map.mower_pos_y,
-            )
-        if uv.fetch_new_map_data:
-            await self.hass.async_add_executor_job(self.device.map.get_map_info)
-            await self.hass.async_add_executor_job(self.device.map.get_backup_map_data)
-        if uv.livemap_update and uv.map_update:
-            await self.device.map.reload_maps()
-            if self.map_entity:
-                await self.map_entity.trigger_update()
-        elif uv.livemap_update:
-            await self.device.map.generate_livemap()
-        self.dataUpdating = False
+        try:
+            if uv.live_move_update:
+                await self.device.map.generate_livemap(
+                    self.device.map.mower_pos_x,
+                    self.device.map.mower_pos_y,
+                )
+            if uv.fetch_new_map_data:
+                await self.hass.async_add_executor_job(self.device.map.get_map_info)
+                await self.hass.async_add_executor_job(
+                    self.device.map.get_backup_map_data
+                )
+            if uv.livemap_update and uv.map_update:
+                await self.device.map.reload_maps()
+                if self.map_entity:
+                    await self.map_entity.trigger_update()
+            elif uv.livemap_update:
+                await self.device.map.generate_livemap()
+        finally:
+            self.dataUpdating = False
         _LOGGER.debug(f"Image handler - end {self.devicesn}")  # noqa: G004
 
     async def get_heat_map(self, snr):
