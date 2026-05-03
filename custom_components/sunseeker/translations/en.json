@@ -382,6 +382,9 @@
 			},
 			"mower_map": {
 				"name": "Map"
+			},
+			"mower_netmap": {
+				"name": "4G net Map"
 			}
 
 		},

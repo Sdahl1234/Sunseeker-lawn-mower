@@ -361,6 +361,9 @@
             },
             "mower_map": {
                 "name": "Kartta"
+            },
+            "mower_netmap": {
+                "name": "4G-verkkokartta"
             }
         },
         "switch": {

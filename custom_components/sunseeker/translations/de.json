@@ -373,6 +373,9 @@
       },
       "mower_map": {
         "name": "Karte"
+      },
+      "mower_netmap": {
+        "name": "4G-Netzkarte"
       }
     },
     "switch": {

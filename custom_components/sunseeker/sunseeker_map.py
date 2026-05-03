@@ -62,6 +62,8 @@ class SunseekerMap:
         self.heatmap_url = None
         self.wifimap: Image.Image = None
         self.wifimap_url = None
+        self.netmap = None
+        self.netmap_url = None
         self.work_color = (124, 252, 0)
         self.grass_color = (0, 0, 0)
         self.grass_fill_color = (34, 139, 34)
@@ -421,6 +423,15 @@ class SunseekerMap:
             except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
                 _LOGGER.debug(f"Get wifimap failed {error}")  # noqa: G004
 
+    def get_net_map(self):
+        """Get netmap map."""
+        if self.netmap_url:
+            try:
+                response = requests.get(url=self.netmap_url, timeout=10)
+                self.netmap = Image.open(BytesIO(response.content))
+            except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+                _LOGGER.debug(f"Get netmap failed {error}")  # noqa: G004
+
     def get_path_data(self, url):
         """Fetch path data."""
         _LOGGER.debug(
@@ -523,10 +534,13 @@ class SunseekerMap:
             _LOGGER.debug(json.dumps(response_data))
             heat_url = response_data["data"].get("url")
             wifi_url = response_data["data"].get("wifiUrl")
+            net_url = response_data["data"].get("netUrl")
             if heat_url:
                 self.heatmap_url = heat_url
             if wifi_url:
                 self.wifimap_url = wifi_url
+            if net_url:
+                self.netmap_url = net_url
 
             if response_data["code"] != 0:
                 _LOGGER.debug(f"Error getting heatmap for {self.mower.devicesn}")  # noqa: G004

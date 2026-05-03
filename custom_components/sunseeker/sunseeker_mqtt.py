@@ -44,6 +44,7 @@ class mqtt_update_values:
         self.livemap_update = False
         self.wifimap = False
         self.live_move_update = False
+        self.netmap = False
 
 
 class SunseekermqttController:

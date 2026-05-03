@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_X
+from .const import MODEL_X, SUB_MODEL_GEN2, SUB_MODEL_GEN3
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,6 +51,19 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                 ]
             )
+            if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+                async_add_entities(
+                    [
+                        MowerImage(
+                            hass,
+                            coordinator,
+                            "4G net Map",
+                            "mower_netmap",
+                            "mdi:map",
+                            3,
+                        ),
+                    ]
+                )
 
 
 class MowerImage(SunseekerEntity, ImageEntity):
@@ -87,6 +100,8 @@ class MowerImage(SunseekerEntity, ImageEntity):
             self.data_coordinator.heatmap_entity = self
         elif mapid == 2:
             self.data_coordinator.wifimap_entity = self
+        elif mapid == 3:
+            self.data_coordinator.nemap_entity = self
         self.device = self._data_handler.get_device(self._sn)
         self.mapid = mapid
 
@@ -127,6 +142,8 @@ class MowerImage(SunseekerEntity, ImageEntity):
                 roi_img = self.device.map.heatmap
             elif self.mapid == 2:
                 roi_img = self.device.map.wifimap
+            elif self.mapid == 3:
+                roi_img = self.device.map.netmap
             # roi_img = img.convert("RGB")
             if roi_img is not None:
                 img_byte_arr = io.BytesIO()
