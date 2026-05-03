@@ -19,18 +19,18 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
-    entities: list = [
-        SunseekerDeviceTracker(coordinator, "Location", "sunseeker_tracker")
-        for coordinator in robot_coordinators(hass, entry)
-    ]
     for coordinator in robot_coordinators(hass, entry):
+        async_add_entities(
+            [SunseekerDeviceTracker(coordinator, "Location", "sunseeker_tracker")]
+        )
         if coordinator.model == MODEL_X:
-            entities.append(
-                SunseekerMowerPositionTracker(
-                    coordinator, "Mower position", "sunseeker_mower_position"
-                )
+            async_add_entities(
+                [
+                    SunseekerMowerPositionTracker(
+                        coordinator, "Mower position", "sunseeker_mower_position"
+                    )
+                ]
             )
-    async_add_entities(entities)
 
 
 class SunseekerDeviceTracker(SunseekerEntity, TrackerEntity):
