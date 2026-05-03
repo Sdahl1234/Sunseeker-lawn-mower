@@ -5,7 +5,6 @@ import json
 import logging
 import os
 
-from PIL import Image
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
@@ -707,21 +706,6 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.config.config_dir,
             "Schedule-{}.json".format(self.devicesn.replace(" ", "_")),
         )
-        # _LOGGER.debug(self.schedulefilepath)
-        self.heatimagefilepath = os.path.join(  # noqa: PTH118
-            self.hass.config.config_dir,
-            "heatmap-{}.png".format(self.devicesn.replace(" ", "_")),
-        )
-        # _LOGGER.debug(self.heatimagefilepath)
-        self.wifiimagefilepath = os.path.join(  # noqa: PTH118
-            self.hass.config.config_dir,
-            "wifimap-{}.png".format(self.devicesn.replace(" ", "_")),
-        )
-        # _LOGGER.debug(self.heatimagefilepath)
-        self.netimagefilepath = os.path.join(  # noqa: PTH118
-            self.hass.config.config_dir,
-            "netmap-{}.png".format(self.devicesn.replace(" ", "_")),
-        )
         self.jdata = self.data_default
         self.livemap_entity = None  # MowerImage
         self.map_entity = None  # MowerImage
@@ -733,34 +717,15 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.add_job(self.schedule_file_exits)
             self.hass.add_job(self.schedule_load_data)
         self.hass.add_job(self.device.map.reload_maps)
-        self.forceheat = False
-        self.forcewifi = False
-        self.forcenet = False
-        getheat = False
-        getwifi = False
-        getnet = False
         if self.device.model == MODEL_X:
-            if not self.device.map.heatmap_url:
-                self.hass.add_job(self.load_image, self.heatimagefilepath, 0)
-            else:
-                getheat = True
-            if not self.device.map.wifimap_url:
-                self.hass.add_job(self.load_image, self.wifiimagefilepath, 1)
-            else:
-                getwifi = True
-            if not self.device.map.netmap_url and self.device.submodel in (
+            uv = mqtt_update_values()
+            uv.wifimap = self.device.model == MODEL_X
+            uv.heatmap = self.device.model == MODEL_X
+            uv.netmap = self.device.model == MODEL_X and self.device.submodel in (
                 SUB_MODEL_GEN2,
                 SUB_MODEL_GEN3,
-            ):
-                self.hass.add_job(self.load_image, self.netimagefilepath, 2)
-            else:
-                getnet = True
-            if getwifi or getheat or getnet:
-                uv = mqtt_update_values()
-                uv.wifimap = getwifi
-                uv.heatmap = getheat
-                uv.netmap = getnet
-                self.dataupdated(self.devicesn, uv=uv)
+            )
+            self.dataupdated(self.devicesn, uv=uv)
 
     async def set_schedule_data(self):
         """Set default."""
@@ -847,38 +812,6 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         except FileNotFoundError:
             return False
 
-    async def save_image(self, image: Image.Image, imagefilepath):
-        """Save image."""
-        try:
-            await self.hass.async_add_executor_job(image.save, imagefilepath)
-        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"Save image failed: {ex}")  # noqa: G004
-
-    async def load_image(self, imagefilepath, target: int):
-        """Load image."""
-        try:
-            if target == 0:
-                if self.device.map.heatmap:
-                    return
-            elif target == 1:
-                if self.device.map.wifimap:
-                    return
-            elif target == 2:
-                if self.device.map.netmap:
-                    return
-            image = await self.hass.async_add_executor_job(Image.open, imagefilepath)
-            if target == 0:
-                self.device.map.heatmap = image
-                self.forceheat = True
-            elif target == 1:
-                self.device.map.wifimap = image
-                self.forcewifi = True
-            elif target == 2:
-                self.device.map.netmap = image
-                self.forcenet = True
-        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"Load image failed: {ex}")  # noqa: G004
-
     def dataupdated(
         self,
         devicesn: str,
@@ -923,19 +856,6 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             if self.netmap_entity:
                 _LOGGER.debug("netmap trigger update")
                 self.hass.add_job(self.netmap_entity.trigger_update)
-        if self.forceheat:
-            self.hass.add_job(self.heatmap_entity.trigger_update)
-            self.forceheat = False
-        if self.forcewifi:
-            self.hass.add_job(self.wifimap_entity.trigger_update)
-            self.forcewifi = False
-        if (
-            self.forcenet
-            and self.device.model == MODEL_X
-            and self.device.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3)
-        ):
-            self.hass.add_job(self.netmap_entity.trigger_update)
-            self.forcenet = False
         _LOGGER.debug(f"callback - end - Sunseeker {self.devicesn}")  # noqa: G004
 
     async def Handle_image_update(self, uv: mqtt_update_values):
@@ -974,22 +894,16 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         """Function to call none async."""
         ad = self.data_handler.get_device(snr)
         await self.hass.async_add_executor_job(ad.map.get_heat_map)
-        if self.device.map.heatmap:
-            await self.save_image(self.device.map.heatmap, self.heatimagefilepath)
 
     async def get_wifi_map(self, snr):
         """Function to call none async."""
         ad = self.data_handler.get_device(snr)
         await self.hass.async_add_executor_job(ad.map.get_wifi_map)
-        if self.device.map.wifimap:
-            await self.save_image(self.device.map.wifimap, self.wifiimagefilepath)
 
     async def get_net_map(self, snr):
         """Function to call none async."""
         ad = self.data_handler.get_device(snr)
         await self.hass.async_add_executor_job(ad.map.get_net_map)
-        if self.device.map.netmap:
-            await self.save_image(self.device.map.netmap, self.netimagefilepath)
 
     @property
     def dsn(self):

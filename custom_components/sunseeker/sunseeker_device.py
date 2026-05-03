@@ -694,7 +694,8 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
                 self.error_text = response_data.get("msg")
-                self.dataupdated(self.devicesn)
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
                 self.error_text = ""
@@ -702,7 +703,8 @@ class SunseekerDevice:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
-            self.dataupdated(self.devicesn)
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set rain status: failed {error}")  # noqa: G004
 
     def set_state_change(self, command, state, zone=None):
@@ -777,7 +779,8 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
                 self.error_text = response_data.get("msg")
-                self.dataupdated(self.devicesn)
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
                 self.error_text = ""
@@ -791,7 +794,8 @@ class SunseekerDevice:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
-            self.dataupdated(self.devicesn)
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set state change: failed {error}")  # noqa: G004
 
     def start_mowing(self, zone=None):
@@ -975,7 +979,8 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
                 self.error_text = response_data.get("msg")
-                self.dataupdated(self.devicesn)
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
                 self.error_text = ""
@@ -983,7 +988,8 @@ class SunseekerDevice:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
-            self.dataupdated(self.devicesn)
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set_schedule: failed {error}")  # noqa: G004
 
     def set_zone_status(
@@ -1043,7 +1049,8 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
                 self.error_text = response_data.get("msg")
-                self.dataupdated(self.devicesn)
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
                 self.error_text = ""
@@ -1051,7 +1058,8 @@ class SunseekerDevice:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
-            self.dataupdated(self.devicesn)
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set zone status: failed {error}")  # noqa: G004
 
     def set_border_freq(self, freq: int):
@@ -1358,7 +1366,8 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
                 self.error_text = response_data.get("msg")
-                self.dataupdated(self.devicesn)
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
                 self.error_text = ""
@@ -1366,7 +1375,8 @@ class SunseekerDevice:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
-            self.dataupdated(self.devicesn)
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set action: failed {error}")  # noqa: G004
 
     def set_property(self, data):
@@ -1398,7 +1408,8 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
                 self.error_text = response_data.get("msg")
-                self.dataupdated(self.devicesn)
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
                 self.error_text = ""
@@ -1406,7 +1417,8 @@ class SunseekerDevice:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
-            self.dataupdated(self.devicesn)
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set property: failed {error}")  # noqa: G004
 
     def set_custon_property(self, zone: SunseekerZone):
@@ -1452,7 +1464,8 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
                 self.error_text = response_data.get("msg")
-                self.dataupdated(self.devicesn)
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
                 self.error_text = ""
@@ -1460,7 +1473,8 @@ class SunseekerDevice:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
-            self.dataupdated(self.devicesn)
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set property: failed {error}")  # noqa: G004
 
     def set_map(self, mapdata):
@@ -1840,7 +1854,8 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
                 self.error_text = response_data.get("msg")
-                self.dataupdated(self.devicesn)
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
                 self.error_text = ""
@@ -1848,7 +1863,8 @@ class SunseekerDevice:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
-            self.dataupdated(self.devicesn)
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"OTA upgrade failed: {error}")  # noqa: G004
 
     def base_ota_upgrade_X_models(self):
@@ -1884,7 +1900,8 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
             if response_data.get("ok") is False:
                 self.error_text = response_data.get("msg")
-                self.dataupdated(self.devicesn)
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(response_data.get("msg"))
             else:
                 self.error_text = ""
@@ -1892,7 +1909,8 @@ class SunseekerDevice:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             self.error_text = error
-            self.dataupdated(self.devicesn)
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"Base OTA upgrade failed: {error}")  # noqa: G004
 
     def check_ota_version(self, sn: str, version: str, devicetype: int):
