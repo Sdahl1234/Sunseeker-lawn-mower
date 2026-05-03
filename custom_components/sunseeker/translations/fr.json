@@ -351,6 +351,9 @@
             }
         },
         "device_tracker": {
+            "sunseeker_mower_position": {
+                "name": "Position de la tondeuse"
+            },
             "sunseeker_tracker": {
                 "name": "Localisation du robot"
             }

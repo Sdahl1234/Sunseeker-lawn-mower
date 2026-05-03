@@ -340,6 +340,9 @@
             }
         },
         "device_tracker": {
+            "sunseeker_mower_position": {
+                "name": "Leikkurin sijainti"
+            },
             "sunseeker_tracker": {
                 "name": "Robotin sijainti"
             }

@@ -362,6 +362,9 @@
 		"device_tracker": {
 			"sunseeker_tracker": {
 				"name": "Robot lokation"
+			},
+			"sunseeker_mower_position": {
+				"name": "Klipperens position"
 			}
 		},
 		"camera": {

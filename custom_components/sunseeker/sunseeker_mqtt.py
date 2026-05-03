@@ -573,6 +573,9 @@ class SunseekermqttController:
         device.map.charger_orientation = self.setvalue(
             nu, datanode, ["charge_pos"], "angle", device.map.charger_orientation
         )
+        if "rtk_pos" in datanode:
+            device.RTKPos = datanode.get("rtk_pos")
+
         if "charge_pos" in datanode:
             if "point" in datanode.get("charge_pos"):
                 x, y = data["data"]["charge_pos"]["point"]

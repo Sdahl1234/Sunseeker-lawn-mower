@@ -107,6 +107,7 @@ class SunseekerDevice:
         self.net_4g_sig = 0
         self.blade_speed = 0
         self.blade_height = 0
+        self.RTKPos = None
 
         self.current_zone_id = 0
         self.zones = [[0, "Global"]]

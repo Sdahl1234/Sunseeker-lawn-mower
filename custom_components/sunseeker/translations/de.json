@@ -354,6 +354,9 @@
     "device_tracker": {
       "sunseeker_tracker": {
         "name": "Roboterposition"
+      },
+      "sunseeker_mower_position": {
+        "name": "Mäherposition"
       }
     },
     "camera": {
