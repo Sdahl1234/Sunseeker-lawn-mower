@@ -208,3 +208,61 @@ delete_backup:
       required: true
       selector:
         text:
+
+load_work_record:
+  name: Load work record
+  description: >
+    Load a work record detail for your Sunseeker mower by URL.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity to load the work record for.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    url:
+      name: URL
+      description: The URL of the work record to load.
+      required: true
+      selector:
+        text:
+
+get_work_records:
+  name: Get work records
+  description: >
+    Retrieve work records for your Sunseeker mower.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity to get work records for.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    pos:
+      name: Position
+      description: The starting position (page) of the work records to retrieve. Defaults to 1.
+      required: false
+      default: 1
+      selector:
+        number:
+          min: 1
+          mode: box
+    count:
+      name: Count
+      description: The number of work records to retrieve. Defaults to 10, maximum 50.
+      required: false
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 50
+          mode: box
+    append:
+      name: Append
+      description: Whether to append the retrieved records to the existing list. Defaults to false.
+      required: false
+      default: false
+      selector:
+        boolean:
