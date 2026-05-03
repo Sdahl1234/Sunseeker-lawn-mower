@@ -173,8 +173,7 @@ class SunseekerDevice:
                     self.Schedule_new.zones.append([zoneid, zonename])
             self.map.get_heat_map_data()
             self.map.get_backup_map_data()
-            if self.submodel == SUB_MODEL_GEN1:
-                self.get_work_records(1, 10)
+            self.get_work_records(1, 10)
 
     def InitValues(self) -> None:
         """Init values at upstart."""
