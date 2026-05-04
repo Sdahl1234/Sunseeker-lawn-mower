@@ -37,6 +37,7 @@ English, Danish, German, Finnish and French
 - Mower control card: https://github.com/Sdahl1234/sunseeker-mower-control-card
 - Mower zones card: https://github.com/Sdahl1234/sunseeker-zone-card
 - Mower map-edit card: https://github.com/Sdahl1234/sunseeker-map-edit-card
+- Mower work-record card: https://github.com/Sdahl1234/sunseeker-work-record-card
 
 # Entities new models (wireless) 
 Not all are availeble for V models
