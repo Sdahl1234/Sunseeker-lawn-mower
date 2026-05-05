@@ -128,6 +128,7 @@ class SunseekerDevice:
         self.base_firmware_new: str = ""
         self.base_ota_desc: str = ""
         self.ota_timer = None
+        self.update_timer: Timer | None = None
 
         # V1
         self.border_distance = 0
@@ -292,7 +293,14 @@ class SunseekerDevice:
         if self.ota_timer:
             self.ota_timer.cancel()
         self.ota_timer = Timer(21600, self.check_ota)
-        self.ota_timer.start()
+        try:
+            self.ota_timer.start()
+        except RuntimeError:
+            _LOGGER.warning(
+                "Check_ota could not start timer thread. Will retry in 60 seconds"
+            )
+            self.ota_timer = Timer(60, self.check_ota)
+            self.ota_timer.start()
 
     def get_zone(self, id) -> SunseekerZone:
         """Get the zone obj."""

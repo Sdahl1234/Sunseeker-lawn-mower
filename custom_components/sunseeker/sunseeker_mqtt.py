@@ -747,10 +747,12 @@ class SunseekermqttController:
 
             if device.forceupdate:
                 device.forceupdate = False
-                update_timer = Timer(
+                if device.update_timer:
+                    device.update_timer.cancel()
+                device.update_timer = Timer(
                     10, self.Sunseeker.update_devices, [device.devicesn]
                 )
-                update_timer.start()
+                device.update_timer.start()
         if "consumable_items" in datanode:
             self.handle_mqtt_consumable_data(upd, nu, data, datanode, device)
         if "id" in data:
@@ -851,10 +853,12 @@ class SunseekermqttController:
 
             if device.forceupdate:
                 device.forceupdate = False
-                update_timer = Timer(
+                if device.update_timer:
+                    device.update_timer.cancel()
+                device.update_timer = Timer(
                     10, self.Sunseeker.update_devices, [device.devicesn]
                 )
-                update_timer.start()
+                device.update_timer.start()
         if "data" in data:
             datanode = data.get("data")
             self.handle_mqtt_data_data(upd, nu, data, datanode, device)

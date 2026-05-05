@@ -58,6 +58,7 @@ class SunseekerRoboticmower:
         self.devicelist_OLD_models = {}
         self.refresh_token_interval = None
         self.refresh_token_timeout = None
+        self._unloaded = False
         self.robotList = []  # list of devices
         self.region = region
 
@@ -305,12 +306,15 @@ class SunseekerRoboticmower:
         """Callback from the device."""
         if self.refresh_token_timeout:
             self.refresh_token_timeout.cancel()
-            self.refresh_token_timeout = Timer(60, self.refresh_token)
-            self.refresh_token_timeout.start()
+        self.refresh_token_timeout = Timer(60, self.refresh_token)
+        self.refresh_token_timeout.start()
 
     def refresh_token(self):
         """Refresh token."""
         _LOGGER.debug("Refresh token")
+        if self.refresh_token_timeout:
+            self.refresh_token_timeout.cancel()
+            self.refresh_token_timeout = None
 
         try:
             url = self.url + "/auth/oauth/token"
@@ -349,12 +353,13 @@ class SunseekerRoboticmower:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"refresh_token failed {error}")  # noqa: G004
         finally:
-            if self.refresh_token_interval:
-                self.refresh_token_interval.cancel()
-            self.refresh_token_interval = Timer(
-                (self.session.get("expires_in") or 3600), self.refresh_token
-            )
-            self.refresh_token_interval.start()
+            if not self._unloaded:
+                if self.refresh_token_interval:
+                    self.refresh_token_interval.cancel()
+                self.refresh_token_interval = Timer(
+                    (self.session.get("expires_in") or 3600), self.refresh_token
+                )
+                self.refresh_token_interval.start()
 
     def refresh_token_new(self):
         """Refresh token new."""
@@ -392,15 +397,17 @@ class SunseekerRoboticmower:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"refresh_token failed {error}")  # noqa: G004
         finally:
-            if self.refresh_token_interval:
-                self.refresh_token_interval.cancel()
-            self.refresh_token_interval = Timer(
-                (self.session.get("expires_in") or 3600), self.refresh_token
-            )
-            self.refresh_token_interval.start()
+            if not self._unloaded:
+                if self.refresh_token_interval:
+                    self.refresh_token_interval.cancel()
+                self.refresh_token_interval = Timer(
+                    (self.session.get("expires_in") or 3600), self.refresh_token_new
+                )
+                self.refresh_token_interval.start()
 
     def unload(self):
         """Unload."""
+        self._unloaded = True
         if self.refresh_token_timeout:
             self.refresh_token_timeout.cancel()
         if self.refresh_token_interval:
@@ -411,3 +418,5 @@ class SunseekerRoboticmower:
             ad = self.get_device(device_sn)
             if ad.ota_timer:
                 ad.ota_timer.cancel()
+            if ad.update_timer:
+                ad.update_timer.cancel()
