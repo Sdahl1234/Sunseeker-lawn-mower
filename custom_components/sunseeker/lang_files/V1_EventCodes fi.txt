@@ -1,0 +1,30 @@
+01:Robotti aloitti työn
+02:Robotti palaa latausasemalle
+03:Robotti aloitti latauksen
+04:Robotti aloitti reunaleikkuun
+06:Robotti siirtyi valmiustilaan
+07:Robotti käynnistyi
+08:Robotti sammutettiin
+09:Sade havaittu – robotti palaa latausasemalle
+10:Robotti tarvitsee akun vaihtoa
+11:Robotti keskeytti työn
+12:Liian monta virheellistä salasanayritystä. Laite lukittu
+13:Ei voi toimia automaattisesti STOP-tilassa
+14:Ei voi toimia automaattisesti sateisina päivinä
+15:Aloita työ aikataulun mukaisesti
+16:Aloita työ manuaalisesti
+17:Aloita trimmaus
+18:Alhainen akun varaus. Automaattinen lataus käynnistyy
+19:Aikataulutettu päättymisaika saavutettu. Lataus alkaa
+20:Aloita lataus manuaalisesti
+21:Aloita lataus sateen aikana
+22:Lopeta työskentely hämärässä. Laite aloittaa latauksen
+23:STOP painettu. Laite keskeytetty
+24:Laite latautuu
+25:Sammuta manuaalisesti
+26:Laite sammuu automaattisesti oltuaan käyttämättömänä pitkään
+27:Alhainen akun varaus. Sammutus käynnissä
+28:Solun lämpötila ylittää suurimman sallitun purkauslämpötilan.
+29:Solun lämpötila on alle pienimmän sallitun purkauslämpötilan.
+30:Solun lämpötila ylittää suurimman sallitun varaustalämpötilan.
+31:Solun lämpötila on alle pienimmän sallitun varaustalämpötilan.

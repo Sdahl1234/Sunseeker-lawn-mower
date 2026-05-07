@@ -1,0 +1,30 @@
+01:Robotten begyndte at arbejde
+02:Robotten vender tilbage til opladningsstationen
+03:Robotten begyndte at oplade
+04:Robotten begyndte at udføre kantskæring
+06:Robotten gik i standbytilstand
+07:Robotten blev tændt
+08:Robotten blev slukket
+09:Regn detekteret – robotten vender tilbage til ladestationen
+10:Robotten kræver udskiftning af batteripakken
+11:Robotten standsede
+12:For mange forkerte adgangskodeforsøg. Maskine låst.
+13:Kan ikke arbejde automatisk i STOP-tilstand.
+14:Kan ikke arbejde automatisk på regnvejrsdage.
+15:Start arbejde efter tidsplan.
+16:Start arbejde manuelt.
+17:Start trimning.
+18:Lavt batteriniveau. Starter automatisk opladning.
+19:Planlagt sluttid nået. Starter opladning.
+20:Start opladning manuelt.
+21:Start opladning, når det regner.
+22:Stop arbejdet ved skumring. Maskinen starter opladning.
+23:STOP trykket. Maskine sat på pause.
+24:Maskinen oplader.
+25:Sluk manuelt.
+26:Maskinen slukker automatisk efter længere tids inaktivitet.
+27:Lavt batteriniveau. Slukker.
+28:Celle temperaturen overskrider den maksimalt tilladte afladningstemperatur.
+29:Celle temperaturen er under den minimalt tilladte afladningstemperatur.
+30:Celle temperaturen overskrider den maksimalt tilladte opladningstemperatur.
+31:Celle temperaturen er under den minimalt tilladte opladningstemperatur.

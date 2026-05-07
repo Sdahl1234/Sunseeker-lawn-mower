@@ -1,0 +1,30 @@
+01:Robot rozpoczął pracę
+02:Robot wraca do stacji ładującej
+03:Robot rozpoczął ładowanie
+04:Robot rozpoczął koszenie krawędziowe
+06:Robot przeszedł w tryb czuwania
+07:Robot został włączony
+08:Robot został wyłączony
+09:Wykryto deszcz – robot wraca do stacji ładującej
+10:Robot wymaga wymiany akumulatora
+11:Robot został wstrzymany
+12:Zbyt wiele nieprawidłowych prób wprowadzenia hasła. Maszyna zablokowana.
+13:Nie można pracować automatycznie w trybie STOP.
+14:Nie można pracować automatycznie w czasie deszczu.
+15:Rozpocznij pracę zgodnie z harmonogramem.
+16:Rozpocznij pracę ręcznie.
+17:Rozpocznij przycinanie.
+18:Niski poziom baterii. Rozpoczynanie automatycznego ładowania.
+19:Osiągnięto zaplanowany czas zakończenia. Rozpoczynanie ładowania.
+20:Rozpocznij ładowanie ręcznie.
+21:Rozpocznij ładowanie podczas deszczu.
+22:Zatrzymaj pracę o zmierzchu. Maszyna rozpoczyna ładowanie.
+23:Naciśnięto STOP. Maszyna wstrzymana.
+24:Maszyna się ładuje.
+25:Wyłącz ręcznie.
+26:Maszyna wyłącza się automatycznie po długim czasie bezczynności.
+27:Niski poziom baterii. Wyłączanie.
+28:Temperatura ogniwa przekracza maksymalną dopuszczalną temperaturę rozładowania.
+29:Temperatura ogniwa jest niższa od minimalnej dopuszczalnej temperatury rozładowania.
+30:Temperatura ogniwa przekracza maksymalną dopuszczalną temperaturę ładowania.
+31:Temperatura ogniwa jest niższa od minimalnej dopuszczalnej temperatury ładowania.

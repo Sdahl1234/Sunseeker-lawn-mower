@@ -43,9 +43,9 @@ from .const import (
 from .entity import SunseekerEntity
 
 
-def _load_event_codes(lang: str) -> dict[int, str]:
+def _load_event_codes(lang: str, prefix: str = "EventCodes") -> dict[int, str]:
     """Load event codes from the bundled txt file for the given language."""
-    filepath = pathlib.Path(__file__).parent / f"EventCodes {lang}.txt"
+    filepath = pathlib.Path(__file__).parent / "lang_files" / f"{prefix} {lang}.txt"
     codes: dict[int, str] = {}
     try:
         with filepath.open(encoding="utf-8") as f:
@@ -70,6 +70,13 @@ _EVENT_CODES_DE: dict[int, str] = _load_event_codes("de")
 _EVENT_CODES_FR: dict[int, str] = _load_event_codes("fr")
 _EVENT_CODES_FI: dict[int, str] = _load_event_codes("fi")
 _EVENT_CODES_PL: dict[int, str] = _load_event_codes("pl")
+
+_V1_EVENT_CODES_DA: dict[int, str] = _load_event_codes("da", "V1_EventCodes")
+_V1_EVENT_CODES_EN: dict[int, str] = _load_event_codes("en", "V1_EventCodes")
+_V1_EVENT_CODES_DE: dict[int, str] = _load_event_codes("de", "V1_EventCodes")
+_V1_EVENT_CODES_FR: dict[int, str] = _load_event_codes("fr", "V1_EventCodes")
+_V1_EVENT_CODES_FI: dict[int, str] = _load_event_codes("fi", "V1_EventCodes")
+_V1_EVENT_CODES_PL: dict[int, str] = _load_event_codes("pl", "V1_EventCodes")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
@@ -838,18 +845,19 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
         elif self._valuepair == "event":
             ec = self.device.eventcode
             lang = self.hass.config.language
+            is_v_model = self.device.model == MODEL_V
             if lang == "da":
-                codes = _EVENT_CODES_DA
+                codes = _V1_EVENT_CODES_DA if is_v_model else _EVENT_CODES_DA
             elif lang == "de":
-                codes = _EVENT_CODES_DE
+                codes = _V1_EVENT_CODES_DE if is_v_model else _EVENT_CODES_DE
             elif lang == "fr":
-                codes = _EVENT_CODES_FR
+                codes = _V1_EVENT_CODES_FR if is_v_model else _EVENT_CODES_FR
             elif lang == "fi":
-                codes = _EVENT_CODES_FI
+                codes = _V1_EVENT_CODES_FI if is_v_model else _EVENT_CODES_FI
             elif lang == "pl":
-                codes = _EVENT_CODES_PL
+                codes = _V1_EVENT_CODES_PL if is_v_model else _EVENT_CODES_PL
             else:
-                codes = _EVENT_CODES_EN
+                codes = _V1_EVENT_CODES_EN if is_v_model else _EVENT_CODES_EN
             val = codes.get(ec, str(ec))
         elif self._valuepair == "mower_firmware":
             val = self.device.device_firmware

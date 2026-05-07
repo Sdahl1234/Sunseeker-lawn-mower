@@ -1,0 +1,30 @@
+01:Le robot commence à travailler
+02:Le robot retourne à la station de charge
+03:Le robot commence à se charger
+04:Le robot démarre la coupe de bordure
+06:Le robot passe en mode veille
+07:Le robot s’allume
+08:Le robot s’arrête
+09:Pluie détectée – Le robot retourne à la station de charge
+10:Il faut remplacer la batterie du robot
+11:Le robot est mis en pause
+12:Vous avez effectué trop de tentatives de mot de passe incorrectes. L’appareil est verrouillé.
+13:Impossible de travailler automatiquement en mode STOP
+14:Impossible de travailler automatiquement les jours de pluie
+15:Démarrer le travail selon le programme
+16:Démarrer le travail manuellement
+17:Démarrer la coupe
+18:Batterie faible. Démarrer la recharge automatique
+19:L\'heure de fin planifiée a été atteinte. Démarrer la recharge
+20:Démarrer la recharge manuellement
+21:Démarrer la recharge par temps de pluie
+22:Arrêter le travail à la tombée de la nuit. Recharge du robot
+23:Le bouton STOP est appuyé. Robot en pause
+24:Le robot est en charge.
+25:Arrêter manuellement
+26:Le robot s\'arrête automatiquement après une longue période d\'inactivité.
+27:Batterie faible. Arrêt en cours
+28:Température de la cellule supérieure à la température de décharge maximale autorisée.
+29:Température de la cellule inférieure à la température de décharge minimale autorisée.
+30:Température de la cellule supérieure à la température de charge maximale autorisée.
+31:Température de la cellule inférieure à la température de charge minimale autorisée.

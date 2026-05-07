@@ -1,0 +1,30 @@
+01:Der Roboter hat die Arbeit begonnen
+02:Der Roboter kehrt zur Ladestation zurück
+03:Der Roboter hat mit dem Laden begonnen
+04:Der Roboter hat mit dem Kantenschneiden begonnen
+06:Der Roboter hat den Standby-Modus betreten
+07:Der Roboter wurde eingeschaltet
+08:Der Roboter wurde heruntergefahren
+09:Regen erkannt – der Roboter kehrt zur Ladestation zurück
+10:Der Roboter benötigt einen Austausch des Akkupacks
+11:Der Roboter hat pausiert
+12:Machine locked Zu viele falsche Passworteingaben. Maschine gesperrt
+13:Kann im STOP-Modus nicht automatisch arbeiten
+14:Kann an Regentagen nicht automatisch arbeiten
+15:Arbeit im Rahmen des Zeitplans starten
+16:Arbeit manuell starten
+17:Trimmen starten
+18:Schwacher Akku. Automatisches Aufladen wird gestartet
+19:Starting recharge Geplante Endzeit erreicht. Aufladen wird gestartet
+20:Aufladen manuell starten
+21:Aufladen bei Regen starten
+22:Arbeit bei Dämmerung stoppen. Maschine beginnt mit dem Aufladen
+23:Maschine beginnt mit dem Aufladen Maschine angehalten
+24:Maschine wird geladen
+25:Manuell herunterfahren
+26:Maschine fährt nach langer Inaktivität automatisch herunter.
+27:Schwacher Akku. Wird heruntergefahren
+28:Zellentemperatur übersteigt die maximal zulässige Entladetemperatur.
+29:Zellentemperatur unterhalb der minimal zulässigen Entladetemperatur.
+30:Zellentemperatur übersteigt die maximal zulässige Ladetemperatur.
+31:Zellentemperatur unterhalb der minimal zulässigen Ladetemperatur.

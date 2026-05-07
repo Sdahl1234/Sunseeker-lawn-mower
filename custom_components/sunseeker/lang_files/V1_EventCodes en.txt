@@ -1,0 +1,30 @@
+01:The robot started working
+02:The robot is returning to the charging station
+03:The robot started charging
+04:The robot started edging cutting
+06:The robot entered standby mode
+07:The robot powered on
+08:The robot shut down
+09:Rain detected – the robot is returning to the charging station
+10:The robot requires battery pack replacement
+11:The robot paused
+12:Too many incorrect password attempts. Machine locked
+13:Cannot work automatically in STOP mode
+14:Cannot work automatically on rainy days
+15:Start working within the schedule
+16:Start working manually
+17:Start trimming
+18:Low battery. Starting automatic recharge
+19:Scheduled end time reached. Starting recharge
+20:Start recharge manually
+21:Start recharge when it rains
+22:Stop working at dusk. Machine starting recharge
+23:STOP pressed. Machine paused
+24:Machine is charging
+25:Shut down manually
+26:Machine shuts down automatically after being idle for a long time
+27:Low battery. Shutting down
+28:Cell temperature exceeds maximum allowable discharge temperature
+29:Cell temperature below minimum allowable discharge temperature
+30:Cell temperature exceeds maximum allowable charge temperature
+31:Cell temperature below minimum allowable charge temperature
