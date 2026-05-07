@@ -1,0 +1,103 @@
+1:Arbeit abgeschlossen. Rückkehr zur Ladestation.
+2:Das Gerät wird neu gestartet
+3:Niedriger Akkuladestand, der Roboter kehrt zum Aufladen zurück
+4:Ausreichend geladen, automatische Wiederaufnahme des Mähbetriebs an Haltepunkten.
+5:Der Roboter wird auf die Werkseinstellungen zurückgesetzt.
+6:Firmware-Update wird gestartet
+7:Kartendatei hochladen
+8:Firmware-Update fehlgeschlagen
+9:Roboter im „Nicht stören-Modus“
+10:Roboter beendet „Nicht stören-Modus“
+104:Betrieb wird an regnerischen Tagen pausiert und zur Ladestation zurückgekehrt.
+11:Der Roboter befindet sich im Kartierungsmodus; bitte Kartierung beenden, wenn der Roboter mit der Arbeit beginnen soll
+12:Kartierung fehlgeschlagen
+13:Kartierung erfolgreich
+16:An regnerischen Tagen arbeitet der Roboter nicht.
+17:Hochladen der vollständigen Pfad-Datei
+18:Upgrade wird durchgeführt, bitte keine anderen Vorgänge ausführen
+19:Arbeit nach Regenunterbrechung fortgesetzt. Der Mäher setzt den Betrieb fort.
+20:Frontkamera verdeckt, bitte anhalten und freimachen
+21:Zonen erfolgreich zusammengeführt
+22:Zone konnte nicht zusammengeführt werden
+23:Nachtmähen wird nicht unterstützt.
+23:Nachtarbeitsmodus aus. Mähen nachts pausiert.
+25:Debugger löst Betrieb aus
+26:App löst Betrieb aus
+27:Ankunft zur geplanten Startzeit der Arbeit
+28:Gerätetaste löst Betrieb aus
+29:Debugger löst das Ende des Betriebs aus
+30:App löst das Ende des Betriebs aus
+31:Pause
+32:Ankunft zur geplanten Endzeit
+33:Debugger löst Aufladen aus
+34:App löst Aufladen aus
+35:Geräteknopf löst das Aufladen aus. Geplante Aufgaben werden storniert, wenn sie aktiv sind
+36:Debugger löst das Ende des Ladevorgangs aus
+37:App löst das Ende des Ladevorgangs aus
+38:Debugger löst Remote-Kartierung aus
+39:App löst Ende der Remote-Kartierung aus
+40:Debugger löst das Ende der Remote-Kartierung aus
+41:App löst Ende der Remote-Kartierung aus
+42:Der Roboter lädt
+43:Gerätetaste löst Herunterfahren aus
+44:Automatische Abschaltung, wenn der Roboter längere Zeit nicht betriebsbereit ist
+45:Die Karte wurde geleert.
+46:Schließen der Karte
+47:KI-Segmentierung ohne Punktwolken
+48:KI erstellt Karten mit ungewöhnlichen Unterbrechungen
+49:Falscher Bautyp, nur Arbeitszone zulässig
+50:RTK-Kalibrierung ist fehlgeschlagen. Der Roboter kehrt automatisch zur Ladestation zurück und versucht erneut, die Kalibrierung durchzuführen.
+51:Regen erkannt
+52:Regenstopp erkannt
+53:Stopptaste gedrückt
+54:Debugger hat den Roboter angehalten
+55:App hat den Roboter angehalten
+56:Versucht, sich zu befreien
+57:Erfolgreich befreit
+58:Zur Neupositionierung zur Ladestation zurückkehren.
+59:Schwacher Akku, Herunterfahren
+60:Kamera gereinigt
+61:Der Roboter ist mit dem Kantenschneiden fertig und kehrt nun automatisch zum Aufladen zurück
+62:Karte wird wiederhergestellt
+63:Kartenwiederherstellung erfolgreich
+64:Antennensignal erfolgreich wiederhergestellt
+65:Die Verwendung im aktuellen Bereich wird nicht unterstützt
+66:Wischer blockiert
+67:Wischer wiederhergestellt
+68:Startet Fahrt zum Zielpunkt
+69:Stoppt Fahrt zum Zielpunkt
+70:Am Zielpunkt angekommen
+71:Die Grashöhe ist zu hoch und die aktuelle Schnitthöhe nicht geeignet. Sie wurde automatisch für Sie angepasst. Es empfiehlt sich, die Schnitthöhe schrittweise zu verringern.\nEmpfehlung: Schnitthöhe/Grashöhe &gt; 70 %
+72:Ruhemodusaktivierung bei Geräteabschaltung
+73:Geteilte Zone erfolgreich.
+74:Geteilte Zone fehlgeschlagen.
+75:NRTK-Netzwerk wiederhergestellt.
+76:Starten der automatischen Kartierung.
+77:LiDAR-Fehler erfolgreich behoben.
+78:Erinnerung an Reinigung des Schneidwerk-Scheibenkranzes.
+79:Erinnerung an Reinigung der Schneidwerkzeuge.
+80:LiDAR-Verschmutzung erkannt. Bitte reinigen Sie ihn umgehend.
+81:EdgeZero-Modul installiert
+82:EdgeZero-Modul entfernt
+83:PreciseEdge-Modul installiert
+84:PreciseEdge-Modul entfernt
+85:Gebietskartierung abgeschlossen, neues Gebiet erkannt.
+86:Firmware-Update abbrechen
+87:Automatische Kartierung abgeschlossen
+88:Rechter Sensor verschmutzt
+89:Linker hinterer Sensor verschmutzt
+90:Hinterer Sensor verschmutzt
+91:Umgebungslicht zu gering, Kantenschnitt nicht verfügbar.
+92:Rechte Kamera ist verschmutzt. Kantenschnitt nicht verfügbar.
+93:Keine geeignete Grenze gefunden. Kantenschnitt nicht verfügbar.
+94:Im Überwachungsbereich wurden wiederholt dynamische Hindernisse erkannt. Kantenschnitt wird beendet.
+95:Warten, bis dynamische Hindernisse verschwinden, um den Kantenschnitt fortzusetzen.
+96:Roboterupdate erfolgreich.
+97:Die Ladestation wurde möglicherweise bewegt.
+98:Das abgelaufene benutzerdefinierte Muster wurde automatisch entfernt.
+99:Der Roboter ist gesperrt. Aufgaben können nicht ausgeführt werden.
+100:Erkennung der rechten Kamera schlecht. Randschnitt wird beendet.
+101:Sonnenaufgang erreicht. Mähvorgang wird fortgesetzt.
+102:Zielbereich bei Nacht nicht erreichbar.
+103:Nachtmähen nicht unterstützt. Rückkehr zur Ladestation wegen zu wenig Licht.
+103:Nachtarbeitsmodus aus. Rückkehr zur Ladestation wegen zu wenig Licht.

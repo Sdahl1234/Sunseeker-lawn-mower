@@ -1,5 +1,7 @@
 """Constants for sunseeker integration."""
 
+LOGLEVEL_DEBUG = 0
+LOGLEVEL = LOGLEVEL_DEBUG
 SERIAL_NO = "serial_no"
 DOMAIN = "sunseeker"
 ROBOTS = "robots"

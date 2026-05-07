@@ -28,15 +28,22 @@ class SunseekerMap:
 
         self.mower: SunseekerDevice
         self.mapid = 0
-        self.mapurl = ""
-        self.realPathFileUlr = ""
+        self.mapurl = ""  # URL to mapdata
+        self.image_data = None  # json with map data from URL
+        self.mappathdata = None  # path points from Getmapinfo
+        self.realPathFileUlr = ""  # url to path data, currently empty?
+        self.realPathmapdata = None  # path data from URL
+        self.skip_server_path = False
+        self.path_id = 0
+        self.path_total = 0
+        self.livepathpoints = []
+        self.cached_pathpoints = []
         self.backupmap_data = None
         self.pathurl = ""
         self.image = None
         self.image_path = None
         self.image_state = "Not loaded"
         self.live_image_state = "Not loaded"
-        self.image_data = None
         self.map_min_x = 0
         self.map_max_x = 0
         self.map_min_y = 0
@@ -55,9 +62,6 @@ class SunseekerMap:
         self.map_phi = 0
         self.robot_image = None
         self.charger_image = None
-        self.mappathdata = None
-        self.realPathmapdata = None
-        self.livepathpoints = []
         self.heatmap = None
         self.heatmap_url = None
         self.wifimap: Image.Image = None
@@ -94,7 +98,11 @@ class SunseekerMap:
         data = pdata
         if not pdata:
             self.image_path = None
-            if self.realPathmapdata:
+            if self.skip_server_path:
+                await self.generate_path(self.cached_pathpoints)
+                # we need to use Image_path image
+                change_image = True
+            elif self.realPathmapdata:
                 await self.generate_path(self.realPathmapdata)
                 # we need to use Image_path image
                 change_image = True
@@ -437,6 +445,9 @@ class SunseekerMap:
         _LOGGER.debug(
             f"Old map_path_url: {self.realPathFileUlr} new map_path_url: {url}"  # noqa: G004
         )
+        if not url:
+            _LOGGER.debug("Skipping fetcing new map path data, url is empty")
+            return
         if self.realPathFileUlr != url:
             self.realPathFileUlr = url
             _LOGGER.debug("Fetcing new map path data")

@@ -1,0 +1,104 @@
+EventCodes en
+1:Work completed. Returning to the charging station.
+2:The device will restart
+3:Low battery, the robot will return to charge
+4:Sufficiently charged, auto-resuming mowing at breakpoints.
+5:The robot will be set to factory settings.
+6:Starting firmware update
+7:Map file upload
+8:Firmware update failed
+9:Robot into Do Not Disturb Mode
+10:Robot exit Do Not Disturb Mode
+11:The Robot is in mapping, please end mapping if you want to start robot to work
+12:Mapping failed
+13:Mapping successfully
+16:The robot does not work on rainy days.
+17:Full path file upload
+18:Updating, please don\'t do any other operations
+19:Work resumed after rain delay. The mower continues operation.
+20:Front camera obscured, please stop and clear
+21:Zones successfully merged
+22:Failed to merge zone
+23:Night mowing not supported.
+23:Night work mode off.Mowing paused at night.
+25:Debugger triggers working
+26:App triggers working
+27:Arrive at scheduled start time to work
+28:Device button triggers working
+29:Debugger triggers the end of working
+30:App triggers the end of working
+31:Pause
+32:Arrive at scheduled end time
+33:Debugger triggers recharging
+34:App triggers recharging
+35:Device button triggers recharging. Scheduled tasks will be canceled if active
+36:Debugger triggers the end of recharging
+37:App triggers the end of recharging
+38:Debugger triggers remote mapping
+39:App triggers the end of remote mapping
+40:Debugger triggers the end of remote mapping
+41:App triggers the end of remote mapping
+42:The robot is charging
+43:Device button triggers shutdown
+44:Automatic shutdown when the robot is not in working condition for a long time
+45:The map has been emptied.
+46:Map closure
+47:Al segmentation without point clouds
+48:AI builds maps with unusual interruptions
+49:Incorrect build type, only work zone allowed
+50:RTK calibrate failed, the robot will automatically return to charging station and try to calibrate again.
+51:Rain detected
+52:Rain stop detected.
+53:Stop button pressed
+54:Debugger paused the robot
+55:App paused the robot
+56:Start trying to escape from the trap
+57:Escape successful
+58:Return to charge station for respositioning.
+59:Low battery, shutdown
+60:Camera cleaned out
+61:The robot has finished edge cutting and is now returning to recharge automatically
+62:Map is restoring
+63:Map recovery successful
+64:Antenna signal recovering successfully
+65:Not supported for use in the current area
+66:Wiper stalled
+67:Wiper restored
+68:Start heading to the target point
+69:Stop heading to the target point
+70:Arrived at the target point
+71:The grass height is too high, and the current cutting height is not suitable. It has been automatically adjusted for you. It is recommended to gradually lower the cutting height.\nRecommendation: Cutting height/Grass height &gt; 70%
+72:Machine Power Off Sleep Trigger
+73:Split zone successful
+74:Split zone failed
+75:NRTK network restored
+76:Start automatic mapping
+77:LiDAR error recovery successful
+78:Blade disc cleaning reminder
+79:Blade cleaning reminder
+80:LiDAR contamination detected. Please clean it promptly.
+81:EdgeZero module installed
+82:EdgeZero module removed
+83:PreciseEdge module installed
+84:PreciseEdge module removed
+85:Area mapping completed, new area detected.
+86:Cancel Firmware Upgrade
+87:Auto mapping completed
+88:Right side sensor dirty
+89:Rear-left sensor dirty
+90:Rear sensor dirty
+91:Low light detected. EdgeZero is unavailable.
+92:Right side camera is dirty. EdgeZero is unavailable.
+93:No eligible boundary found. EdgeZero is unavailable.
+94:Repeated dynamic obstacles detected nearby. EdgeZero has stopped.
+95:Waiting for dynamic obstacles to clear to resume EdgeZero.
+96:Robot update successful.
+97:Charging station may have moved.
+98:Expired custom pattern has been automatically removed.
+99:Robot is locked. Unable to perform tasks.
+100:Right camera detection poor. Exiting edge cutting.
+101:Sunrise reached. Resuming mowing.
+102:Target area not reachable at night.
+103:Night mowing not supported. Returning to charging station due to low light.
+103:Night work mode off. Returning to charging station due to low light.
+104:Pausing operation on rainy days and returning to the charging station.

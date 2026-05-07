@@ -1,0 +1,509 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Konto zostało już skonfinurowane"
+        },
+        "error": {
+            "connection_error": "Błąd połączenia"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "model": "Brand",
+                    "name": "Name",
+                    "email": "E-mail",
+                    "password": "Password"
+                }
+            }
+        }
+    },
+    "entity": {
+		"select": {
+			"sunseeker_screen_timeout": {
+				"name": "Automatyczne wygaszanie ekreanu",
+				"state": {
+					"off": "Zawsze włączony",
+					"30": "30",
+					"60": "60",
+					"90": "90"
+				}
+			},
+			"sunseeker_ride_on_edge": {
+				"name": "Jazda po krawędziach",
+				"state": {
+					"off": "Wył",
+					"on": "Zał"
+				}
+			},
+			"sunseeker_docking_mode": {
+				"name": "Tryb dokowania",
+				"state": {
+					"smart": "Smart",
+					"notrace": "Traceless"
+				}
+			},
+			"sunseeker_border_distance": {
+				"name": "Odległość do krawędzi",
+				"state": {
+					"close": "Blisko",
+					"far": "Daleko"
+				}
+			},
+			"sunseeker_gap_custom": {
+				"name": "{post_name} Odstęp między przejazdami",
+				"state": {
+					"narrow": "Blisko",
+					"normal": "Normalnie",
+					"wide": "Szerzej"
+				}
+
+			},
+			"sunseeker_cutting_pattern_custom": {
+				"name": "{post_name} Kierunek koszenia (kąt)",
+				"state": {
+					"standard": "Standard",
+					"change_pattern": "Zmień kąt",
+					"user_defined": "Ustawiony ręcznie"
+				}
+
+			},
+			"sunseeker_work_speed_custom": {
+				"name": "{post_name} Szybkość przejazdów w czasie koszenia",
+				"state": {
+					"slow": "Powoli",
+					"normal": "Normalnie",
+					"fast": "Szybko"
+				}
+
+			},
+
+      "sunseeker_schedule_mode": {
+				"name": "Harmonogram",
+				"state": {
+					"no_schedule": "Bez harmonogramu",
+					"recommended": "Zalecany",
+					"user_defined": "Użytkownika"
+				}
+
+			},
+			"sunseeker_zones": {
+				"name": "Strefy"
+			},
+			"sunseeker_cutting_pattern": {
+				"name": "Wzorzec koszenia",
+				"state": {
+					"standard": "Standard",
+					"change_pattern": "Zmień kierunek",
+					"user_defined": "Użytkownika"
+				}
+
+			},
+			"sunseeker_avoiding_objects": {
+				"name": "Omijanie przeszkód",
+				"state": {
+					"no_touch": "Bez dotyku",
+					"slow_touch": "Z powolnym dotykaniem przeszkody"
+				}
+
+			},
+			"sunseeker_ai_sensitivity": {
+				"name": "Czułość sztucznej inteligencji",
+				"state": {
+					"low": "Niska",
+					"high": "Wysoka"
+				}
+
+			},
+			"sunseeker_edge_freq": {
+				"name": "Koszenie krawędzi po obwodzie",
+				"state": {
+					"every_time": "Przy każdym koszeniu",
+					"every_2nd_time": "Co drugie koszenie",
+					"every_3rd_time": "Co trzecie koszenie"
+				}
+
+			},
+			"sunseeker_work_speed": {
+				"name": "Prędkość",
+				"state": {
+					"slow": "Powoli",
+					"normal": "Normalnie",
+					"fast": "Szybko"
+				}
+
+			},
+			"sunseeker_gap": {
+				"name": "Odstęp między przejazdami",
+				"state": {
+					"narrow": "Blisko",
+					"normal": "Normalnie",
+					"wide": "Szerzej"
+				}
+
+			}
+
+		},
+      "sensor": {
+			"sunseeker_mower_firmware": {
+				"name": "Mower firmware"
+			},
+			"sunseeker_mower_new_firmware": {
+				"name": "Mower new firmware"
+			},
+			"sunseeker_base_firmware": {
+				"name": "Base firmware"
+			},
+			"sunseeker_base_new_firmware": {
+				"name": "Base new firmware"
+			},
+			"sunseeker_base_serialnumber": {
+				"name": "Stacja: numer seryjny serialnumber"
+			},
+			"sunseeker_blade_health": {
+				"name": "Stan ostrzy tnących"
+			},
+			"sunseeker_blade_time_left": {
+				"name": "Pozostały czas pracy ostrzy"
+			},
+			"sunseeker_cutterplade_health": {
+				"name": "Stan tarczy tnącej"
+			},
+			"sunseeker_cutterplade_time_left": {
+				"name": "Pozostały czas pracy tarczy tnącej"
+			},
+			"sunseeker_estimated_time_custom": {
+				"name": "{post_name} Przewidywany czas"
+			},
+			"sunseeker_area_size_custom": {
+				"name": "{post_name} Obszar"
+			},
+			"sunseeker_events": {
+				"name": "Zdarzenie"
+			},
+			"sunseeker_robot_signal": {
+				"name": "Siła sygnału kosiarki"
+			},
+  			"sunseeker_blade_speed": {
+				"name": "Prędkość wirowania ostrzy"
+	  		},
+		  	"sunseeker_blade_height": {
+				"name": "Wysokość koszenia"
+			},
+			"sunseeker_task_id": {
+				"name": "ID zadania"
+			},
+			"sunseeker_schedule_cancel": {
+				"name": "Anulowanie harmonogramu"
+			},
+			"sunseeker_normal_done": {
+				"name": "Normalne zakończenie"
+			},
+			"sunseeker_end_reason": {
+				"name": "Powód zakończenia"
+			},
+			"sunseeker_oneshot_task_type": {
+				"name": "Typ zadania jednorazowego"
+			},
+			"sunseeker_start_reason": {
+				"name": "Powód uruchomienia"
+			},
+			"sunseeker_task_type": {
+				"name": "Typ zadania"
+			},
+        "sunseeker_taskprogress": {
+				"name": "Postęp"
+			  },
+        "sunseeker_tasktotalarea": {
+				"name": "Obszar całkowity"
+			  },
+			  "sunseeker_taskcoverarea": {
+				"name": "Obszar wykoszony"
+			  },
+			  "sunseeker_net4g_level": {
+				"name": "Siła sygnału 4G"
+        },
+        "sunseeker_state_error": {
+          "name": "Błąd zmiany stanu"
+        },
+        "sunseeker_mower_state": {
+          "name": "Stan kosiarki",
+          "state": {
+            "standby": "Gotowa",
+            "mowing": "Kosi",
+            "on_the_way_home": "Powrót do stacji ładującej",
+            "charging": "W trakcie ładowania",
+            "mowing_border": "Koszenie krawędzi",
+            "unknown": "Nieznany",
+            "unknown4": "Mode 4",
+            "idle": "Bezczynna",
+            "working": "Pracuje",
+					"pause": "Pauza",
+					"error": "Błąd",
+					"return": "Wraca",
+					"return_pause": "Powrót wstrzymany",
+					"charging_full": "Naładowana",
+					"offline": "Offline",
+					"locating": "Ustala położenie",
+					"stop": "Zatrzymana",
+ 					"continue_mowing": "Kontynuuje koszenie",
+          "stuck": "Utknęła",
+          "updating_firmware": "Aktualizacja firmware",
+		  "enter_pin": "Wprowadź pin"
+          }
+        },
+        "sunseeker_battery": {
+          "name": "Bateria"
+        },
+        "sunseeker_rain_delay_set": {
+          "name": "Czas oczekiwania po zmoczeniu kosiarki"
+        },
+        "sunseeker_sensor_counter": {
+          "name": "Czas osuszania"
+        },
+        "sunseeker_mowing_time": {
+          "name": "Czas koszenia"
+        },
+        "sunseeker_error": {
+          "name": "Kod błędu"
+        },
+        "sunseeker_error_text": {
+          "name": "Błąd"
+        },
+        "sunseeker_wifi_level": {
+          "name": "Siła WiFi"
+        },
+        "sunseeker_rain_status": {
+          "name": "Czujnik deszczu",
+          "state": {
+            "dry": "Suchy",
+            "dry_countdown": "Suszenie",
+            "wet": "Mokry",
+            "unknown": "Nieznany"
+          }
+        },
+        "sunseekerzone1": {
+          "name": "Strefa 1 start"
+        },
+        "sunseekerzone2": {
+          "name": "Strefa 2 start"
+        },
+        "sunseekerzone3": {
+          "name": "Strefa 3 start"
+        },
+        "sunseekerzone4": {
+          "name": "Strefa 4 start"
+        },
+        "sunseeker_schedule": {
+          "name": "Harmonogram"
+        },
+        "sunseeker_work_records": {
+          "name": "Rejestr pracy"
+        }
+      },
+      "binary_sensor": {
+        "sunseeker_dock": {
+          "name": "W stacji ładowania",
+          "state": {
+            "away": "Poza domem",
+            "home": "W domu",
+            "unknown": "Nieznane"
+          }
+        },
+        "sunseeker_rain_sensor_active": {
+          "name": "Czujnik deszczu aktywny"
+        },
+        "sunseeker_multizone": {
+          "name": "Multi-strefa"
+        },
+        "sunseeker_multizoneauto": {
+          "name": "Multi-strefa auto"
+        },
+        "sunseeker_online": {
+          "name": "Online",
+          "state": {
+            "connected": "Połączony",
+            "disconnected": "Nie połączony",
+            "unknown": "Nieznany"
+          }
+        }
+      },
+      "lawn_mower": {
+        "sunseeker_lawnmower": {
+          "state": {
+            "standby": "Gotowa",
+            "mowing": "Kosi",
+            "on_the_way_home": "Powrót do stacji ładowania",
+            "charging": "W trakcie ładowania",
+            "mowing_border": "Koszenie krawędzi",
+            "unknown": "Nieznany",
+            "unknown4": "Mode 4",
+            "idle": "Bezczynny",
+            "working": "Pracuje",
+					"pause": "Pauza",
+					"error": "Błąd",
+					"return": "Powrót do stacji ładowania",
+					"return_pause": "Powrót wstrzymany",
+					"charging_full": "Naładowana",
+					"offline": "Offline",
+					"locating": "Ustala położenie",
+					"stop": "Zatrzymana",
+ 					"continue_mowing": "Kontynuuje koszenie",
+          "stuck": "Utknęła",
+          "updating_firmware": "Aktualizacja firmware",
+		  "enter_pin": "Wprowadź pin"
+          }
+        }
+      },
+      "button": {
+				"sunseeker_end_task": {
+					"name": "Zakończ bieżące zadanie"
+				},
+        "sunseeker_reset_bladeplade": {
+          "name": "Reset licznika czasu pracy płyty tnącej"
+        },
+        "sunseeker_reset_blade": {
+          "name": "Reset licznika czasu pracy noży"
+        },
+        "sunseeker_start": {
+          "name": "Start kosiarki"
+        },
+        "sunseeker_pause": {
+          "name": "Pauza kosiarki"
+        },
+        "sunseeker_border": {
+          "name": "Wykoś krawędzie"
+        },
+        "sunseeker_home": {
+          "name": "Wróć do stacji ładującej"
+        },
+        "sunseeker_stop": {
+          "name": "Stop"
+        }
+      },
+      "device_tracker": {
+        "sunseeker_tracker": {
+          "name": "Położenie robota"
+        },
+        "sunseeker_mower_position": {
+          "name": "Lokalizacja kosiarki"
+        }
+      },
+		"camera": {
+			"mower_live_map": {
+				"name": "Mapa na żywo"
+			}
+
+		},
+		"image": {
+			"mower_wifimap": {
+				"name": "Mapa zasięgu WiFi"
+			},
+			"mower_heatmap": {
+				"name": "Heat Map"
+			},
+			"mower_map": {
+				"name": "Mapa"
+			},
+			"mower_netmap": {
+				"name": "Mapa zasięgu 4G"
+			}
+
+		},
+      "switch": {
+			"sunseeker_pause_schedule": {
+				"name": "Wstrzymaj harmonogram"
+			},
+			"sunseeker_custom_enable": {
+				"name": "Strefy użytkownika"
+			},
+			"sunseeker_time_work_repeat": {
+				"name": "Czas powtarzania"
+			},
+			"sunseeker_border_first": {
+				"name": "Koszenie krawędzi w pierwszej kolejności"
+			},
+        "sunseeker_rain_sensor": {
+          "name": "Czujnik deszczu"
+        },
+        "sunseeker_multi_zone": {
+          "name": "Multi-strefa"
+        },
+        "sunseeker_multi_zone_auto": {
+          "name": "Multi-strefa auto"
+        },
+        "schedule_active": {
+          "name": "Harmonogram"
+        }
+      },
+      "number": {
+			"sunseeker_angle": {
+				"name": "Kąt koszenia"
+			},
+			"sunseeker_angle_custom": {
+				"name": "{post_name} Kąt koszenia"
+			},
+			"sunseeker_blade_speed_custom": {
+				"name": "{post_name} Prędkość wirowania ostrzy"
+			},
+			"sunseeker_blade_height_custom": {
+				"name": "{post_name} Wysokość koszenia"
+			},
+  			"sunseeker_blade_speed": {
+				"name": "Prędkość wirowania ostrzy"
+	  		},
+		  	"sunseeker_blade_height": {
+				"name": "Wysokość koszenia"
+},
+        "sunseeker_rain_delay": {
+          "name": "Oczekiwanie po deszczu"
+        },
+        "sunseeker_zone1": {
+          "name": "Strefa 1 start"
+        },
+        "sunseeker_zone2": {
+          "name": "Strefa 2 start"
+        },
+        "sunseeker_zone3": {
+          "name": "Strefa 3 start"
+        },
+        "sunseeker_zone4": {
+          "name": "Strefa 4 start"
+        },
+				"sunseeker_mulpro1": {
+				  "name": "Priorytet strefy 1"
+			  },
+			  "sunseeker_mulpro2": {
+				  "name": "Priorytet strefy 2"
+			  },
+			  "sunseeker_mulpro3": {
+				  "name": "Priorytet strefy 3"
+			  },
+			  "sunseeker_mulpro4": {
+				  "name": "Priorytet strefy 4"
+			  }
+      },
+      "text": {
+        "sunseeker_schedule_text_1": {
+          "name": "Harmonogram poniedziałek"
+        },
+        "sunseeker_schedule_text_2": {
+          "name": "Harmonogram wtorek"
+        },
+        "sunseeker_schedule_text_3": {
+          "name": "Harmonogram środa"
+        },
+        "sunseeker_schedule_text_4": {
+          "name": "Harmonogram czwartek"
+        },
+        "sunseeker_schedule_text_5": {
+          "name": "Harmonogram piątkek"
+        },
+        "sunseeker_schedule_text_6": {
+          "name": "Harmonogram sobota"
+        },
+        "sunseeker_schedule_text_7": {
+          "name": "Harmonogram niedziela"
+        }
+      }
+    }
+  }

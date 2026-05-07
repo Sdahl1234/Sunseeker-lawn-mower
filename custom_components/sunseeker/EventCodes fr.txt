@@ -1,0 +1,103 @@
+1:Travail terminé. Retour à la station de charge.
+2:L\'appareil va redémarrer
+3:Batterie faible, le robot revient se charger
+4:Recharge suffisante, reprise automatique de la tonte aux points d\'arrêt.
+5:Le robot est réinitialisé aux paramètres d\'usine.
+6:Démarrage de la mise à jour du firmware
+7:Chargement de fichier cartographique
+8:Échec de la mise à jour du firmware
+9:Robot en mode « Ne pas déranger »
+10:Le robot quitte le mode « Ne pas déranger »
+11:Le robot est en mode de cartographie, terminez la cartographie si vous souhaitez démarrer le robot
+12:Échec de la cartographie
+13:Cartographie réussie
+16:Le robot ne fonctionne pas les jours de pluie.
+17:Téléchargement du fichier de trajectoire complète
+18:Mise à niveau, merci de ne pas effectuer d\'autres opérations
+19:Reprise du travail après l’interruption due à la pluie. Le robot reprend sa tâche.
+20:Caméra avant obstruée, arrêter le robot et nettoyer la caméra
+21:Zones fusionnées avec succès
+22:Échec de la fusion des zones
+23:La tonte de nuit n’est pas prise en charge.
+23:Mode nuit désactivé. Tonte en pause la nuit.
+25:Le débogueur déclenche le fonctionnement
+26:L\'application déclenche le fonctionnement
+27:Arrive à l\'heure prévue de début de la tonte
+28:Le bouton de l\'appareil déclenche le fonctionnement
+29:Le débogueur déclenche la fin du fonctionnement
+30:L\'application déclenche la fin du fonctionnement
+31:Pause
+32:Arrive à l\'heure de fin prévue
+33:Le débogueur déclenche la recharge
+34:L\'application déclenche la recharge
+35:Appuyez sur le bouton pour lancer la recharge. Si une tâche programmée est en cours, elle sera annulée.
+36:Le débogueur déclenche la fin de la recharge
+37:L\'application déclenche la fin de la recharge
+38:Le débogueur déclenche une cartographie à distance
+39:L\'application déclenche la fin de la cartographie à distance
+40:Le débogueur déclenche la fin de la cartographie à distance
+41:L\'application déclenche la fin de la cartographie à distance
+42:Le robot se charge
+43:Le bouton de l\'appareil déclenche l\'arrêt
+44:Arrêt automatique lorsque le robot n\'est pas en état de fonctionner pendant une longue période
+45:La carte a été vidée.
+46:Fermeture de carte
+47:Segmentation IA sans nuages de points
+48:L\'IA élabore des cartes avec des interruptions inhabituelles
+49:Type de construction incorrect, seule la zone de travail est autorisée
+50:Le calibrage RTK a échoué, le robot retourne automatiquement à la borne de charge et retente le calibrage.
+51:Pluie détectée.
+52:Arrêt lié à la pluie détecté.
+53:Bouton d’arrêt enfoncé
+54:Le débogueur a mis le robot en pause
+55:L’application a mis le robot en pause
+56:Tentative de dégagement du robot
+57:Dégagement réussi
+58:Retourne à la borne de recharge pour repositionnement.
+59:Batterie faible, arrêt
+60:Caméra nettoyée
+61:Le robot a fini de couper les bords et revient maintenant se recharger automatiquement
+62:La carte est restaurée
+63:Récupération de la carte réussie
+64:Récupération du signal d\'antenne réussie
+65:Non pris en charge pour une utilisation dans la zone actuelle
+66:Essuie-glace bloqué
+67:Essuie-glace restauré
+68:Le robot se dirige vers la destination cible
+69:Arrêter de se diriger vers la destination cible
+70:Arrivée à la destination cible
+71:La hauteur d\'herbe est trop élevée, et la hauteur de coupe actuelle n\'est pas adaptée. Cela a été automatiquement ajusté pour vous. Il est recommandé d\'abaisser progressivement la hauteur de coupe.\nRecommandation : Hauteur de coupe/Hauteur de l’herbe &gt; 70%
+72:Déclencheur de mise en veille en cas de panne de courant
+73:La division de zone a réussi
+74:La division de zone a échoué
+75:Le réseau NRTK est restauré
+76:Démarrer la cartographie automatique
+77:Récupération d\'erreur LiDAR réussie.
+78:Rappel de nettoyage du disque de lame.
+79:Rappel de nettoyage des lames.
+80:Obstruction du LiDAR détectée. Nettoyez-le rapidement.
+81:Module EdgeZero installé
+82:Module EdgeZero retiré
+83:Module PreciseEdge installé
+84:Module PreciseEdge retiré
+85:Cartographie de la zone terminée, nouvelle zone détectée.
+86:Annuler la mise à niveau du micrologiciel
+87:Cartographie automatique terminée
+88:Capteur droit sale
+89:Capteur arrière gauche sale
+90:Capteur arrière sale
+91:Lumière ambiante insuffisante, coupe des bordures indisponible.
+92:La caméra droite est sale. Coupe des bordures indisponible.
+93:Aucune limite éligible trouvée. Coupe des bordures indisponible.
+94:Des obstacles dynamiques détectés à plusieurs reprises dans la zone de surveillance. Coupe des bordures arrêtée.
+95:En attente que les obstacles dynamiques disparaissent pour reprendre la coupe des bordures.
+96:Mise à jour du robot réussie.
+97:La station de charge a peut-être été déplacée.
+98:Le motif personnalisé expiré a été automatiquement supprimé.
+99:Le robot est verrouillé. Impossible d\'effectuer des tâches.
+100:Détection par la caméra droite insuffisante. Sortie de la coupe de bord.
+101:Lever du soleil atteint. Reprise de la tonte.
+102:Zone cible inaccessible la nuit.
+103:Tonte nocturne non prise en charge. Retour à la station de charge en raison d’une faible luminosité.
+103:Mode nuit désactivé. Retour à la station de charge en raison d’un faible éclairage.
+104:Pause de l\'opération les jours de pluie et retour à la station de charge.

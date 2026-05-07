@@ -1,0 +1,103 @@
+1:Praca zakończona. Powrót do stacji ładowania.
+2:Urządzenie zostanie ponownie uruchomione
+3:Niski poziom naładowania akumulatora, robot powróci do stacji w celu naładowania się
+4:Wystarczające naładowanie, automatyczne wznawianie koszenia w punktach przerwania.
+5:Robot zostanie przywrócony do ustawień fabrycznych.
+6:Rozpoczęcie aktualizacji oprogramowania sprzętowego
+7:Prześlij plik mapy
+8:Aktualizacja oprogramowania sprzętowego nie powiodła się
+9:Robot w trybie „Nie przeszkadzać”
+10:Robot wychodzi z trybu „Nie przeszkadzać”
+11:Robot jest w trakcie mapowania. Jeśli chcesz, aby robot rozpoczął pracę, zakończ mapowanie.
+12:Mapowanie nie powiodło się
+13:Mapowanie zakończone pomyślnie
+16:Robot nie pracuje w deszczowe dni.
+17:Pełna ścieżka – przesyłanie pliku
+18:Uaktualnianie, proszę nie wykonywać żadnych innych operacji
+19:Praca wznowiona po opóźnieniu spowodowanym deszczem. Kosiarka kontynuuje pracę.
+20:Kamera przednia jest zasłonięta, należy ją wyczyścić
+21:Strefy zostały pomyślnie scalone
+22:Łączenie stref nie powiodło się
+23:Koszenie nocne nie jest obsługiwane.
+23:Tryb nocny wyłączony. Koszenie w nocy wstrzymane.
+25:Debugger inicjuje pracę
+26:Aplikacja inicjuje pracę
+27:Rozpoczęcie pracy według harmonogramu
+28:Przycisk urządzenia inicjuje pracę
+29:Debugger powoduje zakończenie pracy
+30:Aplikacja powoduje zakończenie pracy
+31:Pauza
+32:Zakończenie pracy według harmonogramu
+33:Debugger inicjuje ładowanie
+34:Aplikacja inicjuje ładowanie
+35:Przycisk urządzenia uruchamia ładowanie. Zaplanowane zadania zostaną anulowane, jeśli są aktywne
+36:Debugger powoduje zakończenie ładowania
+37:Aplikacja powoduje zakończenie ładowania
+38:Debugger inicjuje zdalne mapowanie
+39:Aplikacja powoduje zakończenie zdalnego mapowania
+40:Debugger powoduje zakończenie zdalnego mapowania
+41:Aplikacja powoduje zakończenie zdalnego mapowania
+42:Trwa ładowanie robota
+43:Przycisk urządzenia powoduje wyłączenie
+44:Automatyczne wyłączenie w przypadku, gdy robot przez dłuższy czas nie pracuje
+45:Mapa została wyczyszczona.
+46:Zamknięcie mapy
+47:Segmentacja AI bez wirtualnych punktów
+48:Sztuczna inteligencja (AI) tworzy mapy z nietypowymi przerwami
+49:Nieprawidłowy typ kompilacji, dozwolona jest tylko strefa pracy
+50:Kalibracja RTK nie powiodła się, robot automatycznie powróci do stacji ładowania i spróbuje ponownie przeprowadzić kalibrację.
+51:Wykryto deszcz
+52:Wykryto koniec deszczu.
+53:Naciśnięto przycisk Stop
+54:Debugger wstrzymał robota
+55:Aplikacja wstrzymała robota
+56:Rozpocznij próbę uwolnienia
+57:Uwolnienie zakończyło się powodzeniem
+58:Wróć do stacji ładowania w celu ponownego umiejscowienia.
+59:Niski poziom akumulatora, wyłączanie…
+60:Kamera wyczyszczona
+61:Robot zakończył przycinanie krawędzi i teraz automatycznie wraca w celu naładowania
+62:Mapa jest przywracana
+63:Odzyskiwanie mapy zakończone powodzeniem
+64:Sygnał anteny został pomyślnie odzyskany
+65:Nieobsługiwane do użytku w bieżącym obszarze
+66:Wycieraczka zablokowana
+67:Wycieraczka została przywrócona
+68:Rozpocznij kierowanie się do punktu docelowego
+69:Zatrzymaj kierowanie się do punktu docelowego
+70:Dotarcie do punktu docelowego
+71:Aktualna wysokość koszenia nie jest dostosowana do wysokości trawy. Zostało to automatycznie skorygowane. Zaleca się stopniowe obniżanie wysokości koszenia.\nZalecenie: Wysokość koszenia/Wysokość trawy &gt; 70%
+72:Wyzwalacz uśpienia po wyłączeniu zasilania maszyny
+73:Podział strefy zakończony powodzeniem
+74:Podział strefy nie powiódł się
+75:Sieć NRTK została przywrócona
+76:Rozpocznij automatyczne mapowanie
+77:Przywrócenie błędu LiDAR zakończone sukcesem.
+78:Przypomnienie o czyszczeniu tarczy noża.
+79:Przypomnienie o czyszczeniu noża.
+80:Wykryto zanieczyszczenie LiDAR. Proszę niezwłocznie go wyczyścić.
+81:Moduł EdgeZero zainstalowany
+82:Moduł EdgeZero usunięty
+83:Moduł PreciseEdge zainstalowany
+84:Moduł PreciseEdge usunięty
+85:Mapowanie obszaru zakończone, wykryto nowy obszar.
+86:Anuluj aktualizację oprogramowania sprzętowego
+87:Automatyczne mapowanie zakończone
+88:Prawy czujnik zabrudzony
+89:Lewy tylny czujnik zabrudzony
+90:Tylny czujnik zabrudzony
+91:Niewystarczające oświetlenie otoczenia, przycinanie krawędzi niedostępne.
+92:Prawy aparat jest zabrudzony. Przycinanie krawędzi niedostępne.
+93:Nie znaleziono odpowiedniej granicy. Przycinanie krawędzi niedostępne.
+94:Wykryto wielokrotnie dynamiczne przeszkody w strefie obserwacji. Przycinanie krawędzi zostało zatrzymane.
+95:Oczekiwanie na usunięcie dynamicznych przeszkód, aby wznowić przycinanie krawędzi.
+96:Aktualizacja robota powiodła się.
+97:Stacja ładująca mogła zostać przesunięta.
+98:Wygasły niestandardowy wzór został automatycznie usunięty.
+99:Robot jest zablokowany. Nie można wykonywać zadań.
+100:Słabe wykrywanie prawej kamery. Zakończenie przycinania krawędzi.
+101:Wschód słońca osiągnięty. Wznawianie koszenia.
+102:Obszar docelowy nieosiągalny w nocy.
+103:Koszenie nocne nie jest obsługiwane. Powrót do stacji ładującej z powodu słabego oświetlenia.
+103:Tryb nocny wyłączony. Powrót do stacji ładującej z powodu słabego oświetlenia.
+104:Wstrzymanie działania w deszczowe dni i powrót do stacji ładowania.

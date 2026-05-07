@@ -1,6 +1,7 @@
 """Sensor."""
 
 # import logging
+import pathlib
 import time
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
@@ -40,6 +41,35 @@ from .const import (
     SUNSEEKER_WORKING,
 )
 from .entity import SunseekerEntity
+
+
+def _load_event_codes(lang: str) -> dict[int, str]:
+    """Load event codes from the bundled txt file for the given language."""
+    filepath = pathlib.Path(__file__).parent / f"EventCodes {lang}.txt"
+    codes: dict[int, str] = {}
+    try:
+        with filepath.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if ":" in line:
+                    code_str, _, text = line.partition(":")
+                    try:  # noqa: SIM105
+                        codes[int(code_str)] = text
+                    except ValueError:
+                        pass
+    except FileNotFoundError:
+        pass
+    return codes
+
+
+Test = False
+
+_EVENT_CODES_DA: dict[int, str] = _load_event_codes("da")
+_EVENT_CODES_EN: dict[int, str] = _load_event_codes("en")
+_EVENT_CODES_DE: dict[int, str] = _load_event_codes("de")
+_EVENT_CODES_FR: dict[int, str] = _load_event_codes("fr")
+_EVENT_CODES_FI: dict[int, str] = _load_event_codes("fi")
+_EVENT_CODES_PL: dict[int, str] = _load_event_codes("pl")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
@@ -378,6 +408,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     ),
                 ]
             )
+
         if coordinator.model in (MODEL_V, MODEL_X):
             async_add_devices(
                 [
@@ -468,6 +499,81 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:clock-time-three-outline",
                         "sunseeker_mowing_time",
                     )
+                ]
+            )
+        if Test:
+            async_add_devices(
+                [
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Task ID",
+                        None,
+                        "task_id",
+                        "",
+                        "mdi:identifier",
+                        "sunseeker_task_id",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Schedule cancel",
+                        None,
+                        "schedule_cancel",
+                        "",
+                        "mdi:calendar-remove",
+                        "sunseeker_schedule_cancel",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Normal done",
+                        None,
+                        "normal_done",
+                        "",
+                        "mdi:check-circle",
+                        "sunseeker_normal_done",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "End reason",
+                        None,
+                        "end_reason",
+                        "",
+                        "mdi:flag-checkered",
+                        "sunseeker_end_reason",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Oneshot task type",
+                        None,
+                        "oneshot_task_type",
+                        "",
+                        "mdi:play-circle",
+                        "sunseeker_oneshot_task_type",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Start reason",
+                        None,
+                        "start_reason",
+                        "",
+                        "mdi:play",
+                        "sunseeker_start_reason",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Task type",
+                        None,
+                        "task_type",
+                        "",
+                        "mdi:clipboard-text",
+                        "sunseeker_task_type",
+                    ),
                 ]
             )
 
@@ -730,11 +836,21 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
         elif self._valuepair in {"robot_sig", "wifi_rssi"}:  # X models, V models
             val = self.device.robotsignal
         elif self._valuepair == "event":
-            ec = str(self.device.eventcode)
-            val = f"{self.device.eventtype} (Code: {ec})"
-            # if val != self._oldevent:
-            #    self.save_to_logbook(f"New event: {val}")
-            #    self._oldevent = val
+            ec = self.device.eventcode
+            lang = self.hass.config.language
+            if lang == "da":
+                codes = _EVENT_CODES_DA
+            elif lang == "de":
+                codes = _EVENT_CODES_DE
+            elif lang == "fr":
+                codes = _EVENT_CODES_FR
+            elif lang == "fi":
+                codes = _EVENT_CODES_FI
+            elif lang == "pl":
+                codes = _EVENT_CODES_PL
+            else:
+                codes = _EVENT_CODES_EN
+            val = codes.get(ec, str(ec))
         elif self._valuepair == "mower_firmware":
             val = self.device.device_firmware
         elif self._valuepair == "mower_new_firmware":
@@ -745,6 +861,20 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             val = self.device.base_firmware_new
         elif self._valuepair == "base_serialnumber":
             val = self.device.base_sn
+        elif self._valuepair == "task_id":
+            val = self.device.task_id
+        elif self._valuepair == "schedule_cancel":
+            val = self.device.schedule_cancel
+        elif self._valuepair == "normal_done":
+            val = self.device.normal_done
+        elif self._valuepair == "end_reason":
+            val = self.device.end_reason
+        elif self._valuepair == "oneshot_task_type":
+            val = self.device.oneshot_task_type
+        elif self._valuepair == "start_reason":
+            val = self.device.start_reason
+        elif self._valuepair == "task_type":
+            val = self.device.task_type
 
         return val
 

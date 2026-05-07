@@ -40,6 +40,7 @@ class mqtt_update_values:
         self.schedule = False
         self.heatmap = False
         self.fetch_new_map_data = False
+        self.start_new_path = False
         self.map_update = False
         self.livemap_update = False
         self.wifimap = False
@@ -208,10 +209,18 @@ class SunseekermqttController:
                 )
                 thread2.start()
                 if device.model == MODEL_X:
+                    thread4 = Thread(
+                        target=device.getSelectRegionID,
+                    )
+                    thread4.start()
                     thread = Thread(
                         target=device.get_dev_all_properties,
                     )
                     thread.start()
+                    thread3 = Thread(
+                        target=device.getAllPath,
+                    )
+                    thread3.start()
 
     def connect_mqtt(self):
         """Connect mqtt."""
@@ -592,12 +601,32 @@ class SunseekermqttController:
                 device.map.mower_pos_x = x
                 device.map.mower_pos_y = y
                 upd.live_move_update = True
+
+        # id = report_path_change or report_path
         if "path_info" in datanode:
+            path_size = self.setvalue(nu, datanode, ["path_info"], "size", 0)
+            device.map.path_total = self.setvalue(
+                nu, datanode, ["path_info"], "total", device.map.path_total
+            )
+            if (
+                path_size == device.map.path_total
+            ):  # First points in the new path_id series
+                upd.start_new_path = True
+                device.map.livepathpoints.clear()
+                device.map.cached_pathpoints.clear()
+                # This is not testet so skipping this for now
+                # device.map.skip_server_path = True
+
+            device.map.path_id = self.setvalue(
+                nu, datanode, ["path_info"], "path_id", device.map.path_id
+            )
+
             if "path" in datanode.get("path_info"):
                 path = datanode.get("path_info").get("path")
                 new_points = json.loads(path)
+                device.map.cached_pathpoints.extend(new_points)
                 device.map.livepathpoints.extend(new_points)
-                if len(device.map.livepathpoints) > 100:
+                if len(device.map.livepathpoints) > 100 or upd.start_new_path:
                     upd.live_move_update = True
 
     def handle_mqtt_zone_data(
@@ -652,6 +681,7 @@ class SunseekermqttController:
         device: SunseekerDevice,
     ):
         """Handle Data dot datacdot id."""
+
         if "report_work_record" in data.get("id"):
             # Task is done. We need to reload the maps
             nu.need_update = True
@@ -659,8 +689,7 @@ class SunseekermqttController:
             upd.map_update = True
             upd.livemap_update = True
 
-            device.eventtype = data.get("id")
-            device.eventcode = "-1"
+            # device.eventtype = data.get("id")
 
         if datanode.get("event_code"):
             device.eventtype = self.setvalue(nu, data, [], "id", device.eventtype)
@@ -668,7 +697,7 @@ class SunseekermqttController:
                 nu, datanode, [], "event_code", device.eventcode
             )
             if device.eventtype == "report_event":
-                if device.eventcode == 7:  # new map
+                if device.eventcode == 7:  # new map upladed
                     if datanode.get("url"):
                         code7url = datanode.get("url")
                         # if code7url != device.map.mapurl:
@@ -678,16 +707,16 @@ class SunseekermqttController:
                             upd.fetch_new_map_data = True
                             upd.map_update = True
                             upd.livemap_update = True
-                if device.eventcode == 17:  # new path
+                if device.eventcode == 17:  # new path uploaded
                     if datanode.get("url"):
                         code17url = datanode.get("url")
                         if code17url != device.map.pathurl:
                             # device.map.pathurl = code17url
                             nu.need_update = True
-                            upd.fetch_new_map_data = False
+                            upd.fetch_new_map_data = True
                             upd.map_update = True
                             upd.livemap_update = True
-                if device.eventcode == 63:  # restor map
+                if device.eventcode == 63:  # map restored
                     if datanode.get("url"):
                         code17url = datanode.get("url")
                         if code17url != device.map.pathurl:
@@ -757,6 +786,27 @@ class SunseekermqttController:
             self.handle_mqtt_consumable_data(upd, nu, data, datanode, device)
         if "id" in data:
             self.handle_mqtt_data_id(upd, nu, data, datanode, device)
+        # task info
+        device.task_id = self.setvalue(nu, datanode, [], "task_id", device.task_id)
+        device.schedule_cancel = self.setvalue(
+            nu, datanode, [], "schedule_cancel", device.schedule_cancel
+        )
+        device.normal_done = self.setvalue(
+            nu, datanode, [], "normal_done", device.normal_done
+        )
+        device.end_reason = self.setvalue(
+            nu, datanode, [], "end_reason", device.end_reason
+        )
+        device.oneshot_task_type = self.setvalue(
+            nu, datanode, [], "oneshot_task_type", device.oneshot_task_type
+        )
+        device.start_reason = self.setvalue(
+            nu, datanode, [], "start_reason", device.start_reason
+        )
+        device.task_type = self.setvalue(
+            nu, datanode, [], "task_type", device.task_type
+        )
+
         # firmware_version
         device.device_firmware = self.setvalue(
             nu, datanode, [], "firmware_version", device.device_firmware

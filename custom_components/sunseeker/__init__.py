@@ -26,6 +26,7 @@ from .const import (
     DATAHANDLER,
     DH,
     DOMAIN,
+    LOGLEVEL,
     MODEL_X,
     ROBOTS,
     SUB_MODEL_GEN2,
@@ -164,7 +165,8 @@ GET_WORK_RECORDS_SCHEMA = vol.Schema(
 )
 
 _LOGGER = logging.getLogger(__name__)
-# _LOGGER.level = logging.DEBUG
+if LOGLEVEL == 10:
+    _LOGGER.level = logging.DEBUG
 
 
 def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
@@ -870,17 +872,17 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         _LOGGER.debug(f"Image handler - start {self.devicesn}")  # noqa: G004
         self.dataUpdating = True
         try:
-            if uv.live_move_update:
+            if uv.live_move_update or uv.start_new_path:
                 await self.device.map.generate_livemap(
                     self.device.map.mower_pos_x,
                     self.device.map.mower_pos_y,
                 )
-            if uv.fetch_new_map_data:
+            if uv.fetch_new_map_data or uv.start_new_path:
                 await self.hass.async_add_executor_job(self.device.map.get_map_info)
                 await self.hass.async_add_executor_job(
                     self.device.map.get_backup_map_data
                 )
-            if uv.livemap_update and uv.map_update:
+            if (uv.livemap_update and uv.map_update) or uv.start_new_path:
                 await self.device.map.reload_maps()
                 if self.map_entity:
                     await self.map_entity.trigger_update()

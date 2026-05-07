@@ -188,7 +188,28 @@
 	  		},
 		  	"sunseeker_blade_height": {
 				"name": "Blade height"
-},
+			},
+			"sunseeker_task_id": {
+				"name": "Task ID"
+			},
+			"sunseeker_schedule_cancel": {
+				"name": "Schedule cancel"
+			},
+			"sunseeker_normal_done": {
+				"name": "Normal done"
+			},
+			"sunseeker_end_reason": {
+				"name": "End reason"
+			},
+			"sunseeker_oneshot_task_type": {
+				"name": "Oneshot task type"
+			},
+			"sunseeker_start_reason": {
+				"name": "Start reason"
+			},
+			"sunseeker_task_type": {
+				"name": "Task type"
+			},
         "sunseeker_taskprogress": {
 				"name": "Progress"
 			  },

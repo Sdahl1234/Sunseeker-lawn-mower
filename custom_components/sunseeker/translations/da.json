@@ -188,6 +188,27 @@
 			"sunseeker_blade_height": {
 				"name": "Kniv højde"
 			},
+			"sunseeker_task_id": {
+				"name": "Opgave ID"
+			},
+			"sunseeker_schedule_cancel": {
+				"name": "Program annulleret"
+			},
+			"sunseeker_normal_done": {
+				"name": "Normal afsluttet"
+			},
+			"sunseeker_end_reason": {
+				"name": "Slutårsag"
+			},
+			"sunseeker_oneshot_task_type": {
+				"name": "Engangopgave type"
+			},
+			"sunseeker_start_reason": {
+				"name": "Startårsag"
+			},
+			"sunseeker_task_type": {
+				"name": "Opgavetype"
+			},
 			"sunseeker_taskprogress": {
 				"name": "Progress"
 			},

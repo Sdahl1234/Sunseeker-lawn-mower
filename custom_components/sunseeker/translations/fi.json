@@ -175,6 +175,27 @@
             "sunseeker_blade_height": {
                 "name": "Terän korkeus"
             },
+            "sunseeker_task_id": {
+                "name": "Tehtävä-ID"
+            },
+            "sunseeker_schedule_cancel": {
+                "name": "Aikataulu peruutettu"
+            },
+            "sunseeker_normal_done": {
+                "name": "Normaali valmis"
+            },
+            "sunseeker_end_reason": {
+                "name": "Lopetussyy"
+            },
+            "sunseeker_oneshot_task_type": {
+                "name": "Kertatehtävän tyyppi"
+            },
+            "sunseeker_start_reason": {
+                "name": "Käynnistyssyy"
+            },
+            "sunseeker_task_type": {
+                "name": "Tehtävätyyppi"
+            },
             "sunseeker_events": {
                 "name": "Tapahtuma"
             },

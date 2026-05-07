@@ -180,6 +180,27 @@
             "sunseeker_blade_height": {
                 "name": "Hauteur de la coupe"
             },
+            "sunseeker_task_id": {
+                "name": "ID de tâche"
+            },
+            "sunseeker_schedule_cancel": {
+                "name": "Programme annulé"
+            },
+            "sunseeker_normal_done": {
+                "name": "Terminé normalement"
+            },
+            "sunseeker_end_reason": {
+                "name": "Raison de fin"
+            },
+            "sunseeker_oneshot_task_type": {
+                "name": "Type de tâche unique"
+            },
+            "sunseeker_start_reason": {
+                "name": "Raison de démarrage"
+            },
+            "sunseeker_task_type": {
+                "name": "Type de tâche"
+            },
             "sunseeker_taskprogress": {
                 "name": "Avancement"
             },

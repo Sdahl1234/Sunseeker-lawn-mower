@@ -1,0 +1,103 @@
+1:Työ suoritettu. Palataan latausasemalle.
+2:Laite käynnistyy uudelleen
+3:Akku vähissä, robotti palaa latautumaan
+4:Riittävästi ladattu, jatkaa leikkaamista automaattisesti keskeytyskohdista.
+5:Robotti asetetaan tehdasasetuksiin.
+6:Laiteohjelmiston päivityksen käynnistyminen
+7:Karttatiedoston lataus
+8:Laiteohjelmiston päivitys epäonnistui
+9:Robotti menee ”Älä häiritse -tilaan”
+10:Robotti poistuu ”Älä häiritse -tilasta”
+11:Robotti on kartoituksessa, lopeta kartoitus, jos haluat aloittaa robotin työskentelyn
+12:Kartoitus epäonnistui
+13:Kartoitus onnistui
+16:Robotti ei toimi sateisina päivinä.
+17:Täydellisen reittitiedoston lataus
+18:Päivittää, älä tee muita toimintoja
+19:Työ jatkui sadeviiveen jälkeen. Ruohonleikkuri jatkaa toimintaa.
+20:Etukamera peitetty, pysäytä ja poista
+21:Vyöhykkeiden yhdistäminen onnistui
+22:Vyöhykkeen yhdistäminen epäonnistui
+23:Yöleikkuu ei ole tuettu.
+23:Yötila pois päältä. Leikkuutyö keskeytetty yöllä.
+25:Virheenkorjaaja laukaisee työskentelyn
+26:Sovelluslaukaisijat toimivat
+27:Saapuminen aikataulun mukaiseen työskentelyn aloitusaikaan
+28:Laitteen painike laukaisee työskentelyn
+29:Virheenkorjaaja laukaisee työskentelyn päättymisen
+30:Sovellus laukaisee työskentelyn päättymisen
+31:Keskeytä
+32:Saapuminen aikataulun mukaiseen päättymisaikaan
+33:Virheenkorjaaja laukaisee uudelleenlataamisen
+34:Sovellus laukaisee uudelleenlataamisen
+35:Laitteen painike käynnistää latauksen. Ajastetut tehtävät perutaan, jos ne ovat aktiivisia
+36:Virheenkorjaaja laukaisee uudelleenlatauksen päättymisen
+37:Sovellus laukaisee uudelleenlatauksen päättymisen
+38:Virheenkorjaaja laukaisee etäkartoituksen
+39:Sovellus laukaisee etäkartoituksen päättymisen
+40:Virheenkorjaaja laukaisee etäkartoituksen päättymisen
+41:Sovellus laukaisee etäkartoituksen päättymisen
+42:Robotti latautuu
+43:Laitteen painike laukaisee sammutuksen
+44:Automaattinen sammutus, kun robotti ei ole toimintakunnossa pitkään aikaan
+45:Kartta on tyhjennetty.
+46:Kartan sulkeminen
+47:Al-segmentointi ilman pistepilviä
+48:AI rakentaa karttoja epätavallisilla keskeytyksillä
+49:Virheellinen rakennustyyppi, vain työskentelyvyöhyke sallittu
+50:RTK:n kalibrointi epäonnistui, robotti palaa automaattisesti latausasemaan ja yrittää kalibrointia uudelleen.
+51:Sade havaittu
+52:Sateen loppuminen tunnistettu.
+53:Pysäytyspainiketta painettu
+54:Virheenkorjaaja keskeytti robotin
+55:Sovellus keskeytti robotin
+56:Aloita ansasta vapautumisen yrittäminen
+57:Vapautuminen onnistui
+58:Palaa latausasemaan uudelleensijoittamista varten.
+59:Akku vähissä, sammutus
+60:Kamera puhdistettu
+61:Robotti on lopettanut reunojen leikkaamisen ja palaa nyt latautumaan automaattisesti
+62:Kartta on palautumassa
+63:Kartan palautus onnistui
+64:Antennin signaalin palautus onnistui
+65:Käyttöä nykyisellä alueella ei tueta
+66:Pyyhkijä pysähtyi
+67:Pyyhkijä palautettu
+68:Aloita suuntaus kohdepisteeseen
+69:Lopeta suuntaus kohdepisteeseen
+70:Saapui kohdepisteeseen
+71:Ruoho on liian korkeaa eikä nykyinen leikkuukorkeus ole sopiva. Se on säädetty automaattisesti sinua varten. Leikkuukorkeutta on suositeltavaa laskea asteittain.\n Suositus: Leikkuukorkeus / ruohon korkeus &gt; 70 %
+72:Koneen virrankatkaisu lepotilan laukaisu
+73:Alueen jako onnistui
+74:Alueen jako epäonnistui
+75:NRTK-verkko palautui
+76:Käynnistä automaattinen kartoitus
+77:LiDAR-virheen palautus onnistui.
+78:Terän levyn puhdistusmuistutus.
+79:Terän puhdistusmuistutus.
+80:LiDARin likaantuminen havaittu. Puhdista se viipymättä.
+81:EdgeZero-moduuli asennettu
+82:EdgeZero-moduuli poistettu
+83:PreciseEdge-moduuli asennettu
+84:PreciseEdge-moduuli poistettu
+85:Alueen kartoitus valmis, uusi alue havaittu.
+86:Peruuta laiteohjelmiston päivitys
+87:Automaattinen kartoitus valmis
+88:Oikea anturi likainen
+89:Vasen taka-anturi likainen
+90:Takaa-anturi likainen
+91:Ympäristön valaistus riittämätön, reunaleikkaus ei ole käytettävissä.
+92:Oikeanpuoleinen kamera on likainen. Reunaleikkaus ei ole käytettävissä.
+93:Ei löytynyt sopivaa rajaa. Reunaleikkaus ei ole käytettävissä.
+94:Valvonta-alueella havaittiin toistuvasti dynaamisia esteitä. Reunaleikkaus pysäytetty.
+95:Odotetaan, että dynaamiset esteet poistuvat reunaleikkauksen jatkamiseksi.
+96:Robotin päivitys onnistui.
+97:Latausasema on saatettu siirtää.
+98:Vanhentunut mukautettu kuvio on poistettu automaattisesti.
+99:Robotti on lukittu. Tehtäviä ei voida suorittaa.
+100:Oikean kameran tunnistus on huono. Poistutaan reunaleikkauksesta.
+101:Auringonnousu saavutettu. Leikkuuta jatketaan.
+102:Kohdealue ei ole saavutettavissa yöllä.
+103:Yöleikkuuta ei tueta. Paluu latausasemalle heikon valaistuksen vuoksi.
+103:Yötila pois päältä. Paluu latausasemalle heikon valaistuksen vuoksi.
+104:Toiminnan keskeytys sateisina päivinä ja paluu latausasemalle.

@@ -91,7 +91,7 @@ class SunseekerDevice:
         self.plan_mode = 0
         self.plan_angle = 0
         self.mapurl = ""
-        self.pathurl = ""
+        self.pathurl = ""  # URL to pathdata from eventcode 17
         self.eventcode = 0
         self.eventtype = "Event"
         self.avoid_objects = 0
@@ -129,6 +129,14 @@ class SunseekerDevice:
         self.base_ota_desc: str = ""
         self.ota_timer = None
         self.update_timer: Timer | None = None
+        # Task
+        self.schedule_cancel: str = ""
+        self.normal_done: str = ""
+        self.end_reason: str = ""
+        self.oneshot_task_type: str = ""
+        self.start_reason: str = ""
+        self.task_id: str = ""
+        self.task_type: str = ""
 
         # V1
         self.border_distance = 0
@@ -193,6 +201,12 @@ class SunseekerDevice:
         self.rain_en = self.devicedata["data"].get("rainFlag")
         self.rain_delay_set = int(self.devicedata["data"].get("rainDelayDuration") or 0)
         self.rain_status = int(self.devicedata["data"].get("rainStatusCode") or 0)
+
+        # Taks
+        if self.model == MODEL_X:
+            self.schedule_cancel = self.settings["data"].get("scheduleCancel", "")
+            self.task_type = self.settings["data"].get("taskType", "")
+            self.oneshot_task_type = self.settings["data"].get("oneshotTaskType", "")
 
         self.InitMapAndZoneData()
 
@@ -609,18 +623,19 @@ class SunseekerDevice:
             _LOGGER.error(f"Get getSelectRegionID: failed {error}")  # noqa: G004
 
     def getAllPath(self):
-        """Get getSelectRegionID. Data received via mqtt."""
-        if self.model == MODEL_V:
+        """Get getAllPath. Data received via mqtt."""
+        if self.model == MODEL_V or not self.map.mapid:
             return
+
         endpoint = self.cmdurl + "get_property"
         try:
             url_ = self.url + endpoint
             data_ = {
                 "appId": self.userid,
                 "deviceSn": self.devicesn,
-                "id": "getSelectRegionID",
+                "id": "getAllPath",
                 "key": "all_path",
-                "map_file": "Wireless_Serialnum_mapid.json",
+                "map_file": f"Wireless_{self.devicesn}_{self.map.mapid}.json",
                 "method": "get_property",
             }
             headers_ = {

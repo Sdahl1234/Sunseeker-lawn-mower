@@ -181,6 +181,27 @@
       "sunseeker_blade_height": {
         "name": "Messerhöhe"
       },
+      "sunseeker_task_id": {
+        "name": "Aufgaben-ID"
+      },
+      "sunseeker_schedule_cancel": {
+        "name": "Plan abgebrochen"
+      },
+      "sunseeker_normal_done": {
+        "name": "Normal beendet"
+      },
+      "sunseeker_end_reason": {
+        "name": "Beendigungsgrund"
+      },
+      "sunseeker_oneshot_task_type": {
+        "name": "Einmalaufgabe Typ"
+      },
+      "sunseeker_start_reason": {
+        "name": "Startgrund"
+      },
+      "sunseeker_task_type": {
+        "name": "Aufgabentyp"
+      },
       "sunseeker_taskprogress": {
         "name": "Mähfortschritt"
       },

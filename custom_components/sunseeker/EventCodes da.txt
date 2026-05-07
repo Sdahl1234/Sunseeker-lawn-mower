@@ -1,0 +1,104 @@
+EventCodes da
+1:Arbejde fuldført. Returnerer til ladestationen.
+2:Enheden vil genstarte
+3:Lav batteristrøm. Robotten kører tilbage til opladning
+4:Batteriet er ladet nok op. Robotten fortsætter med at klippe græsset.
+5:Robotten nulstilles til fabriksindstillingerne.
+6:Starter firmwareopdateringen
+7:Upload kortfil
+8:Firmwareopdateringen mislykkedes
+9:Robotten sættes på funktionen Forstyr ikke
+10:Robotten afslutter funktionen Forstyr ikke
+11:Robotten er i gang med at kortlægge. Afslut kortlægningen, hvis du vil starte robotten
+12:Kortlægningen mislykkedes
+13:Kortlægningen er færdig
+16:Robotten fungerer ikke på regnfulde dage.
+17:Upload hele rutefilen
+18:Opgraderer. Undgå, at gøre noget på enheden
+19:Arbejdet genoptaget efter regnforsinkelse. Plæneklipperen fortsætter arbejdet.
+20:Kameraet på forenden er tildækket. Stop og fjern eventuelle genstande, der er i vejen
+21:Zoner er blevet lagt sammen
+22:Zonerne kunne ikke lægges sammen
+23:Natklipning understøttes ikke.
+23:Nattilstand slukket. Klipning er sat på pause om natten.
+25:Fejlretningen har sat enheden i gang
+26:Appen har startet enheden
+27:Når den planlagt starttid kommer
+28:Enhedsknappen har startet enheden
+29:Fejlretningen har stoppet enheden
+30:Appen har stoppet enheden
+31:Pause
+32:Når den planlagte sluttid kommer
+33:Fejlretningen har startet opladningen
+34:Appen har startet opladningen
+35:Enhedsknappen aktiverer genopladning. Planlagte opgaver vil blive annulleret, hvis de er aktive
+36:Fejlretningen er stoppet opladningen
+37:Appen har stoppet opladningen
+38:Fejlretningen har startet fjernkortlægningen
+39:Appen har stoppet fjernkortlægningen
+40:Fejlretningen har stoppet fjernkortlægningen
+41:Appen har stoppet fjernkortlægningen
+42:Robotten oplades
+43:Enhedsknappen har lukket enheden ned
+44:Automatisk nedlukning, hvis robotten ikke kører i længere tid
+45:Kortet er blevet tømt.
+46:Kortlukning
+47:Al-segmentering uden punkt skyer
+48:AI bygger kort med usædvanlige afbrydelser
+49:Forkert byggetype. Kun arbejdszone tilladt
+50:RTK-kalibrering mislykkedes. Robotten kører automatisk tilbage til ladestationen, hvor den kalibreres igen.
+51:Regn registreret
+52:Regnstop registreret.
+53:Der er blevet trykket på stopknappen
+54:Fejlretningen har sat robotten på pause
+55:Appen har sat robotten på pause
+56:Sidder fast. Prøv at komme fri
+57:Enheden er kommet fri
+58:Kør tilbage til ladestation for at ændre placeringen.
+59:Lav batteristrøm, lukker ned
+60:Kameraet er rengjort
+61:Robotten er færdig med at klippe kanterne, og den kører automatisk tilbage til genopladning.
+62:Kortet genoprettes
+63:Kortet er blevet gendannet
+64:Antennesignalet er blevet genoprettet
+65:Kan ikke bruges i det aktuelle område
+66:Visker stoppet
+67:Visker gendannet
+68:Begynd at køre mod målpunktet
+69:Hold op med at køre mod målpunktet
+70:Når den når målpunktet
+71:Græsset er for højt, og den aktuelle klippehøjde er ikke egnet. Dette er automatisk blevet justeret for dig. Det anbefales at sænke klippehøjden gradvist.\nAnbefalet: Klippehøjde/Græshøjde &gt; 70%
+72:Robotten er gået i dvale på grund af strømsvigt
+73:Zoneopdeling gennemført
+74:Zoneopdeling mislykkedes
+75:NRTK-netværket genoprettet
+76:Start automatisk kortlægning
+77:LiDAR-fejlretabeling lykkedes.
+78:Påmindelse om rengøring af bladskive.
+79:Påmindelse om rengøring af blad.
+80:LiDAR-forurening registreret. Rens det straks.
+81:EdgeZero-modul installeret
+82:EdgeZero-modul fjernet
+83:PreciseEdge-modul installeret
+84:PreciseEdge-modul fjernet
+85:Områdekortlægning fuldført, nyt område registreret.
+86:Annuller firmwareopdatering
+87:Automatisk kortlægning afsluttet
+88:Højre sensor snavset
+89:Venstre bageste sensor snavset
+90:Bageste sensor snavset
+91:Utilstrækkeligt omgivende lys, kantklipning er ikke tilgængelig.
+92:Det højre kamera er snavset. Kantklipning er ikke tilgængelig.
+93:Ingen kvalificeret grænse fundet. Kantklipning er ikke tilgængelig.
+94:Gentagne dynamiske forhindringer registreret i overvågningsområdet. Kantklipning stoppet.
+95:Venter på at dynamiske forhindringer forsvinder for at genoptage kantklipning.
+96:Robotopdatering lykkedes.
+97:Ladestationen er muligvis flyttet.
+98:Det udløbne brugerdefinerede mønster er blevet automatisk fjernet.
+99:Robotten er låst. Kan ikke udføre opgaver.
+100:Højre kameras detektion er dårlig. Afslutter kantklipning.
+101:Solopgang nået. Genoptager klipning.
+102:Målområde ikke tilgængeligt om natten.
+103:Natklipning understøttes ikke. Tilbage til ladestation på grund af lavt lys.
+103:Nattilstand slukket. Tilbage til ladestation på grund af lavt lys.
+104:Sætter drift på pause på regnfulde dage og vender tilbage til ladestationen.
