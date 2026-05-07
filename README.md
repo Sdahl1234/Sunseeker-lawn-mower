@@ -1,7 +1,7 @@
 # Sunseeker lawn mower integration for Home Assistant
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.1
+#### V1.2.7
 
 ## Tested models
   - Adano RM6
@@ -37,6 +37,7 @@ English, Danish, German, Finnish and French
 - Mower control card: https://github.com/Sdahl1234/sunseeker-mower-control-card
 - Mower zones card: https://github.com/Sdahl1234/sunseeker-zone-card
 - Mower map-edit card: https://github.com/Sdahl1234/sunseeker-map-edit-card
+- Mower work-record card: https://github.com/Sdahl1234/sunseeker-work-record-card
 
 # Entities new models (wireless) 
 Not all are availeble for V models
@@ -140,6 +141,7 @@ Not all are availeble for V models
 - **Live map** - Camera entity of Live Map with mower movments
 - **Heat map** - image of the heat map
 - **Wifi map** - Image of the wifimap
+- **4G map** - Image of the 4G map (Only Gen2 and 3)
 
 ## Mower Map edit card
 https://github.com/Sdahl1234/sunseeker-map-edit-card
@@ -149,8 +151,16 @@ https://github.com/Sdahl1234/sunseeker-map-edit-card
 https://github.com/Sdahl1234/sunseeker-mower-control-card
 <img width="901" height="714" alt="image" src="https://github.com/user-attachments/assets/78235dbd-8555-4bed-b386-7da1a846735f" />
 
+## Mower work record card
+- **Sensors**
+  - **Work Records** - Sensor with the work records data
+
+https://github.com/Sdahl1234/sunseeker-work-record-card
+<img width="1614" height="502" alt="image" src="https://github.com/user-attachments/assets/30d2017a-7a19-414a-9e94-ec3026c94827" />
+
 ## Device tracker
 - **Mower location** - Anti theft location. Returns the latitude and longitude coordinates of the device.
+- **Mower position** - calculated GPS position of the mower
 
 ## Device update
 - **Notification** - Notification when mower or basestation has firmware updates**
