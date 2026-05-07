@@ -73,8 +73,6 @@ def _build_device_payload(coordinator: SunseekerDataCoordinator) -> dict[str, An
             "region": coordinator.region,
             "brand": coordinator.brand,
             "schedulefilepath": coordinator.schedulefilepath,
-            "heatimagefilepath": coordinator.heatimagefilepath,
-            "wifiimagefilepath": coordinator.wifiimagefilepath,
         },
         "device": {
             "devicesn": device.devicesn,
