@@ -131,11 +131,17 @@ class SunseekerDevice:
         self.update_timer: Timer | None = None
         # Task
         self.schedule_cancel: str = ""
+        # 0 Interupted, 1 Done
         self.normal_done: str = ""
+        # 1 done, 3 ended by app, 4 ended on mower, 7 schedule end
         self.end_reason: str = ""
+        # 0 Ikke engangs, 1 Engangs
         self.oneshot_task_type: str = ""
+        # 2 manuelt, 3 planlagt opgave, 4
         self.start_reason: str = ""
+        # task id
         self.task_id: str = ""
+        # 0 Fast task, 1 Selected area if oneshot or zone task if not, 2 schedule task, 3 Fast task
         self.task_type: str = ""
 
         # V1
@@ -213,7 +219,7 @@ class SunseekerDevice:
         if self.apptype == APPTYPE_OLD:
             self.station = self.devicedata["data"].get("stationFlag")
             if self.devicedata["data"].get("onlineFlag"):
-                self.deviceOnlineFlag = '{"online":"1"}'
+                self.deviceOnlineFlag = {"online": "1"}
             self.zoneOpenFlag = self.settings["data"].get("zoneOpenFlag")
             self.mul_en = self.settings["data"].get("zoneOpenFlag")
             self.mul_auto = self.settings["data"].get("zoneAutomaticFlag")

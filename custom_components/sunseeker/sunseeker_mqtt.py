@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import json
 import logging
 from threading import Thread, Timer
@@ -15,7 +16,15 @@ from cryptography.hazmat.primitives.asymmetric import padding
 import paho.mqtt.client as mqtt
 import requests
 
-from .const import APPTYPE_NEW, APPTYPE_OLD, MODEL_V, MODEL_X, REGION_EU, REGION_US
+from .const import (
+    APPTYPE_NEW,
+    APPTYPE_OLD,
+    MODEL_OLD,
+    MODEL_V,
+    MODEL_X,
+    REGION_EU,
+    REGION_US,
+)
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_schedule import Sunseeker_new_schedule_day
 
@@ -786,6 +795,11 @@ class SunseekermqttController:
             self.handle_mqtt_consumable_data(upd, nu, data, datanode, device)
         if "id" in data:
             self.handle_mqtt_data_id(upd, nu, data, datanode, device)
+
+        # online
+        device.deviceOnlineFlag = self.setvalue(
+            nu, datanode, [], "online", device.deviceOnlineFlag
+        )
         # task info
         device.task_id = self.setvalue(nu, datanode, [], "task_id", device.task_id)
         device.schedule_cancel = self.setvalue(
@@ -909,9 +923,19 @@ class SunseekermqttController:
                     10, self.Sunseeker.update_devices, [device.devicesn]
                 )
                 device.update_timer.start()
+        # msg/event code V1
+        if self.model == MODEL_V:
+            device.eventcode = self.setvalue(nu, data, [], "msg", device.eventcode)
+
         if "data" in data:
             datanode = data.get("data")
-            self.handle_mqtt_data_data(upd, nu, data, datanode, device)
+            if isinstance(datanode, str):
+                with contextlib.suppress(json.JSONDecodeError, ValueError):
+                    datanode = json.loads(datanode)
+            if isinstance(datanode, dict):
+                if device.model in (MODEL_V, MODEL_OLD):
+                    device.deviceOnlineFlag = datanode
+                self.handle_mqtt_data_data(upd, nu, data, datanode, device)
 
         device.station = self.setvalue(nu, data, [], "station", device.station)
         device.wifi_lv = self.setvalue(nu, data, [], "wifi_lv", device.wifi_lv)
@@ -929,8 +953,6 @@ class SunseekermqttController:
             nu, data, [], "rain_countdown", device.rain_delay_left
         )
         device.cur_min = self.setvalue(nu, data, [], "cur_min", device.cur_min)
-        if "data" in data:
-            device.deviceOnlineFlag = data.get("data", device.deviceOnlineFlag)
         device.zoneOpenFlag = self.setvalue(
             nu, data, [], "zoneOpenFlag", device.zoneOpenFlag
         )
