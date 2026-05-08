@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
     DOMAIN,
+    LOGLEVEL,
     MODEL_OLD,
     MODEL_V,
     MODEL_X,
@@ -62,7 +63,7 @@ def _load_event_codes(lang: str, prefix: str = "EventCodes") -> dict[int, str]:
     return codes
 
 
-Test = False
+Test = LOGLEVEL == 10
 
 _EVENT_CODES_DA: dict[int, str] = _load_event_codes("da")
 _EVENT_CODES_EN: dict[int, str] = _load_event_codes("en")
@@ -298,11 +299,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:wifi",
                         "sunseeker_wifi_level",
                     ),
-                ]
-            )
-        if coordinator.model == MODEL_X:
-            async_add_devices(
-                [
                     SunseekerSensor(
                         coordinator,
                         None,
@@ -313,6 +309,11 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:calendar-alert",
                         "sunseeker_events",
                     ),
+                ]
+            )
+        if coordinator.model == MODEL_X:
+            async_add_devices(
+                [
                     SunseekerSensor(
                         coordinator,
                         PERCENTAGE,
@@ -702,7 +703,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             elif ival == 6:
                 val = SUNSEEKER_ERROR
             elif ival == 7:
-                if self.device.model in [MODEL_X, MODEL_V]:
+                if self.device.model == MODEL_X:
                     val = SUNSEEKER_RETURN
                 else:
                     val = SUNSEEKER_MOWING_BORDER
