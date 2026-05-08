@@ -16,7 +16,6 @@ from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
-    APPTYPE_NEW,
     MODEL_X,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
@@ -134,7 +133,7 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
         elif ival == 6:
             val = SUNSEEKER_ERROR
         elif ival == 7:
-            if self.device.apptype == APPTYPE_NEW:
+            if self.device.model == MODEL_X:
                 val = SUNSEEKER_RETURN
             else:
                 val = SUNSEEKER_MOWING_BORDER
