@@ -1,7 +1,7 @@
 # Sunseeker lawn mower integration for Home Assistant
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.7
+#### V1.2.8
 
 ## Tested models
   - Adano RM6
@@ -30,7 +30,7 @@ Search for *Sunseeker robotic mower* and add it.
 
 
 ## Translation
-English, Danish, German, Finnish and French
+English, Danish, German, Finnish, French and Polish
 
 # Lovelace cards (Only working with wireless models)
 - Schedule card: https://github.com/Sdahl1234/sunseeker-schedule-card
@@ -97,7 +97,7 @@ Not all are availeble for V models
 - **Actual mowingtime** - Time the mower has mowed
 - **Online** - Connected or Disconnected
 - **Wifi strength** - The strength of the wifi signal
-- **Event** - Events and codes (todo: Map events to real text)
+- **Event** - Eventscodes maped to text from app
 - **Robot signal** - Signalstrength to mower
 - **4G Net strength** - 4G network strength if you have a sim module
 - **Zones** - Dropdown with all zones
@@ -245,6 +245,7 @@ https://github.com/Sdahl1234/sunseeker-work-record-card
 - **Error** - error text returned for the mower
 - **Errorcode** - The errorcode returned for the mower
 - **Schedule** - The state is always schedule, and contains the schedule settings as attributes.
+- **Event** - Eventscodes maped to text from app
 
 ## Device tracker
 - **Robot location** - Some kind of anti theft thing. Returns the latitude and longitude coordinates of the device.
