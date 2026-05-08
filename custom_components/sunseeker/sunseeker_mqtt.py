@@ -924,7 +924,7 @@ class SunseekermqttController:
                 )
                 device.update_timer.start()
         # msg/event code V1
-        if self.model == MODEL_V:
+        if self.model in (MODEL_V, MODEL_OLD):
             device.eventcode = self.setvalue(nu, data, [], "msg", device.eventcode)
 
         if "data" in data:

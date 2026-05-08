@@ -299,16 +299,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:wifi",
                         "sunseeker_wifi_level",
                     ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Event",
-                        None,
-                        "event",
-                        "",
-                        "mdi:calendar-alert",
-                        "sunseeker_events",
-                    ),
                 ]
             )
         if coordinator.model == MODEL_X:
@@ -509,6 +499,20 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     )
                 ]
             )
+        async_add_devices(
+            [
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Event",
+                    None,
+                    "event",
+                    "",
+                    "mdi:calendar-alert",
+                    "sunseeker_events",
+                ),
+            ]
+        )
         if Test:
             async_add_devices(
                 [
@@ -846,7 +850,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
         elif self._valuepair == "event":
             ec = self.device.eventcode
             lang = self.hass.config.language
-            is_v_model = self.device.model == MODEL_V
+            is_v_model = self.device.model in (MODEL_V, MODEL_OLD)
             if lang == "da":
                 codes = _V1_EVENT_CODES_DA if is_v_model else _EVENT_CODES_DA
             elif lang == "de":
