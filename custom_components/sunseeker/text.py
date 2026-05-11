@@ -167,10 +167,16 @@ class SunseekerChargerGPSText(SunseekerEntity, TextEntity):
         return ""
 
     async def async_set_value(self, value: str) -> None:
-        """Parse and store a 'lat, lng' string."""
+        """Parse and store a 'lat, lng' string, or clear if empty."""
+        if value.strip() == "":
+            self.data_coordinator.charger_gps_lat = None
+            self.data_coordinator.charger_gps_lng = None
+            await self.data_coordinator.charger_gps_save_data()
+            self.data_coordinator.async_set_updated_data(self.data_coordinator.data)
+            return
         try:
             parts = value.split(",")
-            if len(parts) != 2:  # noqa: PLR2004
+            if len(parts) != 2:
                 return
             lat = float(parts[0].strip())
             lng = float(parts[1].strip())
@@ -179,5 +185,6 @@ class SunseekerChargerGPSText(SunseekerEntity, TextEntity):
             self.data_coordinator.charger_gps_lat = lat
             self.data_coordinator.charger_gps_lng = lng
             await self.data_coordinator.charger_gps_save_data()
+            self.data_coordinator.async_set_updated_data(self.data_coordinator.data)
         except (ValueError, IndexError) as ex:
             _LOGGER.debug("Invalid charger GPS value '%s': %s", value, ex)
