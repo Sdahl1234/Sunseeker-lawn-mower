@@ -81,6 +81,12 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.config.config_dir,
             "Schedule-{}.json".format(self.devicesn.replace(" ", "_")),
         )
+        self.charger_gps_filepath = os.path.join(  # noqa: PTH118
+            self.hass.config.config_dir,
+            "ChargerGPS-{}.json".format(self.devicesn.replace(" ", "_")),
+        )
+        self.charger_gps_lat: float | None = None
+        self.charger_gps_lng: float | None = None
         self.jdata = self.data_default
         self.livemap_entity = None  # MowerImage
         self.map_entity = None  # MowerImage
@@ -91,6 +97,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.add_job(self.set_schedule_data)
             self.hass.add_job(self.schedule_file_exits)
             self.hass.add_job(self.schedule_load_data)
+        self.hass.add_job(self.charger_gps_load_data)
         self.hass.add_job(self.device.map.reload_maps)
         if self.device.model == MODEL_X:
             uv = mqtt_update_values()
@@ -177,6 +184,32 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         """Update schedule data on disk."""
         await self.set_schedule_data()
         await self.schedule_save_data(True)
+
+    async def charger_gps_load_data(self):
+        """Load charger GPS from disk."""
+        try:
+            cfile = await self.hass.async_add_executor_job(
+                open, self.charger_gps_filepath, "r", -1, "utf-8"
+            )
+            data = json.loads(cfile.read())
+            cfile.close()
+            self.charger_gps_lat = float(data["lat"])
+            self.charger_gps_lng = float(data["lng"])
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"charger GPS load failed: {ex}")  # noqa: G004
+
+    async def charger_gps_save_data(self):
+        """Save charger GPS to disk."""
+        try:
+            cfile = await self.hass.async_add_executor_job(
+                open, self.charger_gps_filepath, "w", -1, "utf-8"
+            )
+            cfile.write(
+                json.dumps({"lat": self.charger_gps_lat, "lng": self.charger_gps_lng})
+            )
+            cfile.close()
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"charger GPS save failed: {ex}")  # noqa: G004
 
     async def does_file_exits(self, filepath) -> bool:
         """Do file exists."""

@@ -493,6 +493,9 @@
       },
       "sunseeker_schedule_text_7": {
         "name": "Arbeitsplan Sonntag"
+      },
+      "sunseeker_charger_gps": {
+        "name": "GPS-Position der Ladestation"
       }
     }
   }

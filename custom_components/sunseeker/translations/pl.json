@@ -503,6 +503,9 @@
         },
         "sunseeker_schedule_text_7": {
           "name": "Harmonogram niedziela"
+        },
+        "sunseeker_charger_gps": {
+          "name": "Pozycja GPS stacji ładowania"
         }
       }
     }

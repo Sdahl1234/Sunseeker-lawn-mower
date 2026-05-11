@@ -481,6 +481,9 @@
             },
             "sunseeker_schedule_text_7": {
                 "name": "Ajastus sunnuntaina"
+            },
+            "sunseeker_charger_gps": {
+                "name": "Latausaseman GPS-sijainti"
             }
         }
     }

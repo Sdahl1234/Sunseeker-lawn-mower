@@ -108,35 +108,44 @@ class SunseekerMowerPositionTracker(SunseekerEntity, TrackerEntity):
     def _calculate_gps(self) -> tuple[float, float] | tuple[None, None]:
         """Convert mower map position to GPS coordinates.
 
-        lat/lng is the GPS of the RTK base station.  rtk_pos = [x, y] gives its
-        position relative to map origin where x is east and y is south (y-down
-        convention).  So map origin sits rtk_y metres NORTH and rtk_x metres WEST
-        of the RTK base.  The mower offset from map origin is rotated by the
-        inverse of phi (R^T) to convert from map frame to geographic East/North.
-        The rtk correction is then applied directly in geographic space:
-          east_m  -= rtk_x   (base is rtk_x east of origin → origin is rtk_x west of base)
-          north_m += rtk_y   (base is rtk_y south of origin → origin is rtk_y north of base)
+        If the user has set the charger's GPS manually, that is used as the
+        anchor point: the charger's known map position is rotated into the
+        geographic frame and back-solved to a reference lat/lng, which is then
+        used for the mower offset calculation.  When no charger GPS is set we
+        fall back to the device's RTK base lat/lng from devicedata.
         """
-        try:
-            lat_ref = self.device.devicedata["data"].get("lat")
-            lng_ref = self.device.devicedata["data"].get("lng")
-        except KeyError, TypeError:
-            return None, None
+        phi = self.device.map.map_phi
+        rtk = self.device.RTKPos
+        rtk_x = rtk["point"][0] if (rtk and "point" in rtk) else 0.0
+        rtk_y = rtk["point"][1] if (rtk and "point" in rtk) else 0.0
 
-        if lat_ref is None or lng_ref is None:
-            return None, None
+        charger_lat = self.data_coordinator.charger_gps_lat
+        charger_lng = self.data_coordinator.charger_gps_lng
+        if charger_lat is not None and charger_lng is not None:
+            rtk_x = 0.0
+            rtk_y = 0.0
+            cx = self.device.map.charger_pos_x
+            cy = self.device.map.charger_pos_y
+            charger_east = cx * math.cos(phi) + cy * math.sin(phi) - rtk_x
+            charger_north = -cx * math.sin(phi) + cy * math.cos(phi) + rtk_y
+            lat_ref = charger_lat - charger_north / 111111.0
+            lng_ref = charger_lng - charger_east / (
+                111111.0 * math.cos(math.radians(charger_lat))
+            )
+        else:
+            try:
+                lat_ref = self.device.devicedata["data"].get("lat")
+                lng_ref = self.device.devicedata["data"].get("lng")
+            except KeyError, TypeError:
+                return None, None
+            if lat_ref is None or lng_ref is None:
+                return None, None
 
         dx = self.device.map.mower_pos_x
         dy = self.device.map.mower_pos_y
 
-        phi = self.device.map.map_phi
-        east_m = dx * math.cos(phi) + dy * math.sin(phi)
-        north_m = -dx * math.sin(phi) + dy * math.cos(phi)
-
-        rtk = self.device.RTKPos
-        if rtk and "point" in rtk:
-            east_m -= rtk["point"][0]
-            north_m += rtk["point"][1]
+        east_m = dx * math.cos(phi) + dy * math.sin(phi) - rtk_x
+        north_m = -dx * math.sin(phi) + dy * math.cos(phi) + rtk_y
 
         lat = lat_ref + north_m / 111111.0
         lng = lng_ref + east_m / (111111.0 * math.cos(math.radians(lat_ref)))
@@ -173,6 +182,8 @@ class SunseekerMowerPositionTracker(SunseekerEntity, TrackerEntity):
         rtk = self.device.RTKPos
         rtk_x = rtk["point"][0] if (rtk and "point" in rtk) else None
         rtk_y = rtk["point"][1] if (rtk and "point" in rtk) else None
+        charger_lat = self.data_coordinator.charger_gps_lat
+        charger_lng = self.data_coordinator.charger_gps_lng
         try:
             lat_ref = self.device.devicedata["data"].get("lat")
             lng_ref = self.device.devicedata["data"].get("lng")
@@ -195,6 +206,8 @@ class SunseekerMowerPositionTracker(SunseekerEntity, TrackerEntity):
             "charger_map_y": round(self.device.map.charger_pos_y, 3),
             "mower_map_x": round(self.device.map.mower_pos_x, 3),
             "mower_map_y": round(self.device.map.mower_pos_y, 3),
+            "charger_lat": charger_lat,
+            "charger_lng": charger_lng,
         }
 
     @property

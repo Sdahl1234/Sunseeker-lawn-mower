@@ -492,6 +492,9 @@
             },
             "sunseeker_schedule_text_7": {
                 "name": "Planning du Dimanche"
+            },
+            "sunseeker_charger_gps": {
+                "name": "Position GPS de la station de charge"
             }
         }
     }

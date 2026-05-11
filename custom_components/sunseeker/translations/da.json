@@ -503,6 +503,9 @@
 			},
 			"sunseeker_schedule_text_7": {
 				"name": "Ugeplan søndag"
+			},
+			"sunseeker_charger_gps": {
+				"name": "Ladestationens GPS-position"
 			}
 		}
 	}

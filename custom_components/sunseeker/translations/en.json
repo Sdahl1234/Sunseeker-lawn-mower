@@ -503,6 +503,9 @@
         },
         "sunseeker_schedule_text_7": {
           "name": "Schedule Sunday"
+        },
+        "sunseeker_charger_gps": {
+          "name": "Charger GPS position"
         }
       }
     }

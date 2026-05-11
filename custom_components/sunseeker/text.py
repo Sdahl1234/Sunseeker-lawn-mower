@@ -9,7 +9,7 @@ from homeassistant.components.text import TextEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_OLD
+from .const import MODEL_OLD, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,6 +19,16 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     """Do setup entry."""
 
     for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_X:
+            async_add_entities(
+                [
+                    SunseekerChargerGPSText(
+                        coordinator,
+                        "Charger GPS position",
+                        "sunseeker_charger_gps",
+                    )
+                ]
+            )
         if coordinator.model == MODEL_OLD:
             async_add_entities(
                 [
@@ -125,3 +135,49 @@ class SunseekerScheduleText(SunseekerEntity, TextEntity):
         }
 
         return str(retval).replace("{", "").replace("}", "").replace("'", "")
+
+
+class SunseekerChargerGPSText(SunseekerEntity, TextEntity):
+    """Text entity to set the charger's GPS position manually."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._name = name
+        self.mode = "text"
+        self.native_max = 50
+        self.native_min = 0
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+
+    @property
+    def native_value(self) -> str:
+        """Return current charger GPS value."""
+        lat = self.data_coordinator.charger_gps_lat
+        lng = self.data_coordinator.charger_gps_lng
+        if lat is not None and lng is not None:
+            return f"{lat}, {lng}"
+        return ""
+
+    async def async_set_value(self, value: str) -> None:
+        """Parse and store a 'lat, lng' string."""
+        try:
+            parts = value.split(",")
+            if len(parts) != 2:  # noqa: PLR2004
+                return
+            lat = float(parts[0].strip())
+            lng = float(parts[1].strip())
+            if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+                return
+            self.data_coordinator.charger_gps_lat = lat
+            self.data_coordinator.charger_gps_lng = lng
+            await self.data_coordinator.charger_gps_save_data()
+        except (ValueError, IndexError) as ex:
+            _LOGGER.debug("Invalid charger GPS value '%s': %s", value, ex)
