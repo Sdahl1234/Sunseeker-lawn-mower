@@ -300,7 +300,10 @@
           "name": "Rejestr pracy"
         },
         "sunseeker_work_region": {
-          "name": "Strefa pracy"
+          "name": "Strefa pracy",
+          "state": {
+            "docking": "Dokowanie"
+          }
         }
       },
       "binary_sensor": {

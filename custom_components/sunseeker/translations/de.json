@@ -292,7 +292,10 @@
         "name": "Arbeitsprotokolle"
       },
       "sunseeker_work_region": {
-        "name": "Arbeitsbereich"
+        "name": "Arbeitsbereich",
+        "state": {
+          "docking": "Dockt"
+        }
       }
     },
     "binary_sensor": {

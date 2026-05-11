@@ -280,7 +280,10 @@
                 "name": "Työtiedot"
             },
             "sunseeker_work_region": {
-                "name": "Työskentelyalue"
+                "name": "Työskentelyalue",
+                "state": {
+                    "docking": "Telakoi"
+                }
             }
         },
         "binary_sensor": {

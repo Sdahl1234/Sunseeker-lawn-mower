@@ -299,7 +299,10 @@
 				"name": "Arbejdsregistreringer"
 			},
 			"sunseeker_work_region": {
-				"name": "Arbejdszone"
+				"name": "Arbejdszone",
+				"state": {
+					"docking": "Ladestation"
+				}
 			}
 		},
 		"binary_sensor": {

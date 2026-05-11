@@ -291,7 +291,10 @@
                 "name": "Historique des sessions"
             },
             "sunseeker_work_region": {
-                "name": "Zone de travail"
+                "name": "Zone de travail",
+                "state": {
+                    "docking": "En charge"
+                }
             }
         },
         "binary_sensor": {

@@ -300,7 +300,10 @@
           "name": "Work Records"
         },
         "sunseeker_work_region": {
-          "name": "Work Region"
+          "name": "Work Region",
+          "state": {
+            "docking": "Docking"
+          }
         }
       },
       "binary_sensor": {
