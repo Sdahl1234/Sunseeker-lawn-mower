@@ -895,7 +895,7 @@ class SunseekermqttController:
         self.handle_mqtt_schedule_data(upd, nu, data, datanode, device)
         self.handle_mqtt_zone_data(upd, nu, data, datanode, device)
 
-    def handle_mqtt_data(
+    def handle_mqtt_data(  # noqa: C901
         self,
         upd: mqtt_update_values,
         nu: mqtt_needupdate,
