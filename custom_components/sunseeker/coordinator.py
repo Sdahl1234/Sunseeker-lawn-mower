@@ -1,7 +1,6 @@
 """Sunseeker data coordinator."""
 
 import asyncio
-import json
 import logging
 import os
 
@@ -78,7 +77,12 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.submodel = self.device.submodel
         self.apptype = self.device.apptype
         self.device.dataupdated = self.dataupdated
-        self.schedulefilepath = os.path.join(  # noqa: PTH118
+        self._schedule_store: Store = Store(
+            hass,
+            version=1,
+            key=f"{DOMAIN}.schedule.{self.devicesn.replace(' ', '_')}",
+        )
+        self._schedule_legacy_path = os.path.join(  # noqa: PTH118
             self.hass.config.config_dir,
             "Schedule-{}.json".format(self.devicesn.replace(" ", "_")),
         )
@@ -97,7 +101,6 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.netmap_entity = None
         if self.device.apptype == APPTYPE_OLD:
             self.hass.add_job(self.set_schedule_data)
-            self.hass.add_job(self.schedule_file_exits)
             self.hass.add_job(self.schedule_load_data)
         self.hass.add_job(self.charger_gps_load_data)
         self.hass.add_job(self.device.map.reload_maps)
@@ -136,56 +139,60 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         }
         return str(retval).replace("{", "").replace("}", "").replace("'", "")
 
-    async def schedule_file_exits(self):
-        """Do file exists."""
-        try:
-            f = await self.hass.async_add_executor_job(
-                open, self.schedulefilepath, "r", -1, "utf-8"
-            )
-            f.close()
-        except FileNotFoundError:
-            # save a new file
-            await self.schedule_save_data(False)
-
-    async def schedule_save_data(self, append: bool):
-        """Save data."""
-        try:
-            if append:
-                cfile = await self.hass.async_add_executor_job(
-                    open, self.schedulefilepath, "w", -1, "utf-8"
-                )
-            else:
-                cfile = await self.hass.async_add_executor_job(
-                    open, self.schedulefilepath, "a", -1, "utf-8"
-                )
-            ocrdata = json.dumps(self.jdata)
-            self.device.Schedule.SavedData = self.jdata
-            cfile.write(ocrdata)
-            cfile.close()
-        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"Save data failed: {ex}")  # noqa: G004
+    async def schedule_save_data(self):
+        """Save schedule data to storage."""
+        self.device.Schedule.SavedData = self.jdata
+        await self._schedule_store.async_save(self.jdata)
 
     async def schedule_load_data(self):
-        """Load data."""
-        try:
-            cfile = await self.hass.async_add_executor_job(
-                open, self.schedulefilepath, "r", -1, "utf-8"
-            )
-            ocrdata = cfile.read()
-            cfile.close()
-            _LOGGER.debug(f"ocrdata: {ocrdata}")  # noqa: G004
-            _LOGGER.debug(f"jsonload: {json.loads(ocrdata)}")  # noqa: G004
-
-            self.jdata = json.loads(ocrdata)
+        """Load schedule data from storage, migrating from legacy file if needed."""
+        data = await self._schedule_store.async_load()
+        if data is None:
+            data = await self._migrate_schedule_from_file()
+        if data:
+            self.jdata = data
             self.device.Schedule.SavedData = self.jdata
             self.data_loaded = True
+
+    async def _migrate_schedule_from_file(self) -> dict | None:
+        """Read legacy Schedule JSON file, save to store, then delete the file."""
+        try:
+            content = await self.hass.async_add_executor_job(
+                self._read_legacy_schedule_file
+            )
+        except FileNotFoundError:
+            return None
         except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.debug(f"load data failed: {ex}")  # noqa: G004
+            _LOGGER.debug("Legacy schedule migration read failed: %s", ex)
+            return None
+        try:
+            import json  # noqa: PLC0415
+
+            data = json.loads(content)
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug("Legacy schedule migration parse failed: %s", ex)
+            return None
+        await self._schedule_store.async_save(data)
+        try:
+            await self.hass.async_add_executor_job(
+                os.remove, self._schedule_legacy_path
+            )
+            _LOGGER.debug(
+                "Migrated schedule from %s to storage", self._schedule_legacy_path
+            )
+        except OSError as ex:
+            _LOGGER.debug("Could not remove legacy schedule file: %s", ex)
+        return data
+
+    def _read_legacy_schedule_file(self) -> str:
+        """Read legacy schedule file (blocking, run in executor)."""
+        with open(self._schedule_legacy_path, encoding="utf-8") as f:  # noqa: PTH123
+            return f.read()
 
     async def save_schedule_data(self):
-        """Update schedule data on disk."""
+        """Update and persist schedule data."""
         await self.set_schedule_data()
-        await self.schedule_save_data(True)
+        await self.schedule_save_data()
 
     async def charger_gps_load_data(self):
         """Load charger GPS from storage."""
