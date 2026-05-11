@@ -290,6 +290,9 @@
       },
       "sunseeker_work_records": {
         "name": "Arbeitsprotokolle"
+      },
+      "sunseeker_work_region": {
+        "name": "Arbeitsbereich"
       }
     },
     "binary_sensor": {

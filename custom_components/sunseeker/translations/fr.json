@@ -289,6 +289,9 @@
             },
             "sunseeker_work_records": {
                 "name": "Historique des sessions"
+            },
+            "sunseeker_work_region": {
+                "name": "Zone de travail"
             }
         },
         "binary_sensor": {

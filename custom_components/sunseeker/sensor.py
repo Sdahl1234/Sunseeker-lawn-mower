@@ -480,7 +480,12 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "",
                         "mdi:clipboard-list",
                         "sunseeker_work_records",
-                    )
+                    ),
+                    SunseekerWorkRegionSensor(
+                        coordinator,
+                        "Work Region",
+                        "sunseeker_work_region",
+                    ),
                 ]
             )
 
@@ -1090,3 +1095,59 @@ class SunseekerWorkRecordSensor(SunseekerEntity, SensorEntity):
     def icon(self):
         """Icon."""
         return self._icon
+
+
+def _point_in_polygon(x: float, y: float, polygon: list[tuple[float, float]]) -> bool:
+    """Ray-casting point-in-polygon test."""
+    n = len(polygon)
+    inside = False
+    j = n - 1
+    for i in range(n):
+        xi, yi = polygon[i]
+        xj, yj = polygon[j]
+        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
+class SunseekerWorkRegionSensor(SunseekerEntity, SensorEntity):
+    """Sunseeker Work Region Sensor (MODEL_X only)."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+
+    @property
+    def state(self) -> str | None:
+        """Return the name of the region the mower is currently in."""
+        mx = self.device.map.mower_pos_x
+        my = self.device.map.mower_pos_y
+
+        for polygon in self.device.map.charger_regions:
+            if _point_in_polygon(mx, my, polygon):
+                return "docking"
+
+        for region in self.device.map.work_regions:
+            if _point_in_polygon(mx, my, region["points"]):
+                return region["name"]
+
+        return None
+
+    @property
+    def icon(self) -> str:
+        """Icon."""
+        return "mdi:map-marker"

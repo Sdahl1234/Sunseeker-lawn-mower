@@ -278,6 +278,9 @@
             },
             "sunseeker_work_records": {
                 "name": "Työtiedot"
+            },
+            "sunseeker_work_region": {
+                "name": "Työskentelyalue"
             }
         },
         "binary_sensor": {

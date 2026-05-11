@@ -77,6 +77,8 @@ class SunseekerMap:
         self.obstacle_color = (169, 169, 169, 255)
         self.placed_blank_fill_color = (0, 0, 255, 150)
         self.placed_blank_color = (0, 0, 255, 255)
+        self.work_regions: list[dict] = []
+        self.charger_regions: list[list[tuple[float, float]]] = []
 
     def load_charger_image(self) -> Image.Image:
         """Load robot.png from the integration folder."""
@@ -282,10 +284,13 @@ class SunseekerMap:
             pts = parse_points(work["points"])
             get_min_max(pts)
 
+        self.work_regions = []
         for work in data.get("region_work", []):
             pts = parse_points(work["points"])
             get_min_max(pts)
+            self.work_regions.append({"name": work["name"], "points": pts})
 
+        self.charger_regions = []
         for region in data.get("region_channel", []):
             pts = parse_points(region["points"])
             get_min_max(pts)
@@ -305,6 +310,7 @@ class SunseekerMap:
         for charger in data.get("region_charger_channel", []):
             pts = parse_points(charger["points"])
             get_min_max(pts)
+            self.charger_regions.append(pts)
 
         self.map_max_x = max_x
         self.map_min_x = min_x

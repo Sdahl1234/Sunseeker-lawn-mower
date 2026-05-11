@@ -101,6 +101,7 @@ Not all are availeble for V models
 - **Robot signal** - Signalstrength to mower
 - **4G Net strength** - 4G network strength if you have a sim module
 - **Zones** - Dropdown with all zones
+- **Work Region** - The name of the work zone the mower is currently located in, based on its live map position. Shows `docking` when the mower is inside the charger channel area, the zone name when inside a work region, or is unavailable when between regions.
 ## Global settings
 - **Settings**
   - **Avoiding objects** - No touch, Slow touch

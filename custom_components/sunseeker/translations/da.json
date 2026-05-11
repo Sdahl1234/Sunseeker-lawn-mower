@@ -297,6 +297,9 @@
 			},
 			"sunseeker_work_records": {
 				"name": "Arbejdsregistreringer"
+			},
+			"sunseeker_work_region": {
+				"name": "Arbejdszone"
 			}
 		},
 		"binary_sensor": {
