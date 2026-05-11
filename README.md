@@ -1,7 +1,7 @@
 # Sunseeker lawn mower integration for Home Assistant
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.8
+#### V1.2.9
 
 ## Tested models
   - Adano RM6
@@ -39,7 +39,7 @@ English, Danish, German, Finnish, French and Polish
 - Mower map-edit card: https://github.com/Sdahl1234/sunseeker-map-edit-card
 - Mower work-record card: https://github.com/Sdahl1234/sunseeker-work-record-card
 
-# Entities new models (wireless) 
+# Entities new models (wireless)
 Not all are availeble for V models
 ## Lawn mower
 #### States
@@ -114,7 +114,7 @@ Not all are availeble for V models
   - **Blade speed** - Speed of the blades
   - **Blade height** - Height of the blades
   - **User defined zones** - If enabled the zone settings will be used
-    
+
 ## Zones - for each zone on your map you will have the following enteties
 - **Sensors**
   - **{zonename}Estimated time** - Estimated time to mowe the area
@@ -160,7 +160,16 @@ https://github.com/Sdahl1234/sunseeker-work-record-card
 
 ## Device tracker
 - **Mower location** - Anti theft location. Returns the latitude and longitude coordinates of the device.
-- **Mower position** - calculated GPS position of the mower
+- **Mower position** - Calculated GPS position of the mower, derived from its map coordinates.
+
+## Charger GPS position
+For the **Mower position** tracker to be accurate, the integration needs to know the real-world GPS location of the charging station. The device's built-in GPS (`Mower location`) is not always reliable, so you can provide the charger coordinates manually.
+
+- **Charger GPS position** (text entity) - Paste the charger's GPS coordinates in Google Maps format: `57.33458060994386, 10.518281265571325`
+  - Right-click the charger location in Google Maps and copy the coordinates
+  - Paste the value into this text entity
+  - The coordinates are saved to `ChargerGPS-{serial}.json` in your config directory and restored on restart
+  - Once set, **Mower position** will use the charger's known GPS as the anchor point instead of the device's internal RTK base coordinates
 
 ## Device update
 - **Notification** - Notification when mower or basestation has firmware updates**
@@ -217,13 +226,13 @@ https://github.com/Sdahl1234/sunseeker-work-record-card
 ## Text
 *Format of the text fields: Start and end time format HH:MM. Add Trim to mowe the border. ex. "06:15 - 17:00 Trim", "06:15 - 17:00", "08:00 - 24:00" or whole day "00:00 - 24:00"*
 
-- **Schedule Monday** - Text field to update the moday schedule. 
-- **Schedule Tuesday** - Text field to update the moday schedule. 
-- **Schedule Wednesday** - Text field to update the moday schedule. 
-- **Schedule Thursday** - Text field to update the moday schedule. 
-- **Schedule Friday** - Text field to update the moday schedule. 
-- **Schedule Saturday** - Text field to update the moday schedule. 
-- **Schedule Sunday** - Text field to update the moday schedule. 
+- **Schedule Monday** - Text field to update the moday schedule.
+- **Schedule Tuesday** - Text field to update the moday schedule.
+- **Schedule Wednesday** - Text field to update the moday schedule.
+- **Schedule Thursday** - Text field to update the moday schedule.
+- **Schedule Friday** - Text field to update the moday schedule.
+- **Schedule Saturday** - Text field to update the moday schedule.
+- **Schedule Sunday** - Text field to update the moday schedule.
 
 ## Binary sensors
 - **Dock** - states: home or away
@@ -236,7 +245,7 @@ https://github.com/Sdahl1234/sunseeker-work-record-card
 - **Battery** - Percentage of the battery
 - **Mower** state - Same state af the mower entity
 - **Wifi level** - 0, 1, 2 or 3
-- **State change error** - Return the error message if any, whene changing the settings. ex. "The mower is offline" 
+- **State change error** - Return the error message if any, whene changing the settings. ex. "The mower is offline"
 - **Rain sensor status** - Dry, Dry countdown, Wet
 - **Rain sensor delay** - Same as the number entity
 - **Rain sensor countdown** - The time left before starting mowing again
