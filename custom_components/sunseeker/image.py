@@ -1,7 +1,5 @@
 """Support for Image map."""
 
-from __future__ import annotations
-
 import io
 import json
 import logging

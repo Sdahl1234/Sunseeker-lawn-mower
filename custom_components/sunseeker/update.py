@@ -1,7 +1,5 @@
 """Support for Sunseeker firmware updates."""
 
-from __future__ import annotations
-
 from typing import Any
 
 from homeassistant.components.update import (

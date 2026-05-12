@@ -1,7 +1,5 @@
 """Support for Sunseeker lawnmower."""
 
-from __future__ import annotations
-
 import logging
 
 from homeassistant.components.button import ButtonEntity

@@ -1,7 +1,5 @@
 """Base Sunseeker entity."""
 
-from __future__ import annotations
-
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import SunseekerDataCoordinator
