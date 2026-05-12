@@ -1,7 +1,5 @@
 """Device tracker Sunseeker robotic mower."""
 
-from __future__ import annotations
-
 import logging
 import math
 from typing import Literal
