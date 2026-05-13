@@ -159,6 +159,9 @@ class SunseekerDevice:
         self.work_records: list = []
         self.work_record_detail: dict | None = None
 
+        # X model gen2
+        self.recharge_mode = 0
+
     def InitDevice(self) -> None:
         """Setup the device."""
         self.get_settings()
@@ -274,6 +277,7 @@ class SunseekerDevice:
                         zone.plan_angle = z.get("plan_angle", zone.plan_angle)
 
             if self.model == MODEL_X:
+                self.recharge_mode = self.settings["data"].get("rechargeMode", 0)
                 self.plan_mode = self.settings["data"].get("planMode", 0)
                 self.plan_angle = self.settings["data"].get("planValue", 0)
 
@@ -2078,6 +2082,18 @@ class SunseekerDevice:
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Check device version: {error}")  # noqa: G004
+
+    def set_return_path_X3Gen2(self, value: int):
+        """Set return path V1."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setRechargeMode",
+            "key": "recharge_mode",
+            "method": "set_property",
+            "value": int(value),
+        }
+        self.set_property(data)
 
     def set_return_path_V1(self, value: int):
         """Set return path V1."""

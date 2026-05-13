@@ -42,6 +42,14 @@
 					"notrace": "Sporingsfri"
 				}
 			},
+			"sunseeker_docking_mode_x3gen2": {
+				"name": "Docking mode",
+				"state": {
+					"smart": "Smart",
+					"border": "Langs kanten",
+					"direct": "Direkte"
+				}
+			},
 			"sunseeker_border_distance": {
 				"name": "Klippeafstand",
 				"state": {
@@ -63,7 +71,9 @@
 				"state": {
 					"standard": "Standard",
 					"change_pattern": "Skift mønster",
-					"user_defined": "Bruger defineret"
+					"user_defined": "Bruger defineret",
+					"effective": "Effektiv",
+					"zigzag": "Multi vinkel"
 				}
 
 			},
@@ -93,7 +103,9 @@
 				"state": {
 					"standard": "Standard",
 					"change_pattern": "Skift mønster",
-					"user_defined": "Bruger defineret"
+					"user_defined": "Bruger defineret",
+					"effective": "Effektiv",
+					"zigzag": "Multi vinkel"
 				}
 
 			},

@@ -42,6 +42,14 @@
                     "notrace": "Jaljeton"
 				}
 			},
+			"sunseeker_docking_mode_x3gen2": {
+				"name": "Telakointitila",
+				"state": {
+					"smart": "Smart",
+					"border": "Reunaa pitkin",
+					"direct": "Suora"
+				}
+			},
 			"sunseeker_border_distance": {
                 "name": "Reunaetaisyys",
 				"state": {
@@ -63,7 +71,9 @@
 				"state": {
 					"standard": "Standard",
                     "change_pattern": "Vaihda kuviota",
-                    "user_defined": "Kayttajan maarittama"
+                    "user_defined": "Kayttajan maarittama",
+                    "effective": "Tehokas",
+                    "zigzag": "Monikulmainen"
 				}
 
 			},
@@ -93,7 +103,9 @@
                 "state": {
                     "standard": "Vakio",
                     "change_pattern": "Vaihda kuviota",
-                    "user_defined": "Käyttäjän määrittämä"
+                    "user_defined": "Käyttäjän määrittämä",
+                    "effective": "Tehokas",
+                    "zigzag": "Monikulmainen"
                 }
             },
             "sunseeker_avoiding_objects": {

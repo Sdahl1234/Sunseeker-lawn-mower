@@ -42,6 +42,14 @@
                     "notrace": "Sans trace"
 				}
 			},
+			"sunseeker_docking_mode_x3gen2": {
+				"name": "Mode d'amarrage",
+				"state": {
+					"smart": "Smart",
+					"border": "Le long du bord",
+					"direct": "Direct"
+				}
+			},
 			"sunseeker_border_distance": {
                 "name": "Distance de bordure",
 				"state": {
@@ -63,7 +71,9 @@
 				"state": {
 					"standard": "Standard",
 					"change_pattern": "Changer de motif",
-					"user_defined": "Défini par l'utilisateur"
+					"user_defined": "Défini par l'utilisateur",
+					"effective": "Efficace",
+					"zigzag": "Multi-angle"
 				}
 
 			},
@@ -92,7 +102,9 @@
                 "state": {
                     "standard": "Standard",
                     "change_pattern": "Changer de motif",
-                    "user_defined": "Défini par l'utilisateur"
+                    "user_defined": "Défini par l'utilisateur",
+                    "effective": "Efficace",
+                    "zigzag": "Multi-angle"
                 }
             },
             "sunseeker_avoiding_objects": {

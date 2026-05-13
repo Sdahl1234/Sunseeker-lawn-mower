@@ -42,6 +42,14 @@
 					"notrace": "Traceless"
 				}
 			},
+			"sunseeker_docking_mode_x3gen2": {
+				"name": "Docking mode",
+				"state": {
+					"smart": "Smart",
+					"border": "Along the edge",
+					"direct": "Direct"
+				}
+			},
 			"sunseeker_border_distance": {
 				"name": "Edge distance",
 				"state": {
@@ -63,7 +71,9 @@
 				"state": {
 					"standard": "Standard",
 					"change_pattern": "Change pattern",
-					"user_defined": "User defined"
+					"user_defined": "User defined",
+					"effective": "Effective",
+					"zigzag": "Multi angle"
 				}
 
 			},
@@ -94,7 +104,9 @@
 				"state": {
 					"standard": "Standard",
 					"change_pattern": "Change pattern",
-					"user_defined": "User defined"
+					"user_defined": "User defined",
+					"effective": "Effective",
+					"zigzag": "Multi angle"
 				}
 
 			},

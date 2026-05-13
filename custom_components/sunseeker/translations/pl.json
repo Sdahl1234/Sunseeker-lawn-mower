@@ -42,6 +42,14 @@
 					"notrace": "Traceless"
 				}
 			},
+			"sunseeker_docking_mode_x3gen2": {
+				"name": "Tryb dokowania",
+				"state": {
+					"smart": "Smart",
+					"border": "Wzdłuż krawędzi",
+					"direct": "Bezpośrednio"
+				}
+			},
 			"sunseeker_border_distance": {
 				"name": "Odległość do krawędzi",
 				"state": {
@@ -63,7 +71,9 @@
 				"state": {
 					"standard": "Standard",
 					"change_pattern": "Zmień kąt",
-					"user_defined": "Ustawiony ręcznie"
+					"user_defined": "Ustawiony ręcznie",
+					"effective": "Efektywny",
+					"zigzag": "Wielokierunkowy"
 				}
 
 			},
@@ -94,7 +104,9 @@
 				"state": {
 					"standard": "Standard",
 					"change_pattern": "Zmień kierunek",
-					"user_defined": "Użytkownika"
+					"user_defined": "Użytkownika",
+					"effective": "Efektywny",
+					"zigzag": "Wielokierunkowy"
 				}
 
 			},

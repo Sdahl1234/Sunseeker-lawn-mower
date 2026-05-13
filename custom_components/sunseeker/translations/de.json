@@ -42,6 +42,14 @@
           "notrace": "Spurlos"
 				}
 			},
+			"sunseeker_docking_mode_x3gen2": {
+				"name": "Andockmodus",
+				"state": {
+					"smart": "Smart",
+					"border": "Entlang der Kante",
+					"direct": "Direkt"
+				}
+			},
 			"sunseeker_border_distance": {
         "name": "Kantenabstand",
 				"state": {
@@ -63,7 +71,9 @@
 				"state": {
 					"standard": "Standard",
 					"change_pattern": "Muster wechseln",
-					"user_defined": "Benutzerdefiniert"
+					"user_defined": "Benutzerdefiniert",
+					"effective": "Effizient",
+					"zigzag": "Multi-Winkel"
 				}
 
 			},
@@ -93,7 +103,9 @@
         "state": {
           "standard": "Standard",
           "change_pattern": "Muster wechseln",
-          "user_defined": "Benutzerdefiniert"
+          "user_defined": "Benutzerdefiniert",
+          "effective": "Effizient",
+          "zigzag": "Multi-Winkel"
         }
       },
       "sunseeker_avoiding_objects": {

@@ -5,7 +5,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_V, MODEL_X
+from .const import MODEL_V, MODEL_X, SUB_MODEL_GEN2
 from .entity import SunseekerEntity
 
 
@@ -93,6 +93,16 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
             )
 
     for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_X and coordinator.submodel == SUB_MODEL_GEN2:
+            async_add_entities(
+                [
+                    SunseekerRechargeModeSelect(
+                        coordinator,
+                        "Docking mode",
+                        "sunseeker_docking_mode_x3gen2",
+                    ),
+                ]
+            )
         if coordinator.model == MODEL_V:
             async_add_entities(
                 [
@@ -222,6 +232,51 @@ class SunseekerBorderFirstSelect(SunseekerEntity, SelectEntity):
     def current_option(self) -> str:
         """Co."""
         return self._get_mode_name(self.device.border_first)
+
+
+class SunseekerRechargeModeSelect(SunseekerEntity, SelectEntity):
+    """Select entity for Sunseeker mower mode."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(
+        self, coordinator: SunseekerDataCoordinator, name: str, translationkey: str
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.data_coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self._attr_options = ["smart", "border", "direct"]
+        self._attr_current_option = self._get_mode_name(self.device.recharge_mode)
+        self._attr_icon = "mdi:earth"
+
+    def _get_mode_name(self, mode: int) -> str:
+        mapping = {1: "smart", 2: "border", 0: "direct"}
+        return mapping.get(mode, "smart")
+
+    async def async_select_option(self, option: str) -> None:
+        """Handle user selecting a new option."""
+        # Map option back to mode code and send to device
+        reverse_mapping = {"smart": 1, "border": 2, "direct": 0}
+        value = reverse_mapping.get(option, 1)
+        # Call your integration's method to set the mode
+        await self.hass.async_add_executor_job(
+            self.device.set_return_path_X3Gen2, value
+        )
+        self._attr_current_option = option
+        self.async_write_ha_state()
+
+    @property
+    def current_option(self) -> str:
+        """Co."""
+        return self._get_mode_name(self.device.recharge_mode)
 
 
 class SunseekerReturnModeSelect(SunseekerEntity, SelectEntity):
@@ -600,7 +655,10 @@ class SunseekerPlanModeSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["standard", "change_pattern", "user_defined"]
+        if coordinator.submodel == SUB_MODEL_GEN2:
+            self._attr_options = ["standard", "change_pattern", "zigzag", "effective"]
+        else:
+            self._attr_options = ["standard", "change_pattern", "user_defined"]
         self._attr_current_option = self._get_mode_name(self.device.plan_mode)
         self._attr_icon = "mdi:earth"
 
@@ -609,6 +667,8 @@ class SunseekerPlanModeSelect(SunseekerEntity, SelectEntity):
             0: "standard",
             1: "change_pattern",
             2: "user_defined",
+            3: "effective",
+            4: "zigzag",
         }
         return mapping.get(mode, "standard")
 
@@ -619,6 +679,8 @@ class SunseekerPlanModeSelect(SunseekerEntity, SelectEntity):
             "standard": 0,
             "change_pattern": 1,
             "user_defined": 2,
+            "effective": 3,
+            "zigzag": 4,
         }
         plan_mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode

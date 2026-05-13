@@ -793,6 +793,10 @@ class SunseekermqttController:
             self.handle_mqtt_consumable_data(upd, nu, data, datanode, device)
         if "id" in data:
             self.handle_mqtt_data_id(upd, nu, data, datanode, device)
+        # X gen2
+        device.recharge_mode = self.setvalue(
+            nu, datanode, [], "recharge_mode", device.recharge_mode
+        )
 
         # online
         device.deviceOnlineFlag = self.setvalue(
