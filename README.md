@@ -1,7 +1,7 @@
 # Sunseeker lawn mower integration for Home Assistant
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.9
+#### V1.2.10
 
 ## Tested models
   - Adano RM6
