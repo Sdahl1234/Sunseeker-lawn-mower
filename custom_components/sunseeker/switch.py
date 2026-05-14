@@ -74,6 +74,16 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                             for i in range(1, 5)
                         )
                 async_add_entities(zigzag_active_custom)
+            if coordinator.submodel == SUB_MODEL_GEN2:
+                async_add_entities(
+                    [
+                        SunseekerAutoRideEdgeSwitch(
+                            coordinator,
+                            "Auto ride edge",
+                            "sunseeker_auto_ride_edge",
+                        ),
+                    ]
+                )
         if coordinator.model in {MODEL_X, MODEL_V}:
             async_add_entities(
                 [
@@ -857,3 +867,51 @@ class SunseekerEnergySavingSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return self.device.enery_mode
+
+
+class SunseekerAutoRideEdgeSwitch(SunseekerEntity, SwitchEntity):
+    """Switch entity for auto ride edge (auto map outside borders)."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:map-marker-path"
+        self.device = self._data_handler.get_device(self._sn)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(
+            self.device.set_auto_ride_edge,
+            1,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(
+            self.device.set_auto_ride_edge,
+            0,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(
+            self.device.set_auto_ride_edge,
+            0 if self.is_on else 1,
+        )
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return bool(self.device.auto_ride_edge)

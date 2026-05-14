@@ -883,6 +883,10 @@ class SunseekermqttController:
         if "id" in data:
             self.handle_mqtt_data_id(upd, nu, data, datanode, device)
         # X gen2
+        # auto ride edge does not get reported via mqtt.
+        device.auto_ride_edge = self.setvalue(
+            nu, datanode, [], "auto_ride_edge_map_m", device.auto_ride_edge
+        )
         device.recharge_mode = self.setvalue(
             nu, datanode, [], "recharge_mode", device.recharge_mode
         )

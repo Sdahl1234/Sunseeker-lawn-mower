@@ -160,6 +160,7 @@ class SunseekerDevice:
         self.work_record_detail: dict | None = None
         self.nightwork = False
         # X model gen2
+        self.auto_ride_edge = 0
         self.enery_mode = False
         self.recharge_mode = 0
         self.multi_zigzag_angles: list = []
@@ -261,6 +262,7 @@ class SunseekerDevice:
             self.wifi_lv = self.settings["data"].get("wifiLv")
             self.blade_speed = self.settings["data"].get("bladeSpeed")
             self.blade_height = self.settings["data"].get("bladeHeight")
+            self.auto_ride_edge = self.settings["data"].get("autoRideEdgeMapM") or 0
             self.enery_mode = self.settings["data"].get("energySavingMode") or False
             self.nightwork = self.settings["data"].get("nightWork") or False
             raw = self.settings["data"].get("multiZigzagAngles") or []
@@ -2197,6 +2199,18 @@ class SunseekerDevice:
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Check device version: {error}")  # noqa: G004
+
+    def set_auto_ride_edge(self, value: int):
+        """Set auto ride edge mode X gen2."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setAutoRideEdgeMapM",
+            "key": "auto_ride_edge_map_m",
+            "method": "set_property",
+            "value": value,
+        }
+        self.set_property(data)
 
     def set_energy_save(self, value: bool):
         """Set energy save mode X gen2."""

@@ -457,7 +457,8 @@
             "sunseeker_zigzag_active_custom_3": { "name": "{post_name} Siksak aktiivinen 3" },
             "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Siksak aktiivinen 4" },
             "sunseeker_night_work": { "name": "Yötyö" },
-            "sunseeker_energy_saving": { "name": "Energiansäästö" }
+            "sunseeker_energy_saving": { "name": "Energiansäästö" },
+            "sunseeker_auto_ride_edge": { "name": "Automaattinen reunaajo" }
         },
         "number": {
 			"sunseeker_angle": {

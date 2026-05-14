@@ -139,6 +139,7 @@ Not all are availeble for V models
 - **Zigzag active 1–4** *(Switch)* - Enable/disable each of the 4 zigzag angle slots individually.
 - **Night work** *(Switch)* - Enable/disable mowing during night hours.
 - **Energy saving** *(Switch)* - Enable/disable energy saving mode.
+- **Auto ride edge** *(Switch)* - Automatically map and mow outside borders.
 
 ## Zones - for each zone on your map you will have the following enteties
 - **Sensors**

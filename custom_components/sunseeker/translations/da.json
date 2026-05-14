@@ -479,7 +479,8 @@
 			"sunseeker_zigzag_active_custom_3": { "name": "{post_name} Zigzag aktiv 3" },
 			"sunseeker_zigzag_active_custom_4": { "name": "{post_name} Zigzag aktiv 4" },
 			"sunseeker_night_work": { "name": "Natarbejde" },
-			"sunseeker_energy_saving": { "name": "Energibesparelse" }
+			"sunseeker_energy_saving": { "name": "Energibesparelse" },
+			"sunseeker_auto_ride_edge": { "name": "Auto kantkørsel" }
 		},
 		"number": {
 			"sunseeker_angle": {
