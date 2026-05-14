@@ -12,7 +12,7 @@ from .const import APPTYPE_NEW, APPTYPE_OLD, MODEL_OLD, MODEL_V, MODEL_X, SUB_MO
 from .sunseeker_consumable_items import SunseekerConsumableItems
 from .sunseeker_map import SunseekerMap
 from .sunseeker_schedule import Sunseeker_new_schedule, SunseekerSchedule
-from .sunseeker_zone import SunseekerZone
+from .sunseeker_zone import SunseekerZigZag, SunseekerZone
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -161,6 +161,11 @@ class SunseekerDevice:
 
         # X model gen2
         self.recharge_mode = 0
+        self.multi_zigzag_angles: list = []
+        self.zigzag_1 = SunseekerZigZag()
+        self.zigzag_2 = SunseekerZigZag()
+        self.zigzag_3 = SunseekerZigZag()
+        self.zigzag_4 = SunseekerZigZag()
 
     def InitDevice(self) -> None:
         """Setup the device."""
@@ -255,6 +260,17 @@ class SunseekerDevice:
             self.wifi_lv = self.settings["data"].get("wifiLv")
             self.blade_speed = self.settings["data"].get("bladeSpeed")
             self.blade_height = self.settings["data"].get("bladeHeight")
+            raw = self.settings["data"].get("multiZigzagAngles") or []
+            self.multi_zigzag_angles = json.loads(raw) if isinstance(raw, str) else raw
+            zigzag_slots = [self.zigzag_1, self.zigzag_2, self.zigzag_3, self.zigzag_4]
+            for i, slot in enumerate(zigzag_slots):
+                if i < len(self.multi_zigzag_angles):
+                    entry = self.multi_zigzag_angles[i]
+                    slot.active = entry.get("active", False)
+                    slot.angle = entry.get("angle", 0)
+                else:
+                    slot.active = False
+                    slot.angle = 0
             # Zones
             if self.devicedata["data"].get("customFlag"):
                 self.custom_zones = self.devicedata["data"].get("customFlag")
@@ -275,6 +291,24 @@ class SunseekerDevice:
                         zone.work_speed = z.get("work_speed", zone.work_speed)
                         zone.setting = z.get("setting", zone.setting)
                         zone.plan_angle = z.get("plan_angle", zone.plan_angle)
+                        raw = z.get("multi_zigzag_angles", zone.multi_zigzag_angles)
+                        zone.multi_zigzag_angles = (
+                            json.loads(raw) if isinstance(raw, str) else (raw or [])
+                        )
+                        zigzag_slots = [
+                            zone.zigzag_1,
+                            zone.zigzag_2,
+                            zone.zigzag_3,
+                            zone.zigzag_4,
+                        ]
+                        for i, slot in enumerate(zigzag_slots):
+                            if i < len(zone.multi_zigzag_angles):
+                                entry = zone.multi_zigzag_angles[i]
+                                slot.active = entry.get("active", False)
+                                slot.angle = entry.get("angle", 0)
+                            else:
+                                slot.active = False
+                                slot.angle = 0
 
             if self.model == MODEL_X:
                 self.recharge_mode = self.settings["data"].get("rechargeMode", 0)
@@ -1106,6 +1140,21 @@ class SunseekerDevice:
         }
         self.set_property(data)
 
+    def set_plan_mode_gen2(self, mode: int, multi_zigzag_angle):
+        """Plan mode."""
+        # example of multi_zigzag_angle. can have up to 4 angles
+        # [{"active": true, "angle": 74}, {"active": false, "angle": 0}, {"active": true, "angle": 23}]
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setPlanAngle",
+            "key": "plan_angle",
+            "method": "set_property",
+            "plan_mode": int(mode),
+            "multi_zigzag_angles": multi_zigzag_angle,
+        }
+        self.set_property(data)
+
     def set_plan_mode(self, mode: int, angle: int):
         """Plan mode."""
         # if mode == 2:
@@ -1456,24 +1505,49 @@ class SunseekerDevice:
     def set_custon_property(self, zone: SunseekerZone):
         """Set custom zones."""
         try:
-            data = {
-                "appId": self.userid,
-                "deviceSn": self.devicesn,
-                "id": "setCustom",
-                "key": "custom",
-                "method": "set_property",
-                "value": [
-                    {
-                        "blade_height": zone.blade_height,  # int in mm
-                        "blade_speed": zone.blade_speed,  # int in revolutions per minute? 2800 = slow, 3000 = fast, at least for the X7; other robots may have different values?
-                        "plan_angle": zone.plan_angle,  # int in degrees, seems to refer to the horizontal of the displayed map, which is not necessarily enforced.
-                        "plan_mode": zone.plan_mode,  # int, 0 = standard, 1 = traceless, 2 = custom; probably only for 2 is plan_angle important
-                        "region_id": zone.id,  # long int id, id of the respective region
-                        "work_gap": zone.gap,  # int: 1 = narrow, 2 = normal, 3 = wide
-                        "work_speed": zone.work_speed,  # int: 1 = slow, 2 = normal, 3 = fast
-                    }
-                ],
-            }
+            if self.submodel == SUB_MODEL_GEN1:
+                data = {
+                    "appId": self.userid,
+                    "deviceSn": self.devicesn,
+                    "id": "setCustom",
+                    "key": "custom",
+                    "method": "set_property",
+                    "value": [
+                        {
+                            "blade_height": zone.blade_height,  # int in mm
+                            "blade_speed": zone.blade_speed,  # int in revolutions per minute? 2800 = slow, 3000 = fast, at least for the X7; other robots may have different values?
+                            "plan_angle": zone.plan_angle,  # int in degrees, seems to refer to the horizontal of the displayed map, which is not necessarily enforced.
+                            "plan_mode": zone.plan_mode,  # int, 0 = standard, 1 = traceless, 2 = custom; probably only for 2 is plan_angle important
+                            "region_id": zone.id,  # long int id, id of the respective region
+                            "work_gap": zone.gap,  # int: 1 = narrow, 2 = normal, 3 = wide
+                            "work_speed": zone.work_speed,  # int: 1 = slow, 2 = normal, 3 = fast
+                        }
+                    ],
+                }
+            else:
+                zone_value: dict = {
+                    "blade_height": zone.blade_height,
+                    "blade_speed": zone.blade_speed,
+                    "plan_mode": zone.plan_mode,
+                    "region_id": zone.id,
+                    "work_gap": zone.gap,
+                    "work_speed": zone.work_speed,
+                }
+                if zone.plan_mode == 4:
+                    zone_value["multi_zigzag_angles"] = [
+                        {"active": zone.zigzag_1.active, "angle": zone.zigzag_1.angle},
+                        {"active": zone.zigzag_2.active, "angle": zone.zigzag_2.angle},
+                        {"active": zone.zigzag_3.active, "angle": zone.zigzag_3.angle},
+                        {"active": zone.zigzag_4.active, "angle": zone.zigzag_4.angle},
+                    ]
+                data = {
+                    "appId": self.userid,
+                    "deviceSn": self.devicesn,
+                    "id": "setCustom",
+                    "key": "custom",
+                    "method": "set_property",
+                    "value": [zone_value],
+                }
             url = self.url + self.cmdurl + "set_property"
             headers = {
                 "Accept-Language": self.language,

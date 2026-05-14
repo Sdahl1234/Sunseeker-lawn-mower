@@ -678,6 +678,23 @@ class SunseekermqttController:
                         nu, z, [], "work_speed", zone.work_speed
                     )
                     zone.setting = self.setvalue(nu, z, [], "setting", zone.setting)
+                    zone.multi_zigzag_angles = self.setvalue(
+                        nu, z, [], "multi_zigzag_angles", zone.multi_zigzag_angles
+                    )
+                    zigzag_slots = [
+                        zone.zigzag_1,
+                        zone.zigzag_2,
+                        zone.zigzag_3,
+                        zone.zigzag_4,
+                    ]
+                    for i, slot in enumerate(zigzag_slots):
+                        if i < len(zone.multi_zigzag_angles):
+                            entry = zone.multi_zigzag_angles[i]
+                            slot.active = entry.get("active", False)
+                            slot.angle = entry.get("angle", 0)
+                        else:
+                            slot.active = False
+                            slot.angle = 0
 
     def handle_mqtt_data_id(
         self,
@@ -887,6 +904,27 @@ class SunseekermqttController:
         device.plan_mode = self.setvalue(
             nu, datanode, ["plan_angle"], "plan_mode", device.plan_mode
         )
+        device.multi_zigzag_angles = self.setvalue(
+            nu,
+            datanode,
+            ["plan_angle"],
+            "multi_zigzag_angles",
+            device.multi_zigzag_angles,
+        )
+        zigzag_slots = [
+            device.zigzag_1,
+            device.zigzag_2,
+            device.zigzag_3,
+            device.zigzag_4,
+        ]
+        for i, slot in enumerate(zigzag_slots):
+            if i < len(device.multi_zigzag_angles):
+                entry = device.multi_zigzag_angles[i]
+                slot.active = entry.get("active", False)
+                slot.angle = entry.get("angle", 0)
+            else:
+                slot.active = False
+                slot.angle = 0
         device.blade_speed = self.setvalue(
             nu, datanode, ["blade"], "speed", device.blade_speed
         )

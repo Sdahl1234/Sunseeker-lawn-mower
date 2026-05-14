@@ -684,11 +684,18 @@ class SunseekerPlanModeSelect(SunseekerEntity, SelectEntity):
         }
         plan_mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
-        await self.hass.async_add_executor_job(
-            self.device.set_plan_mode,
-            plan_mode,
-            self.device.plan_angle,
-        )
+        if self.device.submodel == SUB_MODEL_GEN2:
+            await self.hass.async_add_executor_job(
+                self.device.set_plan_mode_gen2,
+                plan_mode,
+                self.device.multi_zigzag_angles,
+            )
+        else:
+            await self.hass.async_add_executor_job(
+                self.device.set_plan_mode,
+                plan_mode,
+                self.device.plan_angle,
+            )
         self._attr_current_option = option
         self.async_write_ha_state()
 
@@ -834,7 +841,10 @@ class SunseekerCustomPlanModeSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        self._attr_options = ["standard", "change_pattern", "user_defined"]
+        if coordinator.submodel == SUB_MODEL_GEN2:
+            self._attr_options = ["standard", "change_pattern", "zigzag", "effective"]
+        else:
+            self._attr_options = ["standard", "change_pattern", "user_defined"]
         self.zoneid = zoneid
         self.zonename = zonename
         self.zone = self.device.get_zone(zoneid)
@@ -845,6 +855,8 @@ class SunseekerCustomPlanModeSelect(SunseekerEntity, SelectEntity):
             0: "standard",
             1: "change_pattern",
             2: "user_defined",
+            3: "effective",
+            4: "zigzag",
         }
         return mapping.get(mode, "standard")
 
@@ -855,6 +867,8 @@ class SunseekerCustomPlanModeSelect(SunseekerEntity, SelectEntity):
             "standard": 0,
             "change_pattern": 1,
             "user_definded": 2,
+            "effective": 3,
+            "zigzag": 4,
         }
         self.zone.plan_mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode

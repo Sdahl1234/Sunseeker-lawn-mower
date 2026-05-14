@@ -440,7 +440,15 @@
             },
             "schedule_active": {
                 "name": "Planning"
-            }
+            },
+            "sunseeker_zigzag_active_1": { "name": "Zigzag actif 1" },
+            "sunseeker_zigzag_active_2": { "name": "Zigzag actif 2" },
+            "sunseeker_zigzag_active_3": { "name": "Zigzag actif 3" },
+            "sunseeker_zigzag_active_4": { "name": "Zigzag actif 4" },
+            "sunseeker_zigzag_active_custom_1": { "name": "{post_name} Zigzag actif 1" },
+            "sunseeker_zigzag_active_custom_2": { "name": "{post_name} Zigzag actif 2" },
+            "sunseeker_zigzag_active_custom_3": { "name": "{post_name} Zigzag actif 3" },
+            "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Zigzag actif 4" }
         },
         "number": {
 			"sunseeker_angle": {
@@ -487,7 +495,15 @@
             },
             "sunseeker_mulpro4": {
                 "name": "Priorité de la Zone 4"
-            }
+            },
+            "sunseeker_zigzag_angle_1": { "name": "Angle zigzag 1" },
+            "sunseeker_zigzag_angle_2": { "name": "Angle zigzag 2" },
+            "sunseeker_zigzag_angle_3": { "name": "Angle zigzag 3" },
+            "sunseeker_zigzag_angle_4": { "name": "Angle zigzag 4" },
+            "sunseeker_zigzag_angle_custom_1": { "name": "{post_name} Angle zigzag 1" },
+            "sunseeker_zigzag_angle_custom_2": { "name": "{post_name} Angle zigzag 2" },
+            "sunseeker_zigzag_angle_custom_3": { "name": "{post_name} Angle zigzag 3" },
+            "sunseeker_zigzag_angle_custom_4": { "name": "{post_name} Angle zigzag 4" }
         },
         "text": {
             "sunseeker_schedule_text_1": {

@@ -6,7 +6,7 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_OLD, MODEL_X
+from .const import MODEL_OLD, MODEL_X, SUB_MODEL_GEN1, SUB_MODEL_GEN2, SUB_MODEL_GEN3
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,26 +47,46 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                         zid,
                     )
                     blade_height.append(s)
-                    a = SunseekerCustomPlanangleNumber(
-                        coordinator,
-                        f"{zname} Cutting angle",
-                        "sunseeker_angle_custom",
-                        zname,
-                        zid,
-                    )
-                    plan_angle.append(a)
+                    if coordinator.submodel == SUB_MODEL_GEN1:
+                        a = SunseekerCustomPlanangleNumber(
+                            coordinator,
+                            f"{zname} Cutting angle",
+                            "sunseeker_angle_custom",
+                            zname,
+                            zid,
+                        )
+                        plan_angle.append(a)
 
     async_add_entities(blade_height)
     async_add_entities(blade_speed)
     async_add_entities(plan_angle)
 
+    zigzag_angle_custom = []
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_X and coordinator.submodel in (
+            SUB_MODEL_GEN2,
+            SUB_MODEL_GEN3,
+        ):
+            zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
+            for zid, zname in zones:
+                if zid != 0:
+                    zigzag_angle_custom.extend(
+                        SunseekerCustomZigzagAngleNumber(
+                            coordinator,
+                            f"{zname} Zigzag angle {i}",
+                            f"sunseeker_zigzag_angle_custom_{i}",
+                            zname,
+                            zid,
+                            i,
+                        )
+                        for i in range(1, 5)
+                    )
+    async_add_entities(zigzag_angle_custom)
+
     for coordinator in robot_coordinators(hass, entry):
         if coordinator.model == MODEL_X:
             async_add_entities(
                 [
-                    SunseekerPlanangleNumber(
-                        coordinator, "Cutting angle", "sunseeker_angle"
-                    ),
                     SunseekerBladespeedNumber(
                         coordinator, "Blade speed", "sunseeker_blade_speed"
                     ),
@@ -75,6 +95,26 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                 ]
             )
+            if coordinator.submodel in (SUB_MODEL_GEN1):
+                async_add_entities(
+                    [
+                        SunseekerPlanangleNumber(
+                            coordinator, "Cutting angle", "sunseeker_angle"
+                        )
+                    ]
+                )
+            if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+                async_add_entities(
+                    [
+                        SunseekerZigzagAngleNumber(
+                            coordinator,
+                            f"Zigzag angle {i}",
+                            f"sunseeker_zigzag_angle_{i}",
+                            i,
+                        )
+                        for i in range(1, 5)
+                    ]
+                )
 
     for coordinator in robot_coordinators(hass, entry):
         if coordinator.model == MODEL_OLD:
@@ -589,3 +629,109 @@ class SunseekerCustomPlanangleNumber(SunseekerEntity, NumberEntity):
     def native_value(self):
         """Return value."""
         return self.zone.plan_angle
+
+
+class SunseekerZigzagAngleNumber(SunseekerEntity, NumberEntity):
+    """Number entity for a global zigzag angle."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+        angle_index: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self.native_max_value = 180
+        self.native_min_value = 0
+        self.native_step = 1
+        self.native_unit_of_measurement = "°"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self._attr_mode = "box"
+        self.icon = "mdi:angle-acute"
+        self._angle_index = angle_index
+        self.device = self._data_handler.get_device(self._sn)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+        angles = [
+            {
+                "active": getattr(self.device, f"zigzag_{i}").active,
+                "angle": getattr(self.device, f"zigzag_{i}").angle,
+            }
+            for i in range(1, 5)
+        ]
+        angles[self._angle_index - 1]["angle"] = int(value)
+        await self.hass.async_add_executor_job(
+            self.device.set_plan_mode_gen2,
+            self.device.plan_mode,
+            angles,
+        )
+
+    @property
+    def native_value(self):
+        """Return value."""
+        return getattr(self.device, f"zigzag_{self._angle_index}").angle
+
+
+class SunseekerCustomZigzagAngleNumber(SunseekerEntity, NumberEntity):
+    """Number entity for a zone-specific zigzag angle."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+        zonename: str,
+        zoneid: int,
+        angle_index: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self.native_max_value = 180
+        self.native_min_value = 0
+        self.native_step = 1
+        self.native_unit_of_measurement = "°"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_translation_placeholders = {"post_name": zonename}
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self._attr_mode = "box"
+        self.icon = "mdi:angle-acute"
+        self.zoneid = zoneid
+        self.zonename = zonename
+        self._angle_index = angle_index
+        self.device = self._data_handler.get_device(self._sn)
+        self.zone = self.device.get_zone(zoneid)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+        getattr(self.zone, f"zigzag_{self._angle_index}").angle = int(value)
+        self.zone.multi_zigzag_angles = [
+            {
+                "active": getattr(self.zone, f"zigzag_{i}").active,
+                "angle": getattr(self.zone, f"zigzag_{i}").angle,
+            }
+            for i in range(1, 5)
+        ]
+        await self.hass.async_add_executor_job(
+            self.device.set_custon_property,
+            self.zone,
+        )
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self):
+        """Return value."""
+        return getattr(self.zone, f"zigzag_{self._angle_index}").angle

@@ -451,7 +451,15 @@
         },
         "schedule_active": {
           "name": "Harmonogram"
-        }
+        },
+        "sunseeker_zigzag_active_1": { "name": "Zygzak aktywny 1" },
+        "sunseeker_zigzag_active_2": { "name": "Zygzak aktywny 2" },
+        "sunseeker_zigzag_active_3": { "name": "Zygzak aktywny 3" },
+        "sunseeker_zigzag_active_4": { "name": "Zygzak aktywny 4" },
+        "sunseeker_zigzag_active_custom_1": { "name": "{post_name} Zygzak aktywny 1" },
+        "sunseeker_zigzag_active_custom_2": { "name": "{post_name} Zygzak aktywny 2" },
+        "sunseeker_zigzag_active_custom_3": { "name": "{post_name} Zygzak aktywny 3" },
+        "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Zygzak aktywny 4" }
       },
       "number": {
 			"sunseeker_angle": {
@@ -498,7 +506,15 @@
 			  },
 			  "sunseeker_mulpro4": {
 				  "name": "Priorytet strefy 4"
-			  }
+			  },
+			  "sunseeker_zigzag_angle_1": { "name": "Kąt zygzaka 1" },
+			  "sunseeker_zigzag_angle_2": { "name": "Kąt zygzaka 2" },
+			  "sunseeker_zigzag_angle_3": { "name": "Kąt zygzaka 3" },
+			  "sunseeker_zigzag_angle_4": { "name": "Kąt zygzaka 4" },
+			  "sunseeker_zigzag_angle_custom_1": { "name": "{post_name} Kąt zygzaka 1" },
+			  "sunseeker_zigzag_angle_custom_2": { "name": "{post_name} Kąt zygzaka 2" },
+			  "sunseeker_zigzag_angle_custom_3": { "name": "{post_name} Kąt zygzaka 3" },
+			  "sunseeker_zigzag_angle_custom_4": { "name": "{post_name} Kąt zygzaka 4" }
       },
       "text": {
         "sunseeker_schedule_text_1": {

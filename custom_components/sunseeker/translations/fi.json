@@ -429,7 +429,15 @@
             },
             "schedule_active": {
                 "name": "Ajastus"
-            }
+            },
+            "sunseeker_zigzag_active_1": { "name": "Siksak aktiivinen 1" },
+            "sunseeker_zigzag_active_2": { "name": "Siksak aktiivinen 2" },
+            "sunseeker_zigzag_active_3": { "name": "Siksak aktiivinen 3" },
+            "sunseeker_zigzag_active_4": { "name": "Siksak aktiivinen 4" },
+            "sunseeker_zigzag_active_custom_1": { "name": "{post_name} Siksak aktiivinen 1" },
+            "sunseeker_zigzag_active_custom_2": { "name": "{post_name} Siksak aktiivinen 2" },
+            "sunseeker_zigzag_active_custom_3": { "name": "{post_name} Siksak aktiivinen 3" },
+            "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Siksak aktiivinen 4" }
         },
         "number": {
 			"sunseeker_angle": {
@@ -476,7 +484,15 @@
             },
             "sunseeker_mulpro4": {
                 "name": "Alue 4 prioriteetti"
-            }
+            },
+            "sunseeker_zigzag_angle_1": { "name": "Siksak-kulma 1" },
+            "sunseeker_zigzag_angle_2": { "name": "Siksak-kulma 2" },
+            "sunseeker_zigzag_angle_3": { "name": "Siksak-kulma 3" },
+            "sunseeker_zigzag_angle_4": { "name": "Siksak-kulma 4" },
+            "sunseeker_zigzag_angle_custom_1": { "name": "{post_name} Siksak-kulma 1" },
+            "sunseeker_zigzag_angle_custom_2": { "name": "{post_name} Siksak-kulma 2" },
+            "sunseeker_zigzag_angle_custom_3": { "name": "{post_name} Siksak-kulma 3" },
+            "sunseeker_zigzag_angle_custom_4": { "name": "{post_name} Siksak-kulma 4" }
         },
         "text": {
             "sunseeker_schedule_text_1": {

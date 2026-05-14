@@ -7,6 +7,7 @@ Home assistant integration from lawnmower using the robotic-mower connect APP (O
   - Adano RM6
   - Brücke RM501
   - Sunseeker X3, X5, X7
+  - Sunseeker X3 Gen2
   - Sunseeker V1, V3
 
 ## Install
@@ -115,6 +116,14 @@ Not all are availeble for V models
   - **Blade speed** - Speed of the blades
   - **Blade height** - Height of the blades
   - **User defined zones** - If enabled the zone settings will be used
+  - **Docking mode** *(Gen2)* - How the mower returns to the dock: Straight, Detour left, Detour right
+
+## Global settings (Gen2 only)
+- **Cutting pattern** also supports:
+  - **Effective** - Effective mowing pattern
+  - **Zigzag** - Zigzag mowing pattern
+- **Zigzag angle 1–4** *(Number)* - The angle for each of the 4 zigzag passes (0–180°). Only relevant when Cutting pattern is Zigzag.
+- **Zigzag active 1–4** *(Switch)* - Enable/disable each of the 4 zigzag angle slots individually.
 
 ## Zones - for each zone on your map you will have the following enteties
 - **Sensors**
@@ -127,6 +136,10 @@ Not all are availeble for V models
   - **{zonename}Cutting angle** - Setting the cutting angle if Cutting pattern is User defined
   - **{zonename}Blade speed** - Speed of the blades
   - **{zonename}Blade height** - Height of the blades
+- **Zone settings (Gen2 only)**
+  - **{zonename}Cutting pattern** also supports **Effective** and **Zigzag**
+  - **{zonename}Zigzag angle 1–4** *(Number)* - The angle for each zigzag pass in this zone (0–180°). Only active when zone Cutting pattern is Zigzag.
+  - **{zonename}Zigzag active 1–4** *(Switch)* - Enable/disable each zigzag angle slot for this zone.
 - Easy way to control the zones is using the zone card https://github.com/Sdahl1234/sunseeker-zone-card
 <img width="1004" height="853" alt="image" src="https://github.com/user-attachments/assets/e5e50298-bd6f-44fe-b570-79ac30f8e55d" />
 

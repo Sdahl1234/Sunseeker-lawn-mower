@@ -7,7 +7,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_OLD, MODEL_V, MODEL_X
+from .const import MODEL_OLD, MODEL_V, MODEL_X, SUB_MODEL_GEN2, SUB_MODEL_GEN3
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,6 +34,34 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                 ]
             )
+            if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+                async_add_entities(
+                    [
+                        SunseekerZigzagActiveSwitch(
+                            coordinator,
+                            f"Zigzag active {i}",
+                            f"sunseeker_zigzag_active_{i}",
+                            i,
+                        )
+                        for i in range(1, 5)
+                    ]
+                )
+                zigzag_active_custom = []
+                zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
+                for zid, zname in zones:
+                    if zid != 0:
+                        zigzag_active_custom.extend(
+                            SunseekerCustomZigzagActiveSwitch(
+                                coordinator,
+                                f"{zname} Zigzag active {i}",
+                                f"sunseeker_zigzag_active_custom_{i}",
+                                zname,
+                                zid,
+                                i,
+                            )
+                            for i in range(1, 5)
+                        )
+                async_add_entities(zigzag_active_custom)
         if coordinator.model in {MODEL_X, MODEL_V}:
             async_add_entities(
                 [
@@ -610,3 +638,114 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return self.device.Schedule_new.schedule_pause
+
+
+class SunseekerZigzagActiveSwitch(SunseekerEntity, SwitchEntity):
+    """Switch entity for a global zigzag angle active flag."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+        angle_index: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:angle-acute"
+        self._angle_index = angle_index
+        self.device = self._data_handler.get_device(self._sn)
+
+    def _set_active(self, value: bool) -> None:
+        getattr(self.device, f"zigzag_{self._angle_index}").active = value
+        angles = [
+            {
+                "active": getattr(self.device, f"zigzag_{i}").active,
+                "angle": getattr(self.device, f"zigzag_{i}").angle,
+            }
+            for i in range(1, 5)
+        ]
+        self.device.set_plan_mode_gen2(self.device.plan_mode, angles)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(self._set_active, True)
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(self._set_active, False)
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(self._set_active, not self.is_on)
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return getattr(self.device, f"zigzag_{self._angle_index}").active
+
+
+class SunseekerCustomZigzagActiveSwitch(SunseekerEntity, SwitchEntity):
+    """Switch entity for a zone-specific zigzag angle active flag."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+        zonename: str,
+        zoneid: int,
+        angle_index: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_translation_placeholders = {"post_name": zonename}
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:angle-acute"
+        self._angle_index = angle_index
+        self.device = self._data_handler.get_device(self._sn)
+        self.zone = self.device.get_zone(zoneid)
+
+    def _set_active(self, value: bool) -> None:
+        getattr(self.zone, f"zigzag_{self._angle_index}").active = value
+        self.zone.multi_zigzag_angles = [
+            {
+                "active": getattr(self.zone, f"zigzag_{i}").active,
+                "angle": getattr(self.zone, f"zigzag_{i}").angle,
+            }
+            for i in range(1, 5)
+        ]
+        self.device.set_custon_property(self.zone)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(self._set_active, True)
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(self._set_active, False)
+        self.async_write_ha_state()
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(self._set_active, not self.is_on)
+        self.async_write_ha_state()
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return getattr(self.zone, f"zigzag_{self._angle_index}").active
