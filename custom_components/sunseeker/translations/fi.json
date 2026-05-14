@@ -437,7 +437,9 @@
             "sunseeker_zigzag_active_custom_1": { "name": "{post_name} Siksak aktiivinen 1" },
             "sunseeker_zigzag_active_custom_2": { "name": "{post_name} Siksak aktiivinen 2" },
             "sunseeker_zigzag_active_custom_3": { "name": "{post_name} Siksak aktiivinen 3" },
-            "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Siksak aktiivinen 4" }
+            "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Siksak aktiivinen 4" },
+            "sunseeker_night_work": { "name": "Yötyö" },
+            "sunseeker_energy_saving": { "name": "Energiansäästö" }
         },
         "number": {
 			"sunseeker_angle": {

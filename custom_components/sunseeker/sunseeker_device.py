@@ -158,8 +158,9 @@ class SunseekerDevice:
         # Work records (MODEL_X only)
         self.work_records: list = []
         self.work_record_detail: dict | None = None
-
+        self.nightwork = False
         # X model gen2
+        self.enery_mode = False
         self.recharge_mode = 0
         self.multi_zigzag_angles: list = []
         self.zigzag_1 = SunseekerZigZag()
@@ -260,6 +261,8 @@ class SunseekerDevice:
             self.wifi_lv = self.settings["data"].get("wifiLv")
             self.blade_speed = self.settings["data"].get("bladeSpeed")
             self.blade_height = self.settings["data"].get("bladeHeight")
+            self.enery_mode = self.settings["data"].get("energySavingMode") or False
+            self.nightwork = self.settings["data"].get("nightWork") or False
             raw = self.settings["data"].get("multiZigzagAngles") or []
             self.multi_zigzag_angles = json.loads(raw) if isinstance(raw, str) else raw
             zigzag_slots = [self.zigzag_1, self.zigzag_2, self.zigzag_3, self.zigzag_4]
@@ -2156,6 +2159,30 @@ class SunseekerDevice:
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Check device version: {error}")  # noqa: G004
+
+    def set_energy_save(self, value: bool):
+        """Set energy save mode X gen2."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setEnergySavingMode",
+            "key": "energy_saving_mode",
+            "method": "set_property",
+            "value": value,
+        }
+        self.set_property(data)
+
+    def set_night_work(self, value: bool):
+        """Set nightwork X Gen2."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setNightWork",
+            "key": "night_work",
+            "method": "set_property",
+            "value": value,
+        }
+        self.set_property(data)
 
     def set_return_path_X3Gen2(self, value: int):
         """Set return path V1."""

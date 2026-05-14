@@ -459,7 +459,9 @@
         "sunseeker_zigzag_active_custom_1": { "name": "{post_name} Zygzak aktywny 1" },
         "sunseeker_zigzag_active_custom_2": { "name": "{post_name} Zygzak aktywny 2" },
         "sunseeker_zigzag_active_custom_3": { "name": "{post_name} Zygzak aktywny 3" },
-        "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Zygzak aktywny 4" }
+        "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Zygzak aktywny 4" },
+        "sunseeker_night_work": { "name": "Praca nocna" },
+        "sunseeker_energy_saving": { "name": "Oszczędzanie energii" }
       },
       "number": {
 			"sunseeker_angle": {

@@ -37,13 +37,25 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
             if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
                 async_add_entities(
                     [
-                        SunseekerZigzagActiveSwitch(
+                        SunseekerNightWorkSwitch(
                             coordinator,
-                            f"Zigzag active {i}",
-                            f"sunseeker_zigzag_active_{i}",
-                            i,
-                        )
-                        for i in range(1, 5)
+                            "Night work",
+                            "sunseeker_night_work",
+                        ),
+                        SunseekerEnergySavingSwitch(
+                            coordinator,
+                            "Energy saving",
+                            "sunseeker_energy_saving",
+                        ),
+                        *[
+                            SunseekerZigzagActiveSwitch(
+                                coordinator,
+                                f"Zigzag active {i}",
+                                f"sunseeker_zigzag_active_{i}",
+                                i,
+                            )
+                            for i in range(1, 5)
+                        ],
                     ]
                 )
                 zigzag_active_custom = []
@@ -749,3 +761,99 @@ class SunseekerCustomZigzagActiveSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return getattr(self.zone, f"zigzag_{self._angle_index}").active
+
+
+class SunseekerNightWorkSwitch(SunseekerEntity, SwitchEntity):
+    """Switch entity for night work mode."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:weather-night"
+        self.device = self._data_handler.get_device(self._sn)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(
+            self.device.set_night_work,
+            True,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(
+            self.device.set_night_work,
+            False,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(
+            self.device.set_night_work,
+            not self.is_on,
+        )
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return self.device.nightwork
+
+
+class SunseekerEnergySavingSwitch(SunseekerEntity, SwitchEntity):
+    """Switch entity for energy saving mode."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:leaf"
+        self.device = self._data_handler.get_device(self._sn)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(
+            self.device.set_energy_save,
+            True,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(
+            self.device.set_energy_save,
+            False,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(
+            self.device.set_energy_save,
+            not self.is_on,
+        )
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return self.device.enery_mode

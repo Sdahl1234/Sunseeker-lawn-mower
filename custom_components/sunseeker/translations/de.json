@@ -449,7 +449,9 @@
       "sunseeker_zigzag_active_custom_1": { "name": "{post_name} Zickzack aktiv 1" },
       "sunseeker_zigzag_active_custom_2": { "name": "{post_name} Zickzack aktiv 2" },
       "sunseeker_zigzag_active_custom_3": { "name": "{post_name} Zickzack aktiv 3" },
-      "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Zickzack aktiv 4" }
+      "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Zickzack aktiv 4" },
+      "sunseeker_night_work": { "name": "Nachtarbeit" },
+      "sunseeker_energy_saving": { "name": "Energiesparmodus" }
     },
     "number": {
 			"sunseeker_angle": {

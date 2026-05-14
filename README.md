@@ -124,6 +124,8 @@ Not all are availeble for V models
   - **Zigzag** - Zigzag mowing pattern
 - **Zigzag angle 1–4** *(Number)* - The angle for each of the 4 zigzag passes (0–180°). Only relevant when Cutting pattern is Zigzag.
 - **Zigzag active 1–4** *(Switch)* - Enable/disable each of the 4 zigzag angle slots individually.
+- **Night work** *(Switch)* - Enable/disable mowing during night hours.
+- **Energy saving** *(Switch)* - Enable/disable energy saving mode.
 
 ## Zones - for each zone on your map you will have the following enteties
 - **Sensors**

@@ -814,7 +814,12 @@ class SunseekermqttController:
         device.recharge_mode = self.setvalue(
             nu, datanode, [], "recharge_mode", device.recharge_mode
         )
-
+        device.nightwork = self.setvalue(
+            nu, datanode, [], "night_work", device.nightwork
+        )
+        device.enery_mode = self.setvalue(
+            nu, datanode, [], "energy_saving_mode", device.enery_mode
+        )
         # online
         device.deviceOnlineFlag = self.setvalue(
             nu, datanode, [], "online", device.deviceOnlineFlag
