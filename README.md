@@ -129,9 +129,9 @@ Not all are availeble for V models
   - **Blade speed** - Speed of the blades
   - **Blade height** - Height of the blades
   - **User defined zones** - If enabled the zone settings will be used
-  - **Docking mode** *(Gen2)* - How the mower returns to the dock: Straight, Detour left, Detour right
 
 ## Global settings (Gen2 only)
+- **Docking mode** - How the mower returns to the dock: Straight, Detour left, Detour right
 - **Cutting pattern** also supports:
   - **Effective** - Effective mowing pattern
   - **Zigzag** - Zigzag mowing pattern
