@@ -199,7 +199,7 @@ class SunseekerDevice:
             self.map.get_backup_map_data()
             self.get_work_records(1, 10)
 
-    def InitValues(self) -> None:
+    def InitValues(self) -> None:  # noqa: C901
         """Init values at upstart."""
         self.base_firmware = self.settings["data"].get(
             "wirelessStationFirmwareVersion", ""
@@ -334,6 +334,20 @@ class SunseekerDevice:
                         self.consumable.blade.mp = blade.get("mp")
                         self.consumable.blade.loop = blade.get("loop")
                         self.consumable.blade.ls = blade.get("ls")
+                    small_cutter = ci.get("small_cutter", None)
+                    if small_cutter:
+                        self.consumable.small_cutter.twt = small_cutter.get("twt")
+                        self.consumable.small_cutter.at = small_cutter.get("at")
+                        self.consumable.small_cutter.mp = small_cutter.get("mp")
+                        self.consumable.small_cutter.loop = small_cutter.get("loop")
+                        self.consumable.small_cutter.ls = small_cutter.get("ls")
+                    small_blade = ci.get("small_blade", None)
+                    if small_blade:
+                        self.consumable.small_blade.twt = small_blade.get("twt")
+                        self.consumable.small_blade.at = small_blade.get("at")
+                        self.consumable.small_blade.mp = small_blade.get("mp")
+                        self.consumable.small_blade.loop = small_blade.get("loop")
+                        self.consumable.small_blade.ls = small_blade.get("ls")
 
             if self.model == MODEL_V:
                 self.docking_path = self.settings["data"].get("returnMode")
@@ -1184,12 +1198,36 @@ class SunseekerDevice:
         }
         self.set_action(data)
 
+    def set_reset_small_blade(self):
+        """Reset the blade timer."""
+        data = {
+            "appId": self.userid,
+            "cmd": "maintain_consumable_item",
+            "consumable_items": ["small_blade"],
+            "deviceSn": self.devicesn,
+            "id": "maintainConsumableItem",
+            "method": "action",
+        }
+        self.set_action(data)
+
     def set_reset_bladeplade(self):
         """Reset the blade timer."""
         data = {
             "appId": self.userid,
             "cmd": "maintain_consumable_item",
             "consumable_items": ["cutter"],
+            "deviceSn": self.devicesn,
+            "id": "maintainConsumableItem",
+            "method": "action",
+        }
+        self.set_action(data)
+
+    def set_reset_small_bladeplade(self):
+        """Reset the blade timer."""
+        data = {
+            "appId": self.userid,
+            "cmd": "maintain_consumable_item",
+            "consumable_items": ["small_cutter"],
             "deviceSn": self.devicesn,
             "id": "maintainConsumableItem",
             "method": "action",

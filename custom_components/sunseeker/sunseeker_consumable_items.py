@@ -12,6 +12,8 @@ class SunseekerConsumableItems:
         """Init."""
         self.blade = CIBlade()
         self.cutter = CICutter()
+        self.small_blade = CIBlade()
+        self.small_cutter = CICutter()
 
 
 class CIBlade:

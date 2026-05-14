@@ -6,7 +6,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_OLD, MODEL_V, MODEL_X
+from .const import MODEL_OLD, MODEL_V, MODEL_X, SUB_MODEL_GEN2, SUB_MODEL_GEN3
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -70,6 +70,27 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                 ]
             )
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model == MODEL_X and coordinator.submodel in (
+            SUB_MODEL_GEN2,
+            SUB_MODEL_GEN3,
+        ):
+            async_add_entities(
+                [
+                    SunseekerButton(
+                        coordinator,
+                        "Reset small blade",
+                        "reset_small_blade",
+                        "sunseeker_reset_small_blade",
+                    ),
+                    SunseekerButton(
+                        coordinator,
+                        "Reset small bladeplade",
+                        "reset_small_bladeplade",
+                        "sunseeker_reset_small_bladeplade",
+                    ),
+                ]
+            )
 
 
 class SunseekerButton(SunseekerEntity, ButtonEntity):
@@ -113,3 +134,9 @@ class SunseekerButton(SunseekerEntity, ButtonEntity):
             await self.hass.async_add_executor_job(self.device.set_reset_bladeplade)
         elif self._valuepair == "reset_blade":
             await self.hass.async_add_executor_job(self.device.set_reset_blade)
+        elif self._valuepair == "reset_small_bladeplade":
+            await self.hass.async_add_executor_job(
+                self.device.set_reset_small_bladeplade
+            )
+        elif self._valuepair == "reset_small_blade":
+            await self.hass.async_add_executor_job(self.device.set_reset_small_blade)

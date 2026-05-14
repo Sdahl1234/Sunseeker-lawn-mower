@@ -175,6 +175,18 @@
 			"sunseeker_cutterplade_time_left": {
                 "name": "Leikkuulevyn jaljella oleva aika"
 			},
+			"sunseeker_small_blade_health": {
+                "name": "Pienen terän kunto"
+			},
+			"sunseeker_small_blade_time_left": {
+                "name": "Pienen terän jäljellä oleva aika"
+			},
+			"sunseeker_small_cutterplade_health": {
+                "name": "Pienen leikkuulevyn kunto"
+			},
+			"sunseeker_small_cutterplade_time_left": {
+                "name": "Pienen leikkuulevyn jäljellä oleva aika"
+			},
 			"sunseeker_estimated_time_custom": {
 				"name": "{post_name} Arvioitu aika"
 			},
@@ -364,6 +376,12 @@
             },
             "sunseeker_reset_blade": {
                          "name": "Nollaa tera"
+            },
+            "sunseeker_reset_small_bladeplade": {
+                            "name": "Nollaa pieni leikkuulevy"
+            },
+            "sunseeker_reset_small_blade": {
+                         "name": "Nollaa pieni tera"
             },
             "sunseeker_start": {
                 "name": "Aloita leikkaus"

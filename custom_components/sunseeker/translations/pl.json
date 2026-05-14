@@ -183,6 +183,18 @@
 			"sunseeker_cutterplade_time_left": {
 				"name": "Pozostały czas pracy tarczy tnącej"
 			},
+			"sunseeker_small_blade_health": {
+				"name": "Stan małych ostrzy tnących"
+			},
+			"sunseeker_small_blade_time_left": {
+				"name": "Pozostały czas pracy małych ostrzy"
+			},
+			"sunseeker_small_cutterplade_health": {
+				"name": "Stan małej tarczy tnącej"
+			},
+			"sunseeker_small_cutterplade_time_left": {
+				"name": "Pozostały czas pracy małej tarczy tnącej"
+			},
 			"sunseeker_estimated_time_custom": {
 				"name": "{post_name} Przewidywany czas"
 			},
@@ -381,6 +393,12 @@
         },
         "sunseeker_reset_blade": {
           "name": "Reset licznika czasu pracy noży"
+        },
+        "sunseeker_reset_small_bladeplade": {
+          "name": "Reset licznika czasu pracy małej płyty tnącej"
+        },
+        "sunseeker_reset_small_blade": {
+          "name": "Reset licznika czasu pracy małych noży"
         },
         "sunseeker_start": {
           "name": "Start kosiarki"

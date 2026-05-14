@@ -1,7 +1,10 @@
 # Sunseeker lawn mower integration for Home Assistant
+
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
+
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.10
+#### V1.2.11
 
 ## Tested models
   - Adano RM6
@@ -11,13 +14,17 @@ Home assistant integration from lawnmower using the robotic-mower connect APP (O
   - Sunseeker V1, V3
 
 ## Install
-#### Manually
-In Home Assistant, create a folder under *custom_components* named *sunseeker* and copy all the content of this project to that folder.
+#### HACS (recommended)
+In HACS, search for **Sunseeker robotic mower** and click **Download**.
 Restart Home Assistant and go to *Devices and Services* and press *+Add integration*.
 Search for *Sunseeker robotic mower* and add it.
 #### HACS Custom Repository
 In HACS, add a custom repository and use https://github.com/Sdahl1234/Sunseeker-lawn-mower
 Download from HACS.
+Restart Home Assistant and go to *Devices and Services* and press *+Add integration*.
+Search for *Sunseeker robotic mower* and add it.
+#### Manually
+In Home Assistant, create a folder under *custom_components* named *sunseeker* and copy all the content of this project to that folder.
 Restart Home Assistant and go to *Devices and Services* and press *+Add integration*.
 Search for *Sunseeker robotic mower* and add it.
 
@@ -72,13 +79,19 @@ Not all are availeble for V models
 - **End task** - Ends the current task
 ## Consumable items
 - **Buttons**
-  - **Reset blade** - Resets the blade healt to 100%
-  - **Reset bladplate** - Resets the bladeplade healt to 100%
+  - **Reset blade** - Resets the blade health to 100%
+  - **Reset bladeplade** - Resets the bladeplade health to 100%
+  - **Reset small blade** *(X models Gen2 only)* - Resets the small blade health to 100%
+  - **Reset small bladeplade** *(X models Gen2 only)* - Resets the small bladeplade health to 100%
 - **Sensors**
-  - **Blade healt** - Blade healt in %
-  - **Blade change** - Time left to change blade
-  - **Bladeplate healt** - Bladeplate healt in %
-  - **Bladepate cleaning** - Time left to cleaning bladeplade
+  - **Blade health** - Blade health in %
+  - **Blade time left** - Time left to change blade
+  - **Cutterplade health** - Cutterplade health in %
+  - **Cutterplade time left** - Time left to clean cutterplade
+  - **Small blade health** *(X models Gen2 only)* - Small blade health in %
+  - **Small blade time left** *(X models Gen2 only)* - Time left to change small blade
+  - **Small cutterplade health** *(X models Gen2 only)* - Small cutterplade health in %
+  - **Small cutterplade time left** *(X models Gen2 only)* - Time left to clean small cutterplade
 ## Rain sensor and controls
 - **Switches**
   - **Rain sensor** - Turn on/off the rain sensor

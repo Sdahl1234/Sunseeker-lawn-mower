@@ -175,6 +175,18 @@
 			"sunseeker_cutterplade_time_left": {
         "name": "Verbleibende Schneidplattenzeit"
 			},
+			"sunseeker_small_blade_health": {
+        "name": "Kleiner Messerzustand"
+			},
+			"sunseeker_small_blade_time_left": {
+        "name": "Verbleibende kleine Messerzeit"
+			},
+			"sunseeker_small_cutterplade_health": {
+        "name": "Kleiner Schneidplattenzustand"
+			},
+			"sunseeker_small_cutterplade_time_left": {
+        "name": "Verbleibende kleine Schneidplattenzeit"
+			},
 			"sunseeker_estimated_time_custom": {
 				"name": "{post_name} Geschätzte Zeit"
 			},
@@ -373,6 +385,12 @@
         },
         "sunseeker_reset_blade": {
           "name": "Messer zurucksetzen"
+        },
+        "sunseeker_reset_small_bladeplade": {
+          "name": "Kleine Schneidplatte zurucksetzen"
+        },
+        "sunseeker_reset_small_blade": {
+          "name": "Kleines Messer zurucksetzen"
         },
       "sunseeker_start": {
         "name": "Mähvorgang starten"

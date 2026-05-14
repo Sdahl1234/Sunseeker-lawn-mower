@@ -182,6 +182,18 @@
 			"sunseeker_cutterplade_time_left": {
 				"name": "knivplade rengøring"
 			},
+			"sunseeker_small_blade_health": {
+				"name": "Lille knive helbred"
+			},
+			"sunseeker_small_blade_time_left": {
+				"name": "Lille knive skift"
+			},
+			"sunseeker_small_cutterplade_health": {
+				"name": "Lille knivplade helbred"
+			},
+			"sunseeker_small_cutterplade_time_left": {
+				"name": "Lille knivplade rengøring"
+			},
 			"sunseeker_estimated_time_custom": {
 				"name": "{post_name} Estimeret tid"
 			},
@@ -380,6 +392,12 @@
         	},
 	        "sunseeker_reset_blade": {
     	      "name": "Reset knive"
+        	},
+	        "sunseeker_reset_small_bladeplade": {
+    	      "name": "Reset lille knivplade"
+        	},
+	        "sunseeker_reset_small_blade": {
+    	      "name": "Reset lille knive"
         	},
 			"sunseeker_start": {
 				"name": "Start"

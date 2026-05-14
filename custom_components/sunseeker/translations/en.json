@@ -183,6 +183,18 @@
 			"sunseeker_cutterplade_time_left": {
 				"name": "Cutterplade time left"
 			},
+			"sunseeker_small_blade_health": {
+				"name": "Small blade health"
+			},
+			"sunseeker_small_blade_time_left": {
+				"name": "Small blade time left"
+			},
+			"sunseeker_small_cutterplade_health": {
+				"name": "Small cutterplade health"
+			},
+			"sunseeker_small_cutterplade_time_left": {
+				"name": "Small cutterplade time left"
+			},
 			"sunseeker_estimated_time_custom": {
 				"name": "{post_name} Estimated time"
 			},
@@ -381,6 +393,12 @@
         },
         "sunseeker_reset_blade": {
           "name": "Reset blade"
+        },
+        "sunseeker_reset_small_bladeplade": {
+          "name": "Reset small bladeplade"
+        },
+        "sunseeker_reset_small_blade": {
+          "name": "Reset small blade"
         },
         "sunseeker_start": {
           "name": "Start robot"

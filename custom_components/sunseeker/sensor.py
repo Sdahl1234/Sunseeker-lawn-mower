@@ -16,6 +16,8 @@ from .const import (
     MODEL_V,
     MODEL_X,
     SUB_MODEL_GEN1,
+    SUB_MODEL_GEN2,
+    SUB_MODEL_GEN3,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
     SUNSEEKER_CONTINUE_CUTTING,
@@ -403,6 +405,55 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "",
                         "mdi:saw-blade",
                         "sunseeker_blade_height",
+                    ),
+                ]
+            )
+
+        if coordinator.model == MODEL_X and coordinator.submodel in (
+            SUB_MODEL_GEN2,
+            SUB_MODEL_GEN3,
+        ):
+            async_add_devices(
+                [
+                    SunseekerSensor(
+                        coordinator,
+                        PERCENTAGE,
+                        "Small blade health",
+                        "%",
+                        "small_blade_health",
+                        "",
+                        "mdi:heart",
+                        "sunseeker_small_blade_health",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        UnitOfTime.HOURS,
+                        "Small blade time left",
+                        UnitOfTime.HOURS,
+                        "small_blade_time_left",
+                        "",
+                        "mdi:timer-sand",
+                        "sunseeker_small_blade_time_left",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        PERCENTAGE,
+                        "Small cutterplade health",
+                        "%",
+                        "small_cutterplade_health",
+                        "",
+                        "mdi:heart",
+                        "sunseeker_small_cutterplade_health",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        UnitOfTime.HOURS,
+                        "Small cutterplade time left",
+                        UnitOfTime.HOURS,
+                        "small_cutterplade_time_left",
+                        "",
+                        "mdi:timer-sand",
+                        "sunseeker_small_cutterplade_time_left",
                     ),
                 ]
             )
@@ -823,6 +874,44 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
         elif self._valuepair == "cutterplade_health":
             a = self.device.consumable.cutter.at
             b = self.device.consumable.cutter.mp
+            if a is None or b is None or (b - a) == 0:
+                val = 0
+            elif b == 0:
+                val = 100
+            elif b < 0:
+                val = 0
+            else:
+                val = round(100 - ((a / b) * 100))
+        elif self._valuepair == "small_blade_time_left":
+            a = self.device.consumable.small_blade.at
+            b = self.device.consumable.small_blade.mp
+            if a is None or b is None or (b - a) == 0:
+                val = 0
+            else:
+                val = round((b - a) / 60 / 60)
+
+        elif self._valuepair == "small_blade_health":
+            a = self.device.consumable.small_blade.at
+            b = self.device.consumable.small_blade.mp
+            if a is None or b is None or (b - a) == 0:
+                val = 0
+            elif b == 0:
+                val = 100
+            elif b < 0:
+                val = 0
+            else:
+                val = round(100 - ((a / b) * 100))
+        elif self._valuepair == "small_cutterplade_time_left":
+            a = self.device.consumable.small_cutter.at
+            b = self.device.consumable.small_cutter.mp
+            if a is None or b is None or (b - a) == 0:
+                val = 0
+            else:
+                val = round((b - a) / 60 / 60)
+
+        elif self._valuepair == "small_cutterplade_health":
+            a = self.device.consumable.small_cutter.at
+            b = self.device.consumable.small_cutter.mp
             if a is None or b is None or (b - a) == 0:
                 val = 0
             elif b == 0:
