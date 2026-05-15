@@ -875,7 +875,7 @@ class SunseekermqttController:
                 if device.update_timer:
                     device.update_timer.cancel()
                 device.update_timer = Timer(
-                    10, self.Sunseeker.update_devices, [device.devicesn]
+                    10, device.update_devices, []
                 )
                 device.update_timer.start()
         if "consumable_items" in datanode:
@@ -1041,7 +1041,7 @@ class SunseekermqttController:
                 if device.update_timer:
                     device.update_timer.cancel()
                 device.update_timer = Timer(
-                    10, self.Sunseeker.update_devices, [device.devicesn]
+                    10, device.update_devices, []
                 )
                 device.update_timer.start()
         # msg/event code V1
