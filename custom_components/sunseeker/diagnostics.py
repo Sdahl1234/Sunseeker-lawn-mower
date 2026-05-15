@@ -70,7 +70,6 @@ def _build_device_payload(coordinator: SunseekerDataCoordinator) -> dict[str, An
             "apptype": coordinator.apptype,
             "region": coordinator.region,
             "brand": coordinator.brand,
-            "schedulefilepath": coordinator.schedulefilepath,
         },
         "device": {
             "devicesn": device.devicesn,
