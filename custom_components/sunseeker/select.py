@@ -5,7 +5,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_V, MODEL_X, SUB_MODEL_GEN2
+from .const import MODEL_S, MODEL_V, MODEL_V1, MODEL_X, SUB_MODEL_GEN2, SUB_MODEL_GEN3
 from .entity import SunseekerEntity
 
 
@@ -16,7 +16,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
     speed = []
     gap = []
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_X:
+        if coordinator.model in (MODEL_X, MODEL_S):
             zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
             for zone in zones:
                 zid, zname = zone
@@ -50,7 +50,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
     async_add_entities(gap)
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_X:
+        if coordinator.model in (MODEL_X, MODEL_S):
             async_add_entities(
                 [
                     SunseekerZoneSelect(
@@ -93,7 +93,10 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
             )
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_X and coordinator.submodel == SUB_MODEL_GEN2:
+        if coordinator.model in (MODEL_X, MODEL_S) and coordinator.submodel in (
+            SUB_MODEL_GEN2,
+            SUB_MODEL_GEN3,
+        ):
             async_add_entities(
                 [
                     SunseekerRechargeModeSelect(
@@ -103,7 +106,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                     ),
                 ]
             )
-        if coordinator.model == MODEL_V:
+        if coordinator.model in (MODEL_V1):
             async_add_entities(
                 [
                     SunseekerBorderDistanceSelect(
@@ -125,6 +128,42 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                         coordinator,
                         "Automatic screen timeout",
                         "sunseeker_screen_timeout",
+                    ),
+                ]
+            )
+
+        if coordinator.model in (MODEL_V):
+            async_add_entities(
+                [
+                    SunseekerSpeedSelect(
+                        coordinator,
+                        "Work speed",
+                        "sunseeker_work_speed",
+                    ),
+                    SunseekerGapSelect(
+                        coordinator,
+                        "Cutting gap",
+                        "sunseeker_gap",
+                    ),
+                    SunseekerPlanModeSelect(
+                        coordinator,
+                        "Cutting pattern",
+                        "sunseeker_cutting_pattern",
+                    ),
+                    SunseekerAISensSelect(
+                        coordinator,
+                        "AI Sensitivity",
+                        "sunseeker_ai_sensitivity",
+                    ),
+                    SunseekerBorderSelect(
+                        coordinator,
+                        "Edge trim frequency",
+                        "sunseeker_edge_freq",
+                    ),
+                    SunseekerAvoidObjectsSelect(
+                        coordinator,
+                        "Avoiding objects",
+                        "sunseeker_avoiding_objects",
                     ),
                 ]
             )
@@ -655,7 +694,7 @@ class SunseekerPlanModeSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        if coordinator.submodel == SUB_MODEL_GEN2:
+        if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
             self._attr_options = ["standard", "change_pattern", "zigzag", "effective"]
         else:
             self._attr_options = ["standard", "change_pattern", "user_defined"]

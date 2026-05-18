@@ -7,7 +7,7 @@ from homeassistant.components.text import TextEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_OLD, MODEL_X
+from .const import MODEL_OLD, MODEL_S, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     """Do setup entry."""
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_X:
+        if coordinator.model in (MODEL_X, MODEL_S):
             async_add_entities(
                 [
                     SunseekerChargerGPSText(

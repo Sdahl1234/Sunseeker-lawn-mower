@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_X, SUB_MODEL_GEN2, SUB_MODEL_GEN3
+from .const import MODEL_S, MODEL_X, SUB_MODEL_GEN2, SUB_MODEL_GEN3
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     """Do setup entry."""
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_X:
+        if coordinator.model in (MODEL_S, MODEL_X):
             async_add_entities(
                 [
                     MowerImage(

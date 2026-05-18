@@ -4,7 +4,7 @@ import base64
 import contextlib
 import json
 import logging
-from threading import Thread, Timer
+from threading import Thread
 from typing import TYPE_CHECKING, Any
 import uuid
 
@@ -18,7 +18,9 @@ from .const import (
     APPTYPE_NEW,
     APPTYPE_OLD,
     MODEL_OLD,
+    MODEL_S,
     MODEL_V,
+    MODEL_V1,
     MODEL_X,
     REGION_EU,
     REGION_US,
@@ -81,6 +83,7 @@ class SunseekermqttController:
         self.model = model
         self.access_token = access_token
         self.url = url
+        self.debug_user_id = 0
         self.user_id = user_id
         self.appId = "0123456789abcdef"
         self.mqtt_passwd = str(uuid.uuid4()).replace("-", "")[:24]
@@ -165,18 +168,18 @@ class SunseekermqttController:
         )
         self.mqtt_client_new.tls_set()
         if self.region == REGION_EU:
-            if self.model == MODEL_V:
+            if self.model == MODEL_V1:
                 host = "app.mqttv1-eu.sk-robot.com"
             else:
                 host = "wfsmqtt-specific.sk-robot.com"
         elif self.region == REGION_US:
-            if self.model == MODEL_V:
+            if self.model == MODEL_V1:
                 host = "app.mqttv1-us.sk-robot.com"
             else:
                 host = "wfsmqtt-specific-us.sk-robot.com"
-        if self.model == MODEL_V:
+        if self.model in (MODEL_V1):
             port = 32884
-        elif self.model == MODEL_X:
+        else:
             port = 1884
         _LOGGER.debug("MQTT host: " + host)  # noqa: G003
         _LOGGER.debug("MQTT username: " + self.username + self.appId)  # noqa: G003
@@ -196,9 +199,9 @@ class SunseekermqttController:
     def on_mqtt_connect_new(self, client, userdata, flags, rc):
         """On mqtt connect."""
         _LOGGER.debug("MQTT new connected event")
-        if self.model == MODEL_V:
+        if self.model in (MODEL_V1):
             ep = "wirelessmower"
-        else:  # MODEL_X
+        else:
             ep = "wirelessdevice"
 
         sub = f"/{ep}/" + str(self.user_id) + "/get"
@@ -206,28 +209,32 @@ class SunseekermqttController:
             f"MQTT new subscribe to: {sub}"  # noqa: G004
         )
         self.mqtt_client_new.subscribe(sub, qos=0)
+        if self.Sunseeker.debug:
+            sub = f"/{ep}/" + str(self.debug_user_id) + "/get"
+            self.mqtt_client_new.subscribe(sub, qos=0)
         _LOGGER.debug("MQTT new subscribe ok")
 
         for device_ in self.Sunseeker.robotList:
             device: SunseekerDevice = device_
-            if device.model in {MODEL_V, MODEL_X}:
+            if device.model in (MODEL_S, MODEL_V, MODEL_X):
                 thread2 = Thread(
                     target=device.get_schedule_data,
                 )
                 thread2.start()
-                if device.model == MODEL_X:
-                    thread4 = Thread(
-                        target=device.getSelectRegionID,
-                    )
-                    thread4.start()
+                if device.model in (MODEL_S, MODEL_X, MODEL_V):
                     thread = Thread(
                         target=device.get_dev_all_properties,
                     )
                     thread.start()
-                    thread3 = Thread(
-                        target=device.getAllPath,
-                    )
-                    thread3.start()
+                    if device.model in (MODEL_X, MODEL_S):
+                        thread4 = Thread(
+                            target=device.getSelectRegionID,
+                        )
+                        thread4.start()
+                        thread3 = Thread(
+                            target=device.getAllPath,
+                        )
+                        thread3.start()
 
     def connect_mqtt(self):
         """Connect mqtt."""
@@ -861,27 +868,13 @@ class SunseekermqttController:
                     upd.livemap_update = True
                     upd.fetch_new_map_data = True
             device.mode = self.setvalue(nu, datanode, [], "status", device.mode)
-            if "errortype" in data:
-                if device.errortype != data.get("errortype"):
-                    device.forceupdate = True
-                device.errortype = data.get("errortype")
-            else:
-                if device.errortype != 0:
-                    device.forceupdate = True
-                device.errortype = 0
-
-            if device.forceupdate:
-                device.forceupdate = False
-                if device.update_timer:
-                    device.update_timer.cancel()
-                device.update_timer = Timer(
-                    10, self.Sunseeker.update_devices, [device.devicesn]
-                )
-                device.update_timer.start()
         if "consumable_items" in datanode:
             self.handle_mqtt_consumable_data(upd, nu, data, datanode, device)
         if "id" in data:
             self.handle_mqtt_data_id(upd, nu, data, datanode, device)
+        device.above_edge = self.setvalue(
+            nu, datanode, [], "above_edge", device.above_edge
+        )
         # X gen2
         # auto ride edge does not get reported via mqtt.
         device.auto_ride_edge = self.setvalue(
@@ -1016,7 +1009,7 @@ class SunseekermqttController:
         self.handle_mqtt_schedule_data(upd, nu, data, datanode, device)
         self.handle_mqtt_zone_data(upd, nu, data, datanode, device)
 
-    def handle_mqtt_data(  # noqa: C901
+    def handle_mqtt_data(
         self,
         upd: mqtt_update_values,
         nu: mqtt_needupdate,
@@ -1026,26 +1019,9 @@ class SunseekermqttController:
         """Handle mqtt data."""
         device.power = self.setvalue(nu, data, [], "power", device.power)
         device.mode = self.setvalue(nu, data, [], "mode", device.mode)
-        if "mode" in data:
-            if "errortype" in data:
-                if device.errortype != data.get("errortype"):
-                    device.forceupdate = True
-                device.errortype = data.get("errortype")
-            else:
-                if device.errortype != 0:
-                    device.forceupdate = True
-                device.errortype = 0
-
-            if device.forceupdate:
-                device.forceupdate = False
-                if device.update_timer:
-                    device.update_timer.cancel()
-                device.update_timer = Timer(
-                    10, self.Sunseeker.update_devices, [device.devicesn]
-                )
-                device.update_timer.start()
+        device.errortype = self.setvalue(nu, data, [], "errortype", device.errortype)
         # msg/event code V1
-        if self.model in (MODEL_V, MODEL_OLD):
+        if self.model in (MODEL_V1, MODEL_OLD):
             device.eventcode = self.setvalue(nu, data, [], "msg", device.eventcode)
 
         if "data" in data:
@@ -1054,7 +1030,7 @@ class SunseekermqttController:
                 with contextlib.suppress(json.JSONDecodeError, ValueError):
                     datanode = json.loads(datanode)
             if isinstance(datanode, dict):
-                if device.model in (MODEL_V, MODEL_OLD):
+                if device.model in (MODEL_V1, MODEL_OLD):
                     device.deviceOnlineFlag = datanode
                 self.handle_mqtt_data_data(upd, nu, data, datanode, device)
 
@@ -1109,7 +1085,7 @@ class SunseekermqttController:
             if "Sun" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Sun"), 7)
                 upd.schedule = True
-        if self.model == MODEL_V:
+        if self.model in (MODEL_V, MODEL_V1):
             # V models
             device.screen_lock = self.setvalue(
                 nu, data, [], "duration", device.screen_lock
@@ -1141,14 +1117,27 @@ class SunseekermqttController:
     def handle_mqtt_message(self, message):
         """Thread to handle the messages."""
 
-        _LOGGER.debug("MQTT message: " + message.topic + " " + message.payload.decode())  # noqa: G003
+        # _LOGGER.debug("MQTT message: " + message.topic + " " + message.payload.decode())
         data = json.loads(message.payload.decode())
         if "deviceSn" not in data:
+            _LOGGER.debug(
+                "deviceSn not in MQTT message: "  # noqa: G003
+                + message.topic
+                + " "
+                + message.payload.decode()
+            )
             return
         nu = mqtt_needupdate()
         upd = mqtt_update_values()
         devicesn = data.get("deviceSn")
         device: SunseekerDevice = self.Sunseeker.get_device(devicesn)
+        _LOGGER.debug(
+            device.DeviceName  # noqa: G003
+            + " MQTT message: "
+            + message.topic
+            + " "
+            + message.payload.decode()
+        )
         try:
             self.handle_mqtt_data(upd, nu, data, device)
             if device.dataupdated is not None:

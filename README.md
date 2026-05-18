@@ -4,13 +4,13 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.11
+#### V1.2.12.1
 
 ## Tested models
-  - Adano RM6
+  - Adano RM5, RM6, RM9
   - Brücke RM501
   - Sunseeker X3, X5, X7
-  - Sunseeker X3 Gen2
+  - Sunseeker X3, X5, X7 Gen2
   - Sunseeker V1, V3
 
 ## Install
@@ -47,51 +47,194 @@ English, Danish, German, Finnish, French and Polish
 - Mower map-edit card: https://github.com/Sdahl1234/sunseeker-map-edit-card
 - Mower work-record card: https://github.com/Sdahl1234/sunseeker-work-record-card
 
-# Entities new models (wireless)
-Not all are availeble for V models
-## Lawn mower
+# Entities
+
+## All wireless models (V1, V18, V3, X, S)
+
+The following entities are available on all wireless models:
+
+### Lawn mower
+All states and actions (Start, Pause, Stop, Home)
 #### States
-- Going home
-- Charging
-- Standby
-- Working
-- Pause
-- Error
-- Returning
-- Returning paused
-- Charged
-- Offline
-- Locating
-- Stoped
-- Continue mowing
-- Stuck
-- Updating firmware
+- Going home, Charging, Standby, Working, Pause, Error, Returning, Returning paused, Charged, Offline, Locating, Stopped, Continue mowing, Stuck, Updating firmware
 #### Actions
-- **Start** - Starts the mower
+- **Start**, **Pause**, **Stop**, **Home**
+
+### Binary sensors
+- **Online** - Connected or Disconnected
+- **Rain sensor active** - on/off
+
+### Sensors
+- **Mower status** - Current mower state
+- **Battery** - Battery percentage
+- **Robot signal** - Signal strength to mower
+- **State change error** - Error from last setting change
+- **Rain sensor status** - Dry, Dry countdown, Wet
+- **Rain sensor delay** - Configured delay in minutes
+- **Rain sensor countdown** - Time left before resuming mowing
+- **Error code** - Current error code
+- **Error** - Error text
+- **Event** - Event codes mapped to text
+- **Wifi level** - Wifi signal strength
+- **Schedule** - Schedule sensor with schedule attributes
+- **Mower firmware** - Installed firmware version
+- **Mower new firmware** - Latest available firmware version
+
+### Numbers
+- **Rain delay** - Minutes from rain sensor dry to resume mowing
+
+### Switches
+- **Rain sensor** - Enable/disable the rain sensor
+
+### Buttons
+- **Start** - Start the mower
+- **Home** - Send the mower home
 - **Pause** - Pause the mower
-- **Stop** - Stops the mower
-- **Home**  - Sending the mower home
-## Buttons
-- **Start** - Starts the mower
-- **Home** - Sending the mower home
-- **Pause** - Pause the mower
-- **Stop** - Stops the mower
-- **End task** - Ends the current task
-## Consumable items
-- **Buttons**
-  - **Reset blade** - Resets the blade health to 100%
-  - **Reset bladeplade** - Resets the bladeplade health to 100%
-  - **Reset small blade** *(X models Gen2 only)* - Resets the small blade health to 100%
-  - **Reset small bladeplade** *(X models Gen2 only)* - Resets the small bladeplade health to 100%
-- **Sensors**
-  - **Blade health** - Blade health in %
-  - **Blade time left** - Time left to change blade
-  - **Cutterplade health** - Cutterplade health in %
-  - **Cutterplade time left** - Time left to clean cutterplade
-  - **Small blade health** *(X models Gen2 only)* - Small blade health in %
-  - **Small blade time left** *(X models Gen2 only)* - Time left to change small blade
-  - **Small cutterplade health** *(X models Gen2 only)* - Small cutterplade health in %
-  - **Small cutterplade time left** *(X models Gen2 only)* - Time left to clean small cutterplade
+
+### Device tracker
+- **Mower location** - Anti-theft GPS location
+
+### Update
+- **Mower firmware** - Firmware update notification
+
+---
+
+## V models (V18, V3)
+
+In addition to the shared entities above, V models include:
+
+### Buttons
+- **Border** - Cut border
+- **Stop** - Stop the mower
+
+### Switches
+- **Energy saving** - Enable/disable energy saving mode
+- **Cut edge first** - Mow the edge before the main area
+- **Night work** - Enable/disable mowing during night hours
+- **Ride on edge** - Mow on top of the edge when cutting border
+- **Repeat time work** - Continue mowing after the end of a cycle
+
+### Select
+- **Work speed** - Slow, Normal, Fast
+- **Cutting gap** - Narrow, Normal, Wide
+- **Cutting pattern** - Standard, Change pattern, User defined
+- **AI Sensitivity** - Low, High
+- **Edge trim frequency** - Every time, Every 2nd time, Every 3rd time
+- **Avoiding objects** - No touch, Slow touch
+
+### Numbers
+- **Blade speed** - Speed of the cutting blades
+- **Blade height** - Height of the cutting blades
+- **Cutting angle** *(Gen1 only)* - Cutting angle when pattern is User defined
+
+### Sensors
+- **Blade speed** - Current blade speed
+- **Blade height** - Current blade height
+- **Actual mowing time** - Time mowed since last charge
+
+---
+
+## V1
+
+In addition to the shared entities above, V1 includes:
+
+### Buttons
+- **Border** - Cut border
+- **Stop** - Stop the mower
+
+### Switches
+- **Pause schedule** - Pause/resume the mowing schedule
+
+### Select
+- **Border distance** - Close, Far
+- **Docking mode** - Smart, Traceless
+- **Ride on edge** - Off, On
+- **Automatic screen timeout** - Off, 30, 60, 90 seconds
+
+---
+
+## X models (X3, X4, X5, X7, X9) and S models (S3, S4, S5)
+
+In addition to the shared entities above, X and S models include:
+
+### Buttons
+- **Stop** - Stop the mower
+- **End task** - End the current task
+- **Reset blade** - Reset blade health to 100%
+- **Reset bladeplade** - Reset bladeplade health to 100%
+
+### Switches
+- **Custom zones** - Enable user-defined zone settings
+- **Cut edge first** - Mow the edge before the main area
+- **Repeat time work** - Continue mowing after the end of a cycle
+- **Pause schedule** - Pause/resume the mowing schedule
+
+### Select
+- **Zones** - Dropdown of all map zones
+- **Avoiding objects** - No touch, Slow touch
+- **AI Sensitivity** - Low, High
+- **Work speed** - Slow, Normal, Fast
+- **Cutting gap** - Narrow, Normal, Wide
+- **Edge trim frequency** - Every time, Every 2nd time, Every 3rd time
+- **Cutting pattern** - Standard, Change pattern, User defined, Effective, Multi angle
+- **{zone} Cutting pattern** - Per-zone cutting pattern
+- **{zone} Work speed** - Per-zone work speed
+- **{zone} Cutting gap** - Per-zone cutting gap
+
+### Numbers
+- **Blade speed** - Speed of the cutting blades
+- **Blade height** - Height of the cutting blades
+- **{zone} Blade speed** - Blade speed per zone
+- **{zone} Blade height** - Blade height per zone
+
+### Sensors
+- **4G Net strength** - 4G network signal strength (if SIM module installed)
+- **Blade speed** - Current blade speed
+- **Blade height** - Current blade height
+- **Covered area** - Area covered in the current mowing cycle
+- **Total area** - Total map area
+- **Progress** - Progress of the current mowing cycle
+- **Blade health** - Blade health percentage
+- **Blade time left** - Time remaining before blade replacement
+- **Cutterplade health** - Cutterplade health percentage
+- **Cutterplade time left** - Time remaining before cutterplade cleaning
+- **Actual mowing time** - Time mowed since last charge
+- **Work records** - Work record data (used with the work record card)
+- **Work region** - Zone the mower is currently in, based on its live map position
+- **{zone} Estimated time** - Estimated mowing time per zone
+- **{zone} Area** - Area size per zone
+
+### Camera
+- **Live map** - Live map with mower movement
+
+### Images
+- **Map** - Map image (use with the map-edit card)
+- **Heat map** - Heat map image
+- **Wifi map** - Wifi signal map image
+
+### Text
+- **Charger GPS position** - Set the GPS coordinates of the charging station for accurate mower position tracking
+
+### Device tracker
+- **Mower location** - Anti-theft GPS location
+- **Mower position** - Calculated GPS position derived from map coordinates
+
+#### Gen1 only
+- **Sensors:** Base firmware, Base new firmware, Base serialnumber
+- **Numbers:** Cutting angle, {zone} Cutting angle
+- **Update:** Base firmware
+
+#### Gen2 and Gen3 additions
+- **Buttons:** Reset small blade, Reset small bladeplade
+- **Switches:** Night work, Energy saving, Zigzag active 1–4, {zone} Zigzag active 1–4
+- **Switches:** Auto ride edge - Automatically map and mow outside borders
+- **Numbers:** Zigzag angle 1–4 (0–180°), {zone} Zigzag angle 1–4
+- **Sensors:** Small blade health, Small blade time left, Small cutterplade health, Small cutterplade time left
+- **Images:** 4G net map
+- **Select:** Docking mode - Smart, Along the edge, Direct
+
+---
+
 ## Rain sensor and controls
 - **Switches**
   - **Rain sensor** - Turn on/off the rain sensor
@@ -103,75 +246,37 @@ Not all are availeble for V models
   - **Rain sensor status** - Dry, Dry countdown, Wet
   - **Rain sensor delay** - Same as the number entity
   - **Rain sensor countdown** - The time left before starting mowing again
-## Global sensors
-- **Progress** - progress of the current mowing cycle
-- **Total area** - Total area of your map
-- **Coverd area** - The amount of area covered
-- **Battery** - Battery percentage
-- **Actual mowingtime** - Time the mower has mowed
-- **Online** - Connected or Disconnected
-- **Wifi strength** - The strength of the wifi signal
-- **Event** - Eventscodes maped to text from app
-- **Robot signal** - Signalstrength to mower
-- **4G Net strength** - 4G network strength if you have a sim module
-- **Zones** - Dropdown with all zones
-- **Work Region** - The name of the work zone the mower is currently located in, based on its live map position. Shows `docking` when the mower is inside the charger channel area, the zone name when inside a work region, or is unavailable when between regions.
-## Global settings
-- **Settings**
-  - **Avoiding objects** - No touch, Slow touch
-  - **AI Sensitivity** - Low, High
-  - **Edge trim frequency** - Everytime, Every 2nd time, Every 3rd time
-  - **Edge first** - Cut edge first or last
-  - **Cutting gap** - Narrow, Normal, Wide
-  - **Cutting pattern** - Standard, Change pattern, User defined
-  - **Work speed** - Slow, Normal, Fast
-  - **Cutting angle** - Setting the cutting angle if Cutting pattern is User defined
-  - **Blade speed** - Speed of the blades
-  - **Blade height** - Height of the blades
-  - **User defined zones** - If enabled the zone settings will be used
 
-## Global settings (Gen2 only)
-- **Docking mode** - How the mower returns to the dock: Straight, Detour left, Detour right
-- **Cutting pattern** also supports:
-  - **Effective** - Effective mowing pattern
-  - **Zigzag** - Zigzag mowing pattern
-- **Zigzag angle 1–4** *(Number)* - The angle for each of the 4 zigzag passes (0–180°). Only relevant when Cutting pattern is Zigzag.
-- **Zigzag active 1–4** *(Switch)* - Enable/disable each of the 4 zigzag angle slots individually.
-- **Night work** *(Switch)* - Enable/disable mowing during night hours.
-- **Energy saving** *(Switch)* - Enable/disable energy saving mode.
-- **Auto ride edge** *(Switch)* - Automatically map and mow outside borders.
-
-## Zones - for each zone on your map you will have the following enteties
+## Zones *(X and S models)* - for each zone on your map you will have the following entities
 - **Sensors**
-  - **{zonename}Estimated time** - Estimated time to mowe the area
-  - **{zonename}Area** - Area size
+  - **{zonename} Estimated time** - Estimated time to mow the area
+  - **{zonename} Area** - Area size
 - **Settings**
-  - **{zonename}Cutting gap** - Narrow, Normal, Wide
-  - **{zonename}Cutting pattern** - Standard, Change pattern, User defined
-  - **{zonename}Work speed** - Slow, Normal, Fast
-  - **{zonename}Cutting angle** - Setting the cutting angle if Cutting pattern is User defined
-  - **{zonename}Blade speed** - Speed of the blades
-  - **{zonename}Blade height** - Height of the blades
-- **Zone settings (Gen2 only)**
-  - **{zonename}Cutting pattern** also supports **Effective** and **Zigzag**
-  - **{zonename}Zigzag angle 1–4** *(Number)* - The angle for each zigzag pass in this zone (0–180°). Only active when zone Cutting pattern is Zigzag.
-  - **{zonename}Zigzag active 1–4** *(Switch)* - Enable/disable each zigzag angle slot for this zone.
+  - **{zonename} Cutting gap** - Narrow, Normal, Wide
+  - **{zonename} Cutting pattern** - Standard, Change pattern, User defined
+  - **{zonename} Work speed** - Slow, Normal, Fast
+  - **{zonename} Cutting angle** *(Gen1 only)* - Cutting angle when pattern is User defined
+  - **{zonename} Blade speed** - Speed of the blades
+  - **{zonename} Blade height** - Height of the blades
+- **Zone settings (Gen2 and Gen3 only)**
+  - **{zonename} Cutting pattern** also supports **Effective** and **Zigzag**
+  - **{zonename} Zigzag angle 1–4** *(Number)* - The angle for each zigzag pass in this zone (0–180°). Only active when zone Cutting pattern is Zigzag.
+  - **{zonename} Zigzag active 1–4** *(Switch)* - Enable/disable each zigzag angle slot for this zone.
 - Easy way to control the zones is using the zone card https://github.com/Sdahl1234/sunseeker-zone-card
 <img width="1004" height="853" alt="image" src="https://github.com/user-attachments/assets/e5e50298-bd6f-44fe-b570-79ac30f8e55d" />
 
 ## Schedule
-- **Pause schedule** - Turns on/off the schedule
-- **Repeat time work** - If enabled the mower continues mowing after end cycle
-- **Schedule** - Sensor with attribues containing the schedule. This is the one you must use in the schedule card https://github.com/Sdahl1234/sunseeker-schedule-card
+- **Pause schedule** *(V1, X, S)* - Turns on/off the schedule
+- **Repeat time work** *(V, X, S)* - If enabled the mower continues mowing after end cycle
+- **Schedule** - Sensor with attributes containing the schedule. This is the one you must use in the schedule card https://github.com/Sdahl1234/sunseeker-schedule-card
 <img width="905" height="854" alt="image" src="https://github.com/user-attachments/assets/f8674bcc-1afd-4ef4-9890-8c9e57b1ca72" />
 
-
-## Map
-- **map** - Image of the map - Use this one in the sunseeker-map-edit-card
-- **Live map** - Camera entity of Live Map with mower movments
-- **Heat map** - image of the heat map
-- **Wifi map** - Image of the wifimap
-- **4G map** - Image of the 4G map (Only Gen2 and 3)
+## Map *(X and S models only)*
+- **Map** - Image of the map - Use this one in the sunseeker-map-edit-card
+- **Live map** - Camera entity of Live Map with mower movements
+- **Heat map** - Image of the heat map
+- **Wifi map** - Image of the wifi map
+- **4G map** - Image of the 4G map *(Gen2 and Gen3 only)*
 
 ## Mower Map edit card
 https://github.com/Sdahl1234/sunseeker-map-edit-card
@@ -181,7 +286,7 @@ https://github.com/Sdahl1234/sunseeker-map-edit-card
 https://github.com/Sdahl1234/sunseeker-mower-control-card
 <img width="901" height="714" alt="image" src="https://github.com/user-attachments/assets/78235dbd-8555-4bed-b386-7da1a846735f" />
 
-## Mower work record card
+## Mower work record card *(X and S models only)*
 - **Sensors**
   - **Work Records** - Sensor with the work records data
 
@@ -189,10 +294,10 @@ https://github.com/Sdahl1234/sunseeker-work-record-card
 <img width="1614" height="502" alt="image" src="https://github.com/user-attachments/assets/30d2017a-7a19-414a-9e94-ec3026c94827" />
 
 ## Device tracker
-- **Mower location** - Anti theft location. Returns the latitude and longitude coordinates of the device.
-- **Mower position** - Calculated GPS position of the mower, derived from its map coordinates.
+- **Mower location** - Anti-theft location. Returns the latitude and longitude coordinates of the device. *(all models)*
+- **Mower position** - Calculated GPS position of the mower, derived from its map coordinates. *(X and S models only)*
 
-## Charger GPS position
+## Charger GPS position *(X and S models only)*
 For the **Mower position** tracker to be accurate, the integration needs to know the real-world GPS location of the charging station. The device's built-in GPS (`Mower location`) is not always reliable, so you can provide the charger coordinates manually.
 
 - **Charger GPS position** (text entity) - Paste the charger's GPS coordinates in Google Maps format: `57.33458060994386, 10.518281265571325`

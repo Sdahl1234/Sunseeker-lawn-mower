@@ -14,6 +14,9 @@ from .const import (
     APPTYPE_OLD,
     DOMAIN,
     LOGLEVEL,
+    MODEL_S,
+    MODEL_V,
+    MODEL_V1,
     MODEL_X,
     SUB_MODEL_GEN2,
     SUB_MODEL_GEN3,
@@ -104,11 +107,14 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.add_job(self.schedule_load_data)
         self.hass.add_job(self.charger_gps_load_data)
         self.hass.add_job(self.device.map.reload_maps)
-        if self.device.model == MODEL_X:
+        if self.device.model in (MODEL_X, MODEL_S):
             uv = mqtt_update_values()
-            uv.wifimap = self.device.model == MODEL_X
-            uv.heatmap = self.device.model == MODEL_X
-            uv.netmap = self.device.model == MODEL_X and self.device.submodel in (
+            uv.wifimap = self.device.model in (MODEL_X, MODEL_S)
+            uv.heatmap = self.device.model in (MODEL_X, MODEL_S)
+            uv.netmap = self.device.model in (
+                MODEL_X,
+                MODEL_S,
+            ) and self.device.submodel in (
                 SUB_MODEL_GEN2,
                 SUB_MODEL_GEN3,
             )
@@ -256,7 +262,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
                 self.hass.add_job(self.wifimap_entity.trigger_update)
         if (
             uv.netmap
-            and self.device.model == MODEL_X
+            and self.device.model in (MODEL_X, MODEL_S)
             and self.device.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3)
         ):
             self.hass.add_job(self.get_net_map, devicesn)
@@ -267,6 +273,8 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
 
     async def Handle_image_update(self, uv: mqtt_update_values):
         """Function to call none async."""
+        if self.model in (MODEL_V, MODEL_V1):
+            return
         _LOGGER.debug(f"Image handler - check mutex {self.devicesn}")  # noqa: G004
 
         for _ in range(50):

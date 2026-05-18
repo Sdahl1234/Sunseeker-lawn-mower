@@ -1,2 +1,3 @@
 *.pyc
 custom_components/sunseeker/README.md
+custom_components/sunseeker/GetDeviceList_V3.json

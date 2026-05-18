@@ -7,7 +7,7 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_OLD, MODEL_V, MODEL_X
+from .const import MODEL_OLD, MODEL_S, MODEL_V, MODEL_V1, MODEL_X
 from .entity import SunseekerEntity
 
 
@@ -143,7 +143,7 @@ class SunseekerBinarySensor(SunseekerEntity, BinarySensorEntity):
             if self._valuepair == "deviceOnlineFlag":
                 flag = self.device.deviceOnlineFlag
                 return isinstance(flag, dict) and flag.get("online") == "1"
-        elif self.device.model in [MODEL_V, MODEL_X]:
+        elif self.device.model in [MODEL_V, MODEL_V1, MODEL_X, MODEL_S]:
             if self._valuepair == "deviceOnlineFlag":
                 flag = self.device.deviceOnlineFlag
                 if isinstance(flag, dict):

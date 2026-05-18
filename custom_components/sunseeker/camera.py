@@ -7,7 +7,7 @@ from homeassistant.components.camera import Camera, CameraEntityFeature
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_X
+from .const import MODEL_S, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     """Set up Sunseeker camera entities."""
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_X:
+        if coordinator.model in (MODEL_S, MODEL_X):
             async_add_entities(
                 [
                     MowerCamera(

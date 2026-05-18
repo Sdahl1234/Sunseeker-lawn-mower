@@ -10,7 +10,7 @@ from homeassistant.components.update import (
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_OLD, MODEL_X, SUB_MODEL_GEN1
+from .const import MODEL_OLD, MODEL_S, MODEL_X, SUB_MODEL_GEN1
 from .entity import SunseekerEntity
 
 
@@ -30,10 +30,13 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 installed_attr="device_firmware",
                 latest_attr="device_firmware_new",
                 release_notes_attr="device_ota_desc",
-                can_install=coordinator.model == MODEL_X,
+                can_install=coordinator.model in (MODEL_X, MODEL_S),
             )
         )
-        if coordinator.model == MODEL_X and coordinator.submodel == SUB_MODEL_GEN1:
+        if (
+            coordinator.model in (MODEL_X, MODEL_S)
+            and coordinator.submodel == SUB_MODEL_GEN1
+        ):
             entities.append(
                 SunseekerFirmwareUpdate(
                     coordinator,
@@ -42,7 +45,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     installed_attr="base_firmware",
                     latest_attr="base_firmware_new",
                     release_notes_attr="base_ota_desc",
-                    can_install=coordinator.model == MODEL_X,
+                    can_install=coordinator.model in (MODEL_X, MODEL_S),
                 )
             )
 

@@ -44,8 +44,11 @@ APPTYPE_NEW = "New app"
 # Mower models
 MODEL_OLD = "Old models"
 MODEL_X = "X models"  # X3, X4, X5, X7, X9
-MODEL_V = "V models"  # V1, V18, V3
+MODEL_V1 = "V1 models"  # V1
+MODEL_V = "V models"  # V18, V3
 MODEL_S = "S models"  # S4, S5
+
+MODEL_SXV = "MODEL_SXV"
 
 
 S3 = "S3"
@@ -102,6 +105,9 @@ SUB_MODEL_NONE = ""
 SUB_MODEL_GEN1 = "GEN1"
 SUB_MODEL_GEN2 = "GEN2"
 SUB_MODEL_GEN3 = "GEN3"
+SUB_MODEL_V18 = "V18"
+SUB_MODEL_V3 = "V3"
+SUB_MODEL_V1 = "V1"
 
 
 # URLS, HOST
@@ -114,5 +120,7 @@ HOST_XV_EU = "wirefree-specific.sk-robot.com"
 URL_XV_US = "https://wirefree-specific-us.sk-robot.com/api"
 HOST_XV_US = "wirefree-specific-us.sk-robot.com"
 
+CMDURL_S = "/iot_mower/wireless/device/"
 CMDURL_X = "/iot_mower/wireless/device/"
-CMDURL_V = "/app_wirelessv1_mower/wirelessv1/device/"
+CMDURL_V = "/iot_mower/wireless/device/"
+CMDURL_V1 = "/app_wirelessv1_mower/wirelessv1/device/"

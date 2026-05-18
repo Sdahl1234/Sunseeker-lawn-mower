@@ -6,7 +6,15 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_OLD, MODEL_X, SUB_MODEL_GEN1, SUB_MODEL_GEN2, SUB_MODEL_GEN3
+from .const import (
+    MODEL_OLD,
+    MODEL_S,
+    MODEL_V,
+    MODEL_X,
+    SUB_MODEL_GEN1,
+    SUB_MODEL_GEN2,
+    SUB_MODEL_GEN3,
+)
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,7 +34,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     blade_height = []
     plan_angle = []
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_X:
+        if coordinator.model in (MODEL_X, MODEL_S):
             zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
             for zone in zones:
                 zid, zname = zone
@@ -63,7 +71,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
 
     zigzag_angle_custom = []
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_X and coordinator.submodel in (
+        if coordinator.model in (MODEL_X, MODEL_S) and coordinator.submodel in (
             SUB_MODEL_GEN2,
             SUB_MODEL_GEN3,
         ):
@@ -84,7 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     async_add_entities(zigzag_angle_custom)
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_X:
+        if coordinator.model in (MODEL_S, MODEL_X, MODEL_V):
             async_add_entities(
                 [
                     SunseekerBladespeedNumber(

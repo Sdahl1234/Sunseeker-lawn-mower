@@ -13,7 +13,9 @@ from .const import (
     DOMAIN,
     LOGLEVEL,
     MODEL_OLD,
+    MODEL_S,
     MODEL_V,
+    MODEL_V1,
     MODEL_X,
     SUB_MODEL_GEN1,
     SUB_MODEL_GEN2,
@@ -88,7 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     est_time = []
     est_size = []
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model in [MODEL_V, MODEL_X]:
+        if coordinator.model in [MODEL_S, MODEL_X]:
             zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
             for zone in zones:
                 zid, zname = zone
@@ -278,7 +280,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     ),
                 ]
             )
-        if coordinator.model in [MODEL_V, MODEL_X]:
+        if coordinator.model in [MODEL_S, MODEL_V, MODEL_V1, MODEL_X]:
             async_add_devices(
                 [
                     SunseekerScheduleSensor(
@@ -303,7 +305,33 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     ),
                 ]
             )
-        if coordinator.model == MODEL_X:
+        if coordinator.model == MODEL_V:
+            async_add_devices(
+                [
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Blade speed",
+                        "rpm",
+                        "blade_speed",
+                        "",
+                        "mdi:saw-blade",
+                        "sunseeker_blade_speed",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Blade height",
+                        "mm",
+                        "blade_height",
+                        "",
+                        "mdi:saw-blade",
+                        "sunseeker_blade_height",
+                    ),
+                ]
+            )
+
+        if coordinator.model in (MODEL_X, MODEL_S):
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -409,7 +437,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 ]
             )
 
-        if coordinator.model == MODEL_X and coordinator.submodel in (
+        if coordinator.model in (MODEL_X, MODEL_S) and coordinator.submodel in (
             SUB_MODEL_GEN2,
             SUB_MODEL_GEN3,
         ):
@@ -458,7 +486,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 ]
             )
 
-        if coordinator.model in (MODEL_V, MODEL_X):
+        if coordinator.model in (MODEL_S, MODEL_V, MODEL_V1, MODEL_X):
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -483,7 +511,10 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     ),
                 ]
             )
-        if coordinator.model == MODEL_X and coordinator.submodel == SUB_MODEL_GEN1:
+        if (
+            coordinator.model in (MODEL_X, MODEL_S)
+            and coordinator.submodel == SUB_MODEL_GEN1
+        ):
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -519,7 +550,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 ]
             )
 
-        if coordinator.model == MODEL_X:
+        if coordinator.model in (MODEL_X, MODEL_S):
             async_add_devices(
                 [
                     SunseekerWorkRecordSensor(
@@ -540,7 +571,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 ]
             )
 
-        if coordinator.model in [MODEL_OLD, MODEL_X]:
+        if coordinator.model in [MODEL_S, MODEL_OLD, MODEL_X, MODEL_V]:
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -739,22 +770,22 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                     + ")"
                 )
             elif ival == 0:
-                if self.device.model == MODEL_X:
+                if self.device.model in (MODEL_X, MODEL_S):
                     val = SUNSEEKER_UNKNOWN
                 else:
                     val = SUNSEEKER_STANDBY
             elif ival == 1:
-                if self.device.model == MODEL_X:
+                if self.device.model in (MODEL_X, MODEL_S):
                     val = SUNSEEKER_IDLE
                 else:
                     val = SUNSEEKER_MOWING
             elif ival == 2:
-                if self.device.model == MODEL_X:
+                if self.device.model in (MODEL_X, MODEL_S):
                     val = SUNSEEKER_WORKING
                 else:
                     val = SUNSEEKER_GOING_HOME
             elif ival == 3:
-                if self.device.model == MODEL_X:
+                if self.device.model in (MODEL_X, MODEL_S):
                     val = SUNSEEKER_PAUSE
                 else:
                     val = SUNSEEKER_CHARGING
@@ -763,7 +794,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             elif ival == 6:
                 val = SUNSEEKER_ERROR
             elif ival == 7:
-                if self.device.model == MODEL_X:
+                if self.device.model in (MODEL_X, MODEL_S):
                     val = SUNSEEKER_RETURN
                 else:
                     val = SUNSEEKER_MOWING_BORDER
@@ -796,12 +827,12 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             if ival == 0:
                 val = SUNSEEKER_DRY
             elif ival == 1:
-                if self.device.model in {MODEL_V, MODEL_X}:
+                if self.device.model in (MODEL_S, MODEL_V, MODEL_V1, MODEL_X):
                     val = SUNSEEKER_WET
                 else:
                     val = SUNSEEKER_DRY_COUNTDOWN
             elif ival == 2:
-                if self.device.model in {MODEL_V, MODEL_X}:
+                if self.device.model in (MODEL_S, MODEL_V, MODEL_V1, MODEL_X):
                     val = SUNSEEKER_DRY_COUNTDOWN
                 else:
                     val = SUNSEEKER_WET
@@ -944,7 +975,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
         elif self._valuepair == "event":
             ec = self.device.eventcode
             lang = self.hass.config.language
-            is_v_model = self.device.model in (MODEL_V, MODEL_OLD)
+            is_v_model = self.device.model in (MODEL_V1, MODEL_OLD)
             if lang == "da":
                 codes = _V1_EVENT_CODES_DA if is_v_model else _EVENT_CODES_DA
             elif lang == "de":
@@ -1138,7 +1169,7 @@ class SunseekerCustomZoneSizeSensor(SunseekerEntity, SensorEntity):
 
 
 class SunseekerWorkRecordSensor(SunseekerEntity, SensorEntity):
-    """Sunseeker Work Record Sensor (MODEL_X only)."""
+    """Sunseeker Work Record Sensor (MODEL_X and MODEL_S only)."""
 
     def __init__(
         self,
@@ -1201,7 +1232,7 @@ def _point_in_polygon(x: float, y: float, polygon: list[tuple[float, float]]) ->
 
 
 class SunseekerWorkRegionSensor(SunseekerEntity, SensorEntity):
-    """Sunseeker Work Region Sensor (MODEL_X only)."""
+    """Sunseeker Work Region Sensor (MODEL_X and MODEL_S only)."""
 
     def __init__(
         self,

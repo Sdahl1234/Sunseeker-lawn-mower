@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from PIL import Image, ImageDraw
 import requests
 
-from .const import MODEL_X
+from .const import MODEL_S, MODEL_X
 
 if TYPE_CHECKING:
     from .sunseeker import SunseekerDevice
@@ -411,12 +411,13 @@ class SunseekerMap:
         if self.image_data is not None:
             _LOGGER.debug("reload_maps -> generate_map")
             await self.generate_map()  # Opret nyt image med kort
-            _LOGGER.debug("reload_maps -> generate_path")
-            await self.generate_path()  # opret image med path på nyt kort
-            _LOGGER.debug("reload_maps -> generate_livemap")
-            await self.generate_livemap(
-                self.mower_pos_x, self.mower_pos_y
-            )  # Opret live image med robot
+            if self.mower.model in (MODEL_S, MODEL_X):
+                _LOGGER.debug("reload_maps -> generate_path")
+                await self.generate_path()  # opret image med path på nyt kort
+                _LOGGER.debug("reload_maps -> generate_livemap")
+                await self.generate_livemap(
+                    self.mower_pos_x, self.mower_pos_y
+                )  # Opret live image med robot
             self.image_state = "Loaded"
 
     def get_heat_map(self):
@@ -596,7 +597,7 @@ class SunseekerMap:
 
     def InitValues(self, settings) -> None:
         """Init values at upstart."""
-        if self.mower.model == MODEL_X:
+        if self.mower.model in (MODEL_X, MODEL_S):
             if not self.robot_image:
                 self.robot_image = self.load_robot_image()
             robotpos = settings["data"].get("robotPos")

@@ -7,7 +7,15 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_OLD, MODEL_V, MODEL_X, SUB_MODEL_GEN2, SUB_MODEL_GEN3
+from .const import (
+    MODEL_OLD,
+    MODEL_S,
+    MODEL_V,
+    MODEL_V1,
+    MODEL_X,
+    SUB_MODEL_GEN2,
+    SUB_MODEL_GEN3,
+)
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,7 +28,40 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
         async_add_entities(
             [SunseekerRainSwitch(coordinator, "Rain sensor", "sunseeker_rain_sensor")]
         )
-        if coordinator.model == MODEL_X:
+        if coordinator.model in (MODEL_V):
+            async_add_entities(
+                [
+                    SunseekerEnergySavingSwitch(
+                        coordinator,
+                        "Energy saving",
+                        "sunseeker_energy_saving",
+                    ),
+                    SunseekerBorderFirstSwitch(
+                        coordinator, "Cut edge first", "sunseeker_border_first"
+                    ),
+                    SunseekerNightWorkSwitch(
+                        coordinator,
+                        "Night work",
+                        "sunseeker_night_work",
+                    ),
+                    SunseekerAboveEdgeSwitch(
+                        coordinator,
+                        "Ride on edge",
+                        "sunseeker_above_edge",
+                    ),
+                ]
+            )
+
+        if coordinator.model in (MODEL_S, MODEL_X, MODEL_V):
+            async_add_entities(
+                [
+                    SunseekerTimeWorkRepeatSwitch(
+                        coordinator, "Repeat time work", "sunseeker_time_work_repeat"
+                    )
+                ]
+            )
+
+        if coordinator.model in (MODEL_X, MODEL_S):
             async_add_entities(
                 [
                     SunseekerCustomEnableSwitch(
@@ -28,9 +69,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                     SunseekerBorderFirstSwitch(
                         coordinator, "Cut edge first", "sunseeker_border_first"
-                    ),
-                    SunseekerTimeWorkRepeatSwitch(
-                        coordinator, "Repeat time work", "sunseeker_time_work_repeat"
                     ),
                 ]
             )
@@ -84,7 +122,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                         ),
                     ]
                 )
-        if coordinator.model in {MODEL_X, MODEL_V}:
+        if coordinator.model in (MODEL_S, MODEL_X, MODEL_V1):
             async_add_entities(
                 [
                     SunseekerSchedulePauseSwitch(
@@ -614,7 +652,7 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         self.device.Schedule_new.schedule_pause = True
-        if self.device.model == MODEL_V:
+        if self.device.model in (MODEL_V1):
             await self.hass.async_add_executor_job(
                 self.device.set_schedule_on_off_V1,
                 True,
@@ -627,7 +665,7 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         self.device.Schedule_new.schedule_pause = False
-        if self.device.model == MODEL_V:
+        if self.device.model in (MODEL_V1):
             await self.hass.async_add_executor_job(
                 self.device.set_schedule_on_off_V1,
                 False,
@@ -642,7 +680,7 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
         self.device.Schedule_new.schedule_pause = (
             not self.device.Schedule_new.schedule_pause
         )
-        if self.device.model == MODEL_V:
+        if self.device.model in (MODEL_V1):
             await self.hass.async_add_executor_job(
                 self.device.set_schedule_on_off_V1,
                 self.device.Schedule_new.schedule_pause,
@@ -915,3 +953,51 @@ class SunseekerAutoRideEdgeSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return bool(self.device.auto_ride_edge)
+
+
+class SunseekerAboveEdgeSwitch(SunseekerEntity, SwitchEntity):
+    """Switch entity for ride on edge mode."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:map-marker-path"
+        self.device = self._data_handler.get_device(self._sn)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(
+            self.device.set_above_edge,
+            True,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(
+            self.device.set_above_edge,
+            False,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(
+            self.device.set_above_edge,
+            not self.is_on,
+        )
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return self.device.above_edge

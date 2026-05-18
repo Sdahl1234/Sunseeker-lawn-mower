@@ -9,7 +9,7 @@ from homeassistant.components.device_tracker.config_entry import TrackerEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_X
+from .const import MODEL_S, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
         async_add_entities(
             [SunseekerDeviceTracker(coordinator, "Location", "sunseeker_tracker")]
         )
-        if coordinator.model == MODEL_X:
+        if coordinator.model in (MODEL_X, MODEL_S):
             async_add_entities(
                 [
                     SunseekerMowerPositionTracker(

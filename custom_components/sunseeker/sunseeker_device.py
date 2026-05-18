@@ -8,7 +8,16 @@ from threading import Timer
 
 import requests
 
-from .const import APPTYPE_NEW, APPTYPE_OLD, MODEL_OLD, MODEL_V, MODEL_X, SUB_MODEL_GEN1
+from .const import (
+    APPTYPE_NEW,
+    APPTYPE_OLD,
+    MODEL_OLD,
+    MODEL_S,
+    MODEL_V,
+    MODEL_V1,
+    MODEL_X,
+    SUB_MODEL_GEN1,
+)
 from .sunseeker_consumable_items import SunseekerConsumableItems
 from .sunseeker_map import SunseekerMap
 from .sunseeker_schedule import Sunseeker_new_schedule, SunseekerSchedule
@@ -32,25 +41,13 @@ class SunseekerDevice:
         self.apptype = APPTYPE_OLD
         self.model = MODEL_OLD
         self.submodel = SUB_MODEL_GEN1
+        self.deviceSpecies = 0
         self.devicesn = Devicesn
         self.deviceId = None
         self.devicedata = {}  # device status
         self.settings = {}  # data from get settings
         self.power = 0
         self.mode = 0
-        # New apptype modes:
-        # Unknown	   = 0,
-        # Idle		   = 1,
-        # Working 	   = 2,
-        # Pause		   = 3,
-        # Error		   = 6,
-        # Return       = 7,
-        # ReturnPause  = 8,
-        # Charging	   = 9,
-        # ChargingFull = 10,
-        # Offline	   = 13,
-        # Locating	   = 15,
-        # Stopp		   = 18
         self.errortype = 0
         self.station = False
         self.wifi_lv = 0
@@ -71,8 +68,7 @@ class SunseekerDevice:
         self.mulpro_zon2 = 0
         self.mulpro_zon3 = 0
         self.mulpro_zon4 = 0
-        self.forceupdate = False
-        self.error_text = ""
+        self.error_text = ""  # Error message from latest post
 
         # callback function to datacoordinaton
         self.dataupdated = None
@@ -111,7 +107,6 @@ class SunseekerDevice:
 
         self.current_zone_id = 0
         self.zones = [[0, "Global"]]
-        # self.zones = []  # entities setup
         self.zonelist = []
         zone = SunseekerZone()
         zone.id = 0
@@ -144,6 +139,7 @@ class SunseekerDevice:
         # 0 Fast task, 1 Selected area if oneshot or zone task if not, 2 schedule task, 3 Fast task
         self.task_type: str = ""
 
+        self.above_edge = False
         # V1
         self.border_distance = 0
         self.docking_path = 0
@@ -155,7 +151,7 @@ class SunseekerDevice:
         self.map.mower = self
         self.func_refesh_token = None
 
-        # Work records (MODEL_X only)
+        # Work records (MODEL_X,S only)
         self.work_records: list = []
         self.work_record_detail: dict | None = None
         self.nightwork = False
@@ -175,14 +171,14 @@ class SunseekerDevice:
         self.update_devices()
         self.InitValues()
 
-        if self.model == MODEL_V:
+        if self.model in (MODEL_V1):
             self.Schedule_new.Get_schedule_data_V1()
-        if self.model in (MODEL_X, MODEL_V):
+        if self.model in (MODEL_S, MODEL_X, MODEL_V, MODEL_V1):
             self.check_ota()
 
     def InitMapAndZoneData(self) -> None:
         """Init map and zone data."""
-        if self.apptype == APPTYPE_NEW and self.model == MODEL_X:
+        if self.apptype == APPTYPE_NEW and self.model in (MODEL_S, MODEL_X):
             self.map.get_map_info()
             if self.map.image_data:
                 json_data = self.map.image_data
@@ -202,15 +198,18 @@ class SunseekerDevice:
 
     def InitValues(self) -> None:  # noqa: C901
         """Init values at upstart."""
+        self.deviceSpecies = self.devicedata["data"].get("deviceSpecies") or 0
         self.base_firmware = self.settings["data"].get(
             "wirelessStationFirmwareVersion", ""
         )
-        if self.model == MODEL_X:
+        if self.model in (MODEL_S, MODEL_X, MODEL_V):
             self.device_firmware = self.settings["data"].get(
                 "wirelessFirmwareVersion", ""
             )
-        elif self.model == MODEL_V:
+        elif self.model == MODEL_V1:
             self.device_firmware = self.devicedata["data"].get("firmwareVersion", "")
+
+        self.above_edge = self.settings["data"].get("aboveEdge", False)
         self.device_firmware_new = self.device_firmware
         self.power = self.devicedata["data"].get("electricity")
         self.mode = int(self.devicedata["data"].get("workStatusCode") or 0)
@@ -219,7 +218,7 @@ class SunseekerDevice:
         self.rain_status = int(self.devicedata["data"].get("rainStatusCode") or 0)
 
         # Taks
-        if self.model == MODEL_X:
+        if self.model in (MODEL_X, MODEL_S):
             self.schedule_cancel = self.settings["data"].get("scheduleCancel", "")
             self.task_type = self.settings["data"].get("taskType", "")
             self.oneshot_task_type = self.settings["data"].get("oneshotTaskType", "")
@@ -315,7 +314,7 @@ class SunseekerDevice:
                                 slot.active = False
                                 slot.angle = 0
 
-            if self.model == MODEL_X:
+            if self.model in (MODEL_X, MODEL_S):
                 self.recharge_mode = self.settings["data"].get("rechargeMode", 0)
                 self.plan_mode = self.settings["data"].get("planMode", 0)
                 self.plan_angle = self.settings["data"].get("planValue", 0)
@@ -351,13 +350,13 @@ class SunseekerDevice:
                         self.consumable.small_blade.loop = small_blade.get("loop")
                         self.consumable.small_blade.ls = small_blade.get("ls")
 
-            if self.model == MODEL_V:
+            if self.model in (MODEL_V, MODEL_V1):
                 self.docking_path = self.settings["data"].get("returnMode")
                 self.screen_lock = self.settings["data"].get("durationTime")
                 self.border_first = self.settings["data"].get("rideMode")  # ok
                 self.border_distance = self.settings["data"].get("lv")
 
-        if self.model == MODEL_X:
+        if self.model in (MODEL_S, MODEL_X, MODEL_V):
             self.rain_delay_left = self.settings["data"].get("rainCountdown")
         else:
             self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
@@ -365,7 +364,7 @@ class SunseekerDevice:
     def check_ota(self) -> None:
         """Timer to fetch firmware versions."""
         self.check_ota_version(self.devicesn, self.device_firmware, 0)
-        if self.model == MODEL_X and self.submodel == SUB_MODEL_GEN1:
+        if self.model in (MODEL_X, MODEL_S) and self.submodel == SUB_MODEL_GEN1:
             self.check_ota_version(self.base_sn, self.base_firmware, 2)
         if self.ota_timer:
             self.ota_timer.cancel()
@@ -396,7 +395,7 @@ class SunseekerDevice:
             day.trim = dsl.get("trimFlag")
 
     def get_settings(self):
-        """Get settings."""
+        """Get settings. Part of the init."""
         if self.apptype == APPTYPE_OLD:
             endpoint = f"/mower/device-setting/{self.devicesn}"
         else:
@@ -419,16 +418,46 @@ class SunseekerDevice:
             response_data = response.json()
             self.settings = response_data
             _LOGGER.debug(json.dumps(response_data))
-
             if response_data["code"] != 0:
+                self.error_text = response_data.get("msg")
                 _LOGGER.debug(f"Error getting device settings for {self.devicesn}")  # noqa: G004
                 _LOGGER.debug(json.dumps(response_data))
                 return
-            if self.dataupdated is not None:
-                self.dataupdated(self.devicesn)
+            self.error_text = ""
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Get settings: failed {error}")  # noqa: G004
+
+    def update_devices(self):
+        """Update device."""
+        if self.apptype == APPTYPE_OLD:
+            endpoint = f"/mower/device/getBysn?sn={self.devicesn}"
+        else:
+            endpoint = f"/app_wireless_mower/device/getBysn?sn={self.devicesn}"
+
+        url = self.url + endpoint
+
+        try:
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get device status header: {headers} url: {url}")  # noqa: G004
+            response = requests.get(
+                url=url,
+                headers=headers,
+                timeout=10,
+            )
+            response_data = response.json()
+            self.devicedata = response_data
+            _LOGGER.debug(json.dumps(response_data))
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"Get device_status: failed {error}")  # noqa: G004
 
     def get_work_records(self, pos: int = 1, count: int = 10, append: bool = False):
         """Get workrecords."""
@@ -452,8 +481,14 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
 
             if response_data["code"] != 0:
+                self.error_text = response_data.get("msg")
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 _LOGGER.debug(f"Error getting workrecords for {self.devicesn}")  # noqa: G004
                 _LOGGER.debug(json.dumps(response_data))
+                return
+            self.error_text = ""
+            if response_data.get("data") is None:
                 return
             records = response_data.get("data", {}).get("records", [])
             if append:
@@ -463,10 +498,13 @@ class SunseekerDevice:
                 ]
             else:
                 self.work_records = records
-            if self.dataupdated is not None:
+            if self.dataupdated:
                 self.dataupdated(self.devicesn)
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
             _LOGGER.error(f"Get work_records: failed {error}")  # noqa: G004
 
     def load_work_record_detail(self, url: str):
@@ -477,11 +515,14 @@ class SunseekerDevice:
             response.raise_for_status()
             decompressed = gzip.decompress(response.content)
             self.work_record_detail = json.loads(decompressed)
-            if self.dataupdated is not None:
+            if self.dataupdated:
                 self.dataupdated(self.devicesn)
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Load work record detail: failed {error}")  # noqa: G004
+            self.error_text = error
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
 
     def device_skin(self):
         """Get skin. X models. Return on mqtt."""
@@ -506,87 +547,24 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
 
             if response_data["code"] != 0:
+                self.error_text = response_data.get("msg")
                 _LOGGER.debug(f"Error getting skin for {self.userid}")  # noqa: G004
                 _LOGGER.debug(json.dumps(response_data))
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 return
+            self.error_text = ""
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Get skin: failed {error}")  # noqa: G004
-
-    def getCustomDevice(self):
-        """Get CustomDevice X models. Return on mqtt."""
-        endpoint = "/app_wireless_mower/device-user/getCustomDevice?all=false"
-        # endpoint = "/app_wireless_mower/device-user/getCustomDevice?all=true"
-        try:
-            url_ = self.url + endpoint
-            headers_ = {
-                "Accept-Language": self.language,
-                "Authorization": "bearer " + self.access_token,
-                "Host": self.host,
-                "Connection": "Keep-Alive",
-                "User-Agent": "okhttp/4.4.1",
-            }
-            _LOGGER.debug(f"Get CustomDevice: {headers_} url: {url_}")  # noqa: G004
-            response = requests.get(
-                url=url_,
-                headers=headers_,
-                timeout=10,
-            )
-            response_data = response.json()
-            _LOGGER.debug(json.dumps(response_data))
-
-            if response_data["code"] != 0:
-                _LOGGER.debug("Error getting customDevice")
-                _LOGGER.debug(json.dumps(response_data))
-                return
-            return  # noqa: TRY300
-        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.error(f"Get CustomDevice: failed {error}")  # noqa: G004
-
-    def update_devices(self):
-        """Update device."""
-        if self.apptype == APPTYPE_OLD:
-            endpoint = f"/mower/device/getBysn?sn={self.devicesn}"
-        else:
-            endpoint = f"/app_wireless_mower/device/getBysn?sn={self.devicesn}"
-
-        url = self.url + endpoint
-
-        try:
-            headers = {
-                "Accept-Language": self.language,
-                "Authorization": "bearer " + self.access_token,
-                "Host": self.host,
-                "Connection": "Keep-Alive",
-                "User-Agent": "okhttp/4.4.1",
-            }
-            _LOGGER.debug(f"Get status header: {headers} url: {url}")  # noqa: G004
-            response = requests.get(
-                url=url,
-                headers=headers,
-                timeout=10,
-            )
-            response_data = response.json()
-            self.devicedata = response_data
-            _LOGGER.debug(json.dumps(response_data))
-
-            if self.dataupdated is not None:
-                self.dataupdated(self.devicesn)
-            return  # noqa: TRY300
-
-        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
             if hasattr(error, "response"):
                 if error.response.status == 401:
                     _LOGGER.debug(json.dumps(error.response.json()))
-                    _LOGGER.debug(
-                        "{element['path']} receive 401 error. Refresh Token in 60 seconds"
-                    )
+                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
                     if self.func_refesh_token:
                         self.func_refesh_token()
                     return
-
-            _LOGGER.debug(url)
-            _LOGGER.debug(error)
 
     def change_pincode(self, oldpin: str, newpin: str):
         """Change the pincode."""
@@ -609,7 +587,7 @@ class SunseekerDevice:
 
     def get_dev_all_properties(self):
         """Get devAllProperties. Data received via mqtt."""
-        if self.model == MODEL_V:
+        if self.model == MODEL_V1:
             return
         endpoint = self.cmdurl + "get_property"
         try:
@@ -639,16 +617,30 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
 
             if response_data["code"] != 0:
+                self.error_text = response_data.get("msg")
                 _LOGGER.debug(f"Error getting devAllProperties for {self.devicesn}")  # noqa: G004
                 _LOGGER.debug(json.dumps(response_data))
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 return
+            self.error_text = ""
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Get devAllProperties: failed {error}")  # noqa: G004
+            self.error_text = error
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
+            if hasattr(error, "response"):
+                if error.response.status == 401:
+                    _LOGGER.debug(json.dumps(error.response.json()))
+                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
+                    if self.func_refesh_token:
+                        self.func_refesh_token()
+                    return
 
     def getSelectRegionID(self):
         """Get getSelectRegionID. Data received via mqtt."""
-        if self.model == MODEL_V:
+        if self.model in (MODEL_V, MODEL_V1):
             return
         endpoint = self.cmdurl + "get_property"
         try:
@@ -678,16 +670,30 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
 
             if response_data["code"] != 0:
+                self.error_text = response_data.get("msg")
                 _LOGGER.debug(f"Error getting getSelectRegionID for {self.devicesn}")  # noqa: G004
                 _LOGGER.debug(json.dumps(response_data))
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 return
+            self.error_text = ""
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Get getSelectRegionID: failed {error}")  # noqa: G004
+            self.error_text = error
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
+            if hasattr(error, "response"):
+                if error.response.status == 401:
+                    _LOGGER.debug(json.dumps(error.response.json()))
+                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
+                    if self.func_refesh_token:
+                        self.func_refesh_token()
+                    return
 
     def getAllPath(self):
         """Get getAllPath. Data received via mqtt."""
-        if self.model == MODEL_V or not self.map.mapid:
+        if self.model in (MODEL_V, MODEL_V1) or not self.map.mapid:
             return
 
         endpoint = self.cmdurl + "get_property"
@@ -719,18 +725,32 @@ class SunseekerDevice:
             _LOGGER.debug(json.dumps(response_data))
 
             if response_data["code"] != 0:
+                self.error_text = response_data.get("msg")
                 _LOGGER.debug(f"Error getting getAllPath for {self.devicesn}")  # noqa: G004
                 _LOGGER.debug(json.dumps(response_data))
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
                 return
+            self.error_text = ""
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Get getAllPath: failed {error}")  # noqa: G004
+            self.error_text = error
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
+            if hasattr(error, "response"):
+                if error.response.status == 401:
+                    _LOGGER.debug(json.dumps(error.response.json()))
+                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
+                    if self.func_refesh_token:
+                        self.func_refesh_token()
+                    return
 
     def set_rain_status(self, state: bool, delaymin: int):
         """Set rain status."""
         try:
-            if self.model in {MODEL_V, MODEL_V}:
-                if self.model == MODEL_V:
+            if self.model in (MODEL_S, MODEL_X, MODEL_V, MODEL_V1):
+                if self.model == MODEL_V1:
                     url = self.url + self.cmdurl + "setProperty"
                     data = {
                         "appId": self.userid,
@@ -787,17 +807,28 @@ class SunseekerDevice:
             return  # noqa: TRY300
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"Set rain status: failed {error}")  # noqa: G004
             self.error_text = error
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
-            _LOGGER.error(f"Set rain status: failed {error}")  # noqa: G004
+            if hasattr(error, "response"):
+                if error.response.status == 401:
+                    _LOGGER.debug(json.dumps(error.response.json()))
+                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
+                    if self.func_refesh_token:
+                        self.func_refesh_token()
+                    return
 
     def set_state_change(self, command, state, zone=None):
         """Old Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Border."""
-        # New Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Stop.
-        # V models state 4=start
+        # X Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Stop.
+        # V1 models same as old but another call
+        # V models same as X, Trim border unknown
         # device_id = self.DeviceSn  # self.devicedata["data"].get("id")
-        if self.model == MODEL_V:
+        if self.model == MODEL_V and state == 5:  # V models border unknown
+            return
+
+        if self.model in (MODEL_V1):
             self.set_workmode_V1(state)
             return
         endpoint = "/app_mower/device/setWorkStatus"
@@ -812,6 +843,7 @@ class SunseekerDevice:
                     "mode": state,
                 }
             elif self.apptype == APPTYPE_NEW:
+                # Other commands: stop_find_charger/stopFindCharger, restart/restartWork
                 if state == 1:
                     cmd = "start"
                     cmdid = "startWork"
@@ -824,7 +856,9 @@ class SunseekerDevice:
                 elif state == 4:
                     cmd = "stop"
                     cmdid = "stopWork"
-
+                elif state == 5:  # V-models border
+                    cmd = "trim"
+                    cmdid = "startTrim"
                 if zone:
                     data = {
                         "appId": self.userid,
@@ -870,11 +904,6 @@ class SunseekerDevice:
             else:
                 self.error_text = ""
 
-            refresh_timeout = Timer(
-                10,
-                self.refresh,
-            )
-            refresh_timeout.start()
             return  # noqa: TRY300
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
@@ -882,6 +911,13 @@ class SunseekerDevice:
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set state change: failed {error}")  # noqa: G004
+            if hasattr(error, "response"):
+                if error.response.status == 401:
+                    _LOGGER.debug(json.dumps(error.response.json()))
+                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
+                    if self.func_refesh_token:
+                        self.func_refesh_token()
+                    return
 
     def start_mowing(self, zone=None):
         """Start Mowing."""
@@ -902,7 +938,11 @@ class SunseekerDevice:
     def border(self):
         """Border."""
         _LOGGER.debug("Border")
-        self.set_state_change("mode", 4)
+        if self.model in (MODEL_V):
+            self.set_state_change("mode", 5)
+        else:
+            self.set_state_change("mode", 4)
+        # self.set_state_change("mode", 4)
 
     def stop(self):
         """Stop."""
@@ -953,11 +993,6 @@ class SunseekerDevice:
         }
         _LOGGER.debug(f"Mowe selected area, mapid: {mapid}, vertexs: {points}")  # noqa: G004
         self.set_property(data)
-
-    def refresh(self):
-        """Refresh data."""
-        _LOGGER.debug("Refresh device data")
-        self.update_devices()
 
     def set_schedule(self, ScheduleList):
         """Set schedule data."""
@@ -1272,6 +1307,18 @@ class SunseekerDevice:
         }
         self.set_property(data)
 
+    def set_above_edge(self, value: bool):
+        """Ride on edge."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setAboveEdge",
+            "key": "above_edge",
+            "method": "set_property",
+            "value": value,
+        }
+        self.set_property(data)
+
     def set_time_work_repeat(self, value: bool):
         """Time work repeat."""
         data = {
@@ -1324,7 +1371,7 @@ class SunseekerDevice:
     def set_schedule_new(self, timedata):
         """Set schedule from service call."""
         _LOGGER.debug(f"Servicecall data: {timedata}")  # noqa: G004
-        if self.model == MODEL_X:
+        if self.model in (MODEL_X, MODEL_S):
             data = {
                 "action": 1,
                 "appId": self.userid,
@@ -1452,16 +1499,25 @@ class SunseekerDevice:
 
     def get_schedule_data(self):
         """Get schedule property."""
-        if self.model == MODEL_V:
+        if self.model in (MODEL_V1):
             self.Schedule_new.Get_schedule_data_V1()
             return
-        data = {
-            "appId": self.userid,
-            "deviceSn": self.devicesn,
-            "id": "getTimeTactics",
-            "key": "time_custom",
-            "method": "get_property",
-        }
+        if self.model in (MODEL_V):
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "getTimeCustom",  # "getTimeCustom",
+                "key": "time_custom",
+                "method": "get_property",
+            }
+        else:
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "id": "getTimeTactics",
+                "key": "time_custom",
+                "method": "get_property",
+            }
         self.set_property(data)
 
     def set_action(self, data):
@@ -1506,7 +1562,7 @@ class SunseekerDevice:
     def set_property(self, data):
         """Set property status."""
         try:
-            if self.model == MODEL_V:
+            if self.model == MODEL_V1:
                 cmd = "setProperty"
             else:
                 cmd = "set_property"
@@ -1544,6 +1600,13 @@ class SunseekerDevice:
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set property: failed {error}")  # noqa: G004
+            if hasattr(error, "response"):
+                if error.response.status == 401:
+                    _LOGGER.debug(json.dumps(error.response.json()))
+                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
+                    if self.func_refesh_token:
+                        self.func_refesh_token()
+                    return
 
     def set_custon_property(self, zone: SunseekerZone):
         """Set custom zones."""
@@ -1625,6 +1688,13 @@ class SunseekerDevice:
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set property: failed {error}")  # noqa: G004
+            if hasattr(error, "response"):
+                if error.response.status == 401:
+                    _LOGGER.debug(json.dumps(error.response.json()))
+                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
+                    if self.func_refesh_token:
+                        self.func_refesh_token()
+                    return
 
     def set_map(self, mapdata):
         """Set map from service call."""
@@ -2101,22 +2171,9 @@ class SunseekerDevice:
         if version == "" or sn == "":
             return
         try:
-            deviceSpecies = 0
-            if self.model == MODEL_V:
-                deviceSpecies = 3
-                # version = 40701  # test V model OTA
-                # self.device_firmware = version
-            else:
-                deviceSpecies = 0
-                # if devicetype == 0:
-                #    version = "1.0.5.1234"  # device firmware robot
-                #    self.device_firmware = version
-                # if devicetype == 2:
-                #    version = "2.1.0.5"  # base
-                #    self.base_firmware = version
             data = {
                 "deviceSn": sn,  # devicesn or base_sn
-                "deviceSpecies": deviceSpecies,
+                "deviceSpecies": self.deviceSpecies,
                 "deviceType": devicetype,
                 "version": version,
             }
@@ -2150,7 +2207,7 @@ class SunseekerDevice:
                 self.error_text = ""
                 if response_data.get("data"):
                     if devicetype == 0:
-                        if deviceSpecies == 3:  # V models
+                        if self.deviceSpecies == 3:  # V1 models
                             self.device_firmware_new = (
                                 response_data.get("data").get(
                                     "version", self.device_firmware
@@ -2160,7 +2217,7 @@ class SunseekerDevice:
                             self.device_ota_desc = response_data.get("data").get(
                                 "description", ""
                             )
-                        else:  # X models
+                        else:  # X models and V3 models
                             wireless_version = (
                                 response_data.get("data").get("wirelessVersion", 0) or 0
                             )
@@ -2199,6 +2256,13 @@ class SunseekerDevice:
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Check device version: {error}")  # noqa: G004
+            if hasattr(error, "response"):
+                if error.response.status == 401:
+                    _LOGGER.debug(json.dumps(error.response.json()))
+                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
+                    if self.func_refesh_token:
+                        self.func_refesh_token()
+                    return
 
     def set_auto_ride_edge(self, value: int):
         """Set auto ride edge mode X gen2."""

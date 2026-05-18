@@ -480,7 +480,8 @@
         "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Zygzak aktywny 4" },
         "sunseeker_night_work": { "name": "Praca nocna" },
         "sunseeker_energy_saving": { "name": "Oszczędzanie energii" },
-        "sunseeker_auto_ride_edge": { "name": "Automatyczny przejazd krawędzi" }
+        "sunseeker_auto_ride_edge": { "name": "Automatyczny przejazd krawędzi" },
+        "sunseeker_above_edge": { "name": "Jazda po krawędziach" }
       },
       "number": {
 			"sunseeker_angle": {
