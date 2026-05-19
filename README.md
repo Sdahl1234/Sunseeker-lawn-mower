@@ -4,14 +4,14 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.12.1
+#### V1.2.12.2 Beta
 
 ## Tested models
   - Adano RM5, RM6, RM9
   - Brücke RM501
   - Sunseeker X3, X5, X7
   - Sunseeker X3, X5, X7 Gen2
-  - Sunseeker V1, V3
+  - Sunseeker V1, V18, V3
 
 ## Install
 #### HACS (recommended)
@@ -107,14 +107,17 @@ In addition to the shared entities above, V models include:
 - **Border** - Cut border
 - **Stop** - Stop the mower
 
-### Switches
+### Switches (V3)
 - **Energy saving** - Enable/disable energy saving mode
 - **Cut edge first** - Mow the edge before the main area
 - **Night work** - Enable/disable mowing during night hours
 - **Ride on edge** - Mow on top of the edge when cutting border
 - **Repeat time work** - Continue mowing after the end of a cycle
 
-### Select
+### Switches (V18)
+- **Ride on edge** - Mow on top of the edge when cutting border
+
+### Select (V3)
 - **Work speed** - Slow, Normal, Fast
 - **Cutting gap** - Narrow, Normal, Wide
 - **Cutting pattern** - Standard, Change pattern, User defined
@@ -122,7 +125,10 @@ In addition to the shared entities above, V models include:
 - **Edge trim frequency** - Every time, Every 2nd time, Every 3rd time
 - **Avoiding objects** - No touch, Slow touch
 
-### Numbers
+### Select (V18)
+- **Border distance** - Far, Moderate, Close
+
+### Numbers (V3)
 - **Blade speed** - Speed of the cutting blades
 - **Blade height** - Height of the cutting blades
 - **Cutting angle** *(Gen1 only)* - Cutting angle when pattern is User defined
@@ -130,7 +136,10 @@ In addition to the shared entities above, V models include:
 ### Sensors
 - **Blade speed** - Current blade speed
 - **Blade height** - Current blade height
+
+### Sensors (V3)
 - **Actual mowing time** - Time mowed since last charge
+
 
 ---
 
