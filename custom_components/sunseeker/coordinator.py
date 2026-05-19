@@ -328,16 +328,29 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info."""
+        if self.device.apptype == APPTYPE_OLD:
+            return DeviceInfo(
+                identifiers={
+                    (DOMAIN, self.unique_id),
+                },
+                model=self.device.DeviceModel,
+                manufacturer=self.brand,
+                serial_number=self.devicesn,
+                name=self.device.DeviceName,
+                sw_version=self.device.devicedata["data"].get("bbSv"),
+                hw_version=self.device.devicedata["data"].get("bbHv"),
+            )
         return DeviceInfo(
             identifiers={
                 (DOMAIN, self.unique_id),
             },
             model=self.device.DeviceModel,
+            model_id=self.device.ModelName,
             manufacturer=self.brand,
             serial_number=self.devicesn,
             name=self.device.DeviceName,
-            sw_version=self.device.devicedata["data"].get("bbSv"),
-            hw_version=self.device.devicedata["data"].get("bbHv"),
+            sw_version=self.device.device_firmware,
+            hw_version=self.device.base_firmware,
         )
 
     @property
