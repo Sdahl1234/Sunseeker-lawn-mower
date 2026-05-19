@@ -217,13 +217,8 @@ class SunseekerRoboticmower:
     def add_devices(self, devicelist, apptype: str, model: str) -> bool:
         """Adds the devices from a devicelist."""
         Added: bool = False
+        parsed_model = model
         for device in devicelist["data"]:
-            # V1 models are diffrent.
-            if device["modelName"].startswith("V1") and model in (MODEL_SXV):
-                continue
-            if (not device["modelName"].startswith("V1")) and model in (MODEL_V1):
-                continue
-
             device_sn = device["deviceSn"]
             if device["modelName"].startswith(("V18", "V3")):
                 model = MODEL_V
@@ -233,6 +228,12 @@ class SunseekerRoboticmower:
                 model = MODEL_S
             elif device["modelName"].startswith("V1"):
                 model = MODEL_V1
+
+            # V1 models are diffrent.
+            if model == MODEL_V1 and parsed_model == MODEL_SXV:
+                continue
+            if (model != MODEL_V1) and parsed_model == MODEL_V1:
+                continue
 
             if device_sn not in self.deviceArray:
                 Added = True

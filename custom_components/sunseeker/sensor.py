@@ -20,6 +20,7 @@ from .const import (
     SUB_MODEL_GEN1,
     SUB_MODEL_GEN2,
     SUB_MODEL_GEN3,
+    SUB_MODEL_V18,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
     SUNSEEKER_CONTINUE_CUTTING,
@@ -121,6 +122,21 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     async_add_devices(est_size)
 
     for coordinator in robot_coordinators(hass, entry):
+        if coordinator.submodel not in (SUB_MODEL_V18):
+            async_add_devices(
+                [
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Robot sginal",
+                        "",
+                        "robot_sig",
+                        "",
+                        "mdi:wifi",
+                        "sunseeker_robot_signal",
+                    ),
+                ]
+            )
         async_add_devices(
             [
                 SunseekerSensor(
@@ -142,16 +158,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     "",
                     "mdi:battery",
                     "sunseeker_battery",
-                ),
-                SunseekerSensor(
-                    coordinator,
-                    None,
-                    "Robot sginal",
-                    "",
-                    "robot_sig",
-                    "",
-                    "mdi:wifi",
-                    "sunseeker_robot_signal",
                 ),
                 SunseekerSensor(
                     coordinator,
@@ -571,7 +577,12 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 ]
             )
 
-        if coordinator.model in [MODEL_S, MODEL_OLD, MODEL_X, MODEL_V]:
+        if coordinator.model in [
+            MODEL_S,
+            MODEL_OLD,
+            MODEL_X,
+            MODEL_V,
+        ] and coordinator.submodel not in (SUB_MODEL_V18):
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -770,22 +781,22 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                     + ")"
                 )
             elif ival == 0:
-                if self.device.model in (MODEL_X, MODEL_S):
+                if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                     val = SUNSEEKER_UNKNOWN
                 else:
                     val = SUNSEEKER_STANDBY
             elif ival == 1:
-                if self.device.model in (MODEL_X, MODEL_S):
+                if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                     val = SUNSEEKER_IDLE
                 else:
                     val = SUNSEEKER_MOWING
             elif ival == 2:
-                if self.device.model in (MODEL_X, MODEL_S):
+                if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                     val = SUNSEEKER_WORKING
                 else:
                     val = SUNSEEKER_GOING_HOME
             elif ival == 3:
-                if self.device.model in (MODEL_X, MODEL_S):
+                if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                     val = SUNSEEKER_PAUSE
                 else:
                     val = SUNSEEKER_CHARGING
@@ -794,7 +805,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             elif ival == 6:
                 val = SUNSEEKER_ERROR
             elif ival == 7:
-                if self.device.model in (MODEL_X, MODEL_S):
+                if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                     val = SUNSEEKER_RETURN
                 else:
                     val = SUNSEEKER_MOWING_BORDER

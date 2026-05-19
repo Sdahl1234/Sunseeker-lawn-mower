@@ -15,6 +15,7 @@ from .const import (
     MODEL_X,
     SUB_MODEL_GEN2,
     SUB_MODEL_GEN3,
+    SUB_MODEL_V3,
 )
 from .entity import SunseekerEntity
 
@@ -31,6 +32,16 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
         if coordinator.model in (MODEL_V):
             async_add_entities(
                 [
+                    SunseekerAboveEdgeSwitch(
+                        coordinator,
+                        "Ride on edge",
+                        "sunseeker_above_edge",
+                    ),
+                ]
+            )
+        if coordinator.model in (MODEL_V) and coordinator.submodel in (SUB_MODEL_V3):
+            async_add_entities(
+                [
                     SunseekerEnergySavingSwitch(
                         coordinator,
                         "Energy saving",
@@ -44,26 +55,18 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                         "Night work",
                         "sunseeker_night_work",
                     ),
-                    SunseekerAboveEdgeSwitch(
-                        coordinator,
-                        "Ride on edge",
-                        "sunseeker_above_edge",
-                    ),
-                ]
-            )
-
-        if coordinator.model in (MODEL_S, MODEL_X, MODEL_V):
-            async_add_entities(
-                [
                     SunseekerTimeWorkRepeatSwitch(
                         coordinator, "Repeat time work", "sunseeker_time_work_repeat"
-                    )
+                    ),
                 ]
             )
 
         if coordinator.model in (MODEL_X, MODEL_S):
             async_add_entities(
                 [
+                    SunseekerTimeWorkRepeatSwitch(
+                        coordinator, "Repeat time work", "sunseeker_time_work_repeat"
+                    ),
                     SunseekerCustomEnableSwitch(
                         coordinator, "Custom zones", "sunseeker_custom_enable"
                     ),
@@ -122,7 +125,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                         ),
                     ]
                 )
-        if coordinator.model in (MODEL_S, MODEL_X, MODEL_V1):
+        if coordinator.model in (MODEL_S, MODEL_X, MODEL_V1, MODEL_V):
             async_add_entities(
                 [
                     SunseekerSchedulePauseSwitch(

@@ -145,6 +145,8 @@ class SunseekerDevice:
         self.docking_path = 0
         # self.border_first
         self.screen_lock = 60
+        # V18
+        self.dis_along_border = 0
         # X models
         self.consumable = SunseekerConsumableItems()
         self.map = SunseekerMap()
@@ -173,6 +175,8 @@ class SunseekerDevice:
 
         if self.model in (MODEL_V1):
             self.Schedule_new.Get_schedule_data_V1()
+        if self.model in (MODEL_V):
+            self.Schedule_new.Get_schedule_data_V()
         if self.model in (MODEL_S, MODEL_X, MODEL_V, MODEL_V1):
             self.check_ota()
 
@@ -209,6 +213,7 @@ class SunseekerDevice:
         elif self.model == MODEL_V1:
             self.device_firmware = self.devicedata["data"].get("firmwareVersion", "")
 
+        self.dis_along_border = self.settings["data"].get("disAlongBorder", 1)
         self.above_edge = self.settings["data"].get("aboveEdge", False)
         self.device_firmware_new = self.device_firmware
         self.power = self.devicedata["data"].get("electricity")
@@ -360,6 +365,20 @@ class SunseekerDevice:
             self.rain_delay_left = self.settings["data"].get("rainCountdown")
         else:
             self.rain_delay_left = self.devicedata["data"].get("rainDelayLeft")
+
+    def after_mqtt_connect(self) -> None:
+        """Calls required after MQTT is setup."""
+        if self.model in (MODEL_S, MODEL_X):
+            self.get_schedule_data()
+        if self.model in (MODEL_S, MODEL_X, MODEL_V):
+            self.get_dev_all_properties()
+        if self.model in (MODEL_X, MODEL_S, MODEL_V):
+            self.getSelectRegionID()
+        if self.model in (MODEL_X, MODEL_S):
+            self.getAllPath()
+        if self.model in (MODEL_V):
+            self.getConsumableItems()
+            self.get_fc_state()
 
     def check_ota(self) -> None:
         """Timer to fetch firmware versions."""
@@ -589,136 +608,68 @@ class SunseekerDevice:
         """Get devAllProperties. Data received via mqtt."""
         if self.model == MODEL_V1:
             return
-        endpoint = self.cmdurl + "get_property"
-        try:
-            url_ = self.url + endpoint
-            data_ = {
-                "appId": self.userid,
-                "deviceSn": self.devicesn,
-                "id": "getDevAllProperty",
-                "key": "all",
-                "method": "get_property",
-            }
-            headers_ = {
-                "Authorization": "bearer " + self.access_token,
-                "Content-Type": "application/json",
-                "Connection": "Keep-Alive",
-            }
-            _LOGGER.debug(
-                f"Get devAllProperties header: {headers_} url: {url_} data: {data_}"  # noqa: G004
-            )
-            response = requests.post(
-                url=url_,
-                headers=headers_,
-                json=data_,
-                timeout=10,
-            )
-            response_data = response.json()
-            _LOGGER.debug(json.dumps(response_data))
-
-            if response_data["code"] != 0:
-                self.error_text = response_data.get("msg")
-                _LOGGER.debug(f"Error getting devAllProperties for {self.devicesn}")  # noqa: G004
-                _LOGGER.debug(json.dumps(response_data))
-                if self.dataupdated:
-                    self.dataupdated(self.devicesn)
-                return
-            self.error_text = ""
-            return  # noqa: TRY300
-        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.error(f"Get devAllProperties: failed {error}")  # noqa: G004
-            self.error_text = error
-            if self.dataupdated:
-                self.dataupdated(self.devicesn)
-            if hasattr(error, "response"):
-                if error.response.status == 401:
-                    _LOGGER.debug(json.dumps(error.response.json()))
-                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
-                    if self.func_refesh_token:
-                        self.func_refesh_token()
-                    return
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "getDevAllProperty",
+            "key": "all",
+            "method": "get_property",
+        }
+        self.get_property(data)
 
     def getSelectRegionID(self):
         """Get getSelectRegionID. Data received via mqtt."""
-        if self.model in (MODEL_V, MODEL_V1):
+        if self.model in (MODEL_V1):
             return
-        endpoint = self.cmdurl + "get_property"
-        try:
-            url_ = self.url + endpoint
-            data_ = {
-                "appId": self.userid,
-                "deviceSn": self.devicesn,
-                "id": "getSelectRegionID",
-                "key": "select_region_id",
-                "method": "get_property",
-            }
-            headers_ = {
-                "Authorization": "bearer " + self.access_token,
-                "Content-Type": "application/json",
-                "Connection": "Keep-Alive",
-            }
-            _LOGGER.debug(
-                f"Get getSelectRegionID header: {headers_} url: {url_} data: {data_}"  # noqa: G004
-            )
-            response = requests.post(
-                url=url_,
-                headers=headers_,
-                json=data_,
-                timeout=10,
-            )
-            response_data = response.json()
-            _LOGGER.debug(json.dumps(response_data))
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "getSelectRegionID",
+            "key": "select_region_id",
+            "method": "get_property",
+        }
+        self.get_property(data)
 
-            if response_data["code"] != 0:
-                self.error_text = response_data.get("msg")
-                _LOGGER.debug(f"Error getting getSelectRegionID for {self.devicesn}")  # noqa: G004
-                _LOGGER.debug(json.dumps(response_data))
-                if self.dataupdated:
-                    self.dataupdated(self.devicesn)
-                return
-            self.error_text = ""
-            return  # noqa: TRY300
-        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.error(f"Get getSelectRegionID: failed {error}")  # noqa: G004
-            self.error_text = error
-            if self.dataupdated:
-                self.dataupdated(self.devicesn)
-            if hasattr(error, "response"):
-                if error.response.status == 401:
-                    _LOGGER.debug(json.dumps(error.response.json()))
-                    _LOGGER.debug("{element['path']} receive 401 error. Refresh Token")
-                    if self.func_refesh_token:
-                        self.func_refesh_token()
-                    return
+    def get_fc_state(self):
+        """Get getSelectRegionID. Data received via mqtt."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "getFCState",
+            "key": "getfc_state",
+            "method": "get_property",
+        }
+        self.get_property(data)
 
     def getAllPath(self):
         """Get getAllPath. Data received via mqtt."""
-        if self.model in (MODEL_V, MODEL_V1) or not self.map.mapid:
-            return
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "getAllPath",
+            "key": "all_path",
+            "map_file": f"Wireless_{self.devicesn}_{self.map.mapid}.json",
+            "method": "get_property",
+        }
+        self.get_property(data)
 
+    def get_property(self, data):
+        """Get property."""
         endpoint = self.cmdurl + "get_property"
         try:
             url_ = self.url + endpoint
-            data_ = {
-                "appId": self.userid,
-                "deviceSn": self.devicesn,
-                "id": "getAllPath",
-                "key": "all_path",
-                "map_file": f"Wireless_{self.devicesn}_{self.map.mapid}.json",
-                "method": "get_property",
-            }
             headers_ = {
                 "Authorization": "bearer " + self.access_token,
                 "Content-Type": "application/json",
                 "Connection": "Keep-Alive",
             }
             _LOGGER.debug(
-                f"Get getAllPath header: {headers_} url: {url_} data: {data_}"  # noqa: G004
+                f"Get Properties header: {headers_} url: {url_} data: {data}"  # noqa: G004
             )
             response = requests.post(
                 url=url_,
                 headers=headers_,
-                json=data_,
+                json=data,
                 timeout=10,
             )
             response_data = response.json()
@@ -726,7 +677,7 @@ class SunseekerDevice:
 
             if response_data["code"] != 0:
                 self.error_text = response_data.get("msg")
-                _LOGGER.debug(f"Error getting getAllPath for {self.devicesn}")  # noqa: G004
+                _LOGGER.debug(f"Error getting properties for {self.devicesn}")  # noqa: G004
                 _LOGGER.debug(json.dumps(response_data))
                 if self.dataupdated:
                     self.dataupdated(self.devicesn)
@@ -734,7 +685,7 @@ class SunseekerDevice:
             self.error_text = ""
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
-            _LOGGER.error(f"Get getAllPath: failed {error}")  # noqa: G004
+            _LOGGER.error(f"Get properties: failed {error}")  # noqa: G004
             self.error_text = error
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
@@ -745,6 +696,17 @@ class SunseekerDevice:
                     if self.func_refesh_token:
                         self.func_refesh_token()
                     return
+
+    def getConsumableItems(self):
+        """Consumable items."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "getConsumableItems",
+            "key": "consumable_items",
+            "method": "get_property",
+        }
+        self.get_property(data)
 
     def set_rain_status(self, state: bool, delaymin: int):
         """Set rain status."""
@@ -823,10 +785,8 @@ class SunseekerDevice:
         """Old Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Border."""
         # X Command is "mode" and state is 1 = Start, 0 = Pause, 2 = Home, 4 = Stop.
         # V1 models same as old but another call
-        # V models same as X, Trim border unknown
-        # device_id = self.DeviceSn  # self.devicedata["data"].get("id")
-        if self.model == MODEL_V and state == 5:  # V models border unknown
-            return
+        # V models same as X, Trim border is state 5
+        # device_id = self.DeviceSn
 
         if self.model in (MODEL_V1):
             self.set_workmode_V1(state)
@@ -857,9 +817,18 @@ class SunseekerDevice:
                     cmd = "stop"
                     cmdid = "stopWork"
                 elif state == 5:  # V-models border
-                    cmd = "trim"
-                    cmdid = "startTrim"
-                if zone:
+                    cmd = "follow_border"
+                    cmdid = "followBorder"
+                if state == 5:
+                    data = {
+                        "appId": self.userid,
+                        "cmd": cmd,
+                        "deviceSn": self.devicesn,
+                        "id": cmdid,
+                        "method": "action",
+                        "value": True,
+                    }
+                elif zone:
                     data = {
                         "appId": self.userid,
                         "cmd": cmd,
@@ -942,7 +911,6 @@ class SunseekerDevice:
             self.set_state_change("mode", 5)
         else:
             self.set_state_change("mode", 4)
-        # self.set_state_change("mode", 4)
 
     def stop(self):
         """Stop."""
@@ -1371,7 +1339,7 @@ class SunseekerDevice:
     def set_schedule_new(self, timedata):
         """Set schedule from service call."""
         _LOGGER.debug(f"Servicecall data: {timedata}")  # noqa: G004
-        if self.model in (MODEL_X, MODEL_S):
+        if self.model in (MODEL_X, MODEL_S, MODEL_V):
             data = {
                 "action": 1,
                 "appId": self.userid,
@@ -1503,21 +1471,15 @@ class SunseekerDevice:
             self.Schedule_new.Get_schedule_data_V1()
             return
         if self.model in (MODEL_V):
-            data = {
-                "appId": self.userid,
-                "deviceSn": self.devicesn,
-                "id": "getTimeCustom",  # "getTimeCustom",
-                "key": "time_custom",
-                "method": "get_property",
-            }
-        else:
-            data = {
-                "appId": self.userid,
-                "deviceSn": self.devicesn,
-                "id": "getTimeTactics",
-                "key": "time_custom",
-                "method": "get_property",
-            }
+            self.Schedule_new.Get_schedule_data_V()
+            return
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "getTimeTactics",
+            "key": "time_custom",
+            "method": "get_property",
+        }
         self.set_property(data)
 
     def set_action(self, data):
@@ -2295,6 +2257,18 @@ class SunseekerDevice:
             "deviceSn": self.devicesn,
             "id": "setNightWork",
             "key": "night_work",
+            "method": "set_property",
+            "value": value,
+        }
+        self.set_property(data)
+
+    def set_dis_along_border(self, value: int):
+        """Set distance to border. V18."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setAlongBorderDistance",
+            "key": "dis_along_border",
             "method": "set_property",
             "value": value,
         }

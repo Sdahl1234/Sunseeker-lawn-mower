@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
     MODEL_S,
+    MODEL_V,
     MODEL_X,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
@@ -108,22 +109,22 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
         ival = self.device.mode
 
         if ival == 0:
-            if self.device.model in (MODEL_X, MODEL_S):
+            if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                 val = SUNSEEKER_UNKNOWN
             else:
                 val = SUNSEEKER_STANDBY
         elif ival == 1:
-            if self.device.model in (MODEL_X, MODEL_S):
+            if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                 val = SUNSEEKER_IDLE
             else:
                 val = SUNSEEKER_MOWING
         elif ival == 2:
-            if self.device.model in (MODEL_X, MODEL_S):
+            if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                 val = SUNSEEKER_WORKING
             else:
                 val = SUNSEEKER_GOING_HOME
         elif ival == 3:
-            if self.device.model in (MODEL_X, MODEL_S):
+            if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                 val = SUNSEEKER_PAUSE
             else:
                 val = SUNSEEKER_CHARGING
@@ -132,7 +133,7 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
         elif ival == 6:
             val = SUNSEEKER_ERROR
         elif ival == 7:
-            if self.device.model in (MODEL_X, MODEL_S):
+            if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                 val = SUNSEEKER_RETURN
             else:
                 val = SUNSEEKER_MOWING_BORDER

@@ -57,6 +57,14 @@
                     "far": "Kaukana"
 				}
 			},
+			"sunseeker_dis_along_border": {
+				"name": "Reunaetäisyys",
+				"state": {
+					"far": "Kaukana",
+					"moderate": "Kohtalainen",
+					"close": "Lähellä"
+				}
+			},
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Leikkausväli",
 				"state": {

@@ -5,7 +5,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_S, MODEL_V, MODEL_V1, MODEL_X, SUB_MODEL_GEN2, SUB_MODEL_GEN3
+from .const import (
+    MODEL_S,
+    MODEL_V,
+    MODEL_V1,
+    MODEL_X,
+    SUB_MODEL_GEN2,
+    SUB_MODEL_GEN3,
+    SUB_MODEL_V3,
+    SUB_MODEL_V18,
+)
 from .entity import SunseekerEntity
 
 
@@ -131,8 +140,18 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                     ),
                 ]
             )
+        if coordinator.model in (MODEL_V) and coordinator.submodel in (SUB_MODEL_V18):
+            async_add_entities(
+                [
+                    SunseekerDisAlongBorderSelect(
+                        coordinator,
+                        "Border distance",
+                        "sunseeker_dis_along_border",
+                    ),
+                ]
+            )
 
-        if coordinator.model in (MODEL_V):
+        if coordinator.model in (MODEL_V) and coordinator.submodel in (SUB_MODEL_V3):
             async_add_entities(
                 [
                     SunseekerSpeedSelect(
@@ -416,6 +435,55 @@ class SunseekerBorderDistanceSelect(SunseekerEntity, SelectEntity):
     def current_option(self) -> str:
         """Co."""
         return self._get_mode_name(self.device.border_distance)
+
+
+class SunseekerDisAlongBorderSelect(SunseekerEntity, SelectEntity):
+    """Select entity for distance along border (V18)."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(
+        self, coordinator: SunseekerDataCoordinator, name: str, translationkey: str
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.data_coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self._attr_options = ["far", "moderate", "close"]
+        self._attr_current_option = self._get_mode_name(self.device.dis_along_border)
+        self._attr_icon = "mdi:arrow-expand-horizontal"
+
+    def _get_mode_name(self, mode: int) -> str:
+        mapping = {
+            0: "far",
+            1: "moderate",
+            2: "close",
+        }
+        return mapping.get(mode, "far")
+
+    async def async_select_option(self, option: str) -> None:
+        """Handle user selecting a new option."""
+        reverse_mapping = {
+            "far": 0,
+            "moderate": 1,
+            "close": 2,
+        }
+        value = reverse_mapping.get(option, 0)
+        await self.hass.async_add_executor_job(self.device.set_dis_along_border, value)
+        self._attr_current_option = option
+        self.async_write_ha_state()
+
+    @property
+    def current_option(self) -> str:
+        """Return the current option."""
+        return self._get_mode_name(self.device.dis_along_border)
 
 
 class SunseekerSpeedSelect(SunseekerEntity, SelectEntity):

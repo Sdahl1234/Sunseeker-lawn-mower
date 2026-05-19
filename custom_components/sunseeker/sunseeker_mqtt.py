@@ -18,10 +18,8 @@ from .const import (
     APPTYPE_NEW,
     APPTYPE_OLD,
     MODEL_OLD,
-    MODEL_S,
     MODEL_V,
     MODEL_V1,
-    MODEL_X,
     REGION_EU,
     REGION_US,
 )
@@ -216,25 +214,8 @@ class SunseekermqttController:
 
         for device_ in self.Sunseeker.robotList:
             device: SunseekerDevice = device_
-            if device.model in (MODEL_S, MODEL_V, MODEL_X):
-                thread2 = Thread(
-                    target=device.get_schedule_data,
-                )
-                thread2.start()
-                if device.model in (MODEL_S, MODEL_X, MODEL_V):
-                    thread = Thread(
-                        target=device.get_dev_all_properties,
-                    )
-                    thread.start()
-                    if device.model in (MODEL_X, MODEL_S):
-                        thread4 = Thread(
-                            target=device.getSelectRegionID,
-                        )
-                        thread4.start()
-                        thread3 = Thread(
-                            target=device.getAllPath,
-                        )
-                        thread3.start()
+            thread0 = Thread(target=device.after_mqtt_connect)
+            thread0.start()
 
     def connect_mqtt(self):
         """Connect mqtt."""
@@ -1004,6 +985,9 @@ class SunseekermqttController:
         )
         device.blade_height = self.setvalue(
             nu, datanode, ["blade"], "height", device.blade_height
+        )
+        device.dis_along_border = self.setvalue(
+            nu, datanode, [], "dis_along_border", device.dis_along_border
         )
         self.handle_mqtt_map_data(upd, nu, data, datanode, device)
         self.handle_mqtt_schedule_data(upd, nu, data, datanode, device)

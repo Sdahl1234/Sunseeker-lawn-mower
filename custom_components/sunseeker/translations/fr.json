@@ -57,6 +57,14 @@
                     "far": "Loin"
 				}
 			},
+			"sunseeker_dis_along_border": {
+				"name": "Distance au bord",
+				"state": {
+					"far": "Loin",
+					"moderate": "Modéré",
+					"close": "Proche"
+				}
+			},
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Espacement de coupe",
 				"state": {

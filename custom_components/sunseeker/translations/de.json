@@ -57,6 +57,14 @@
           "far": "Fern"
 				}
 			},
+			"sunseeker_dis_along_border": {
+				"name": "Randabstand",
+				"state": {
+					"far": "Weit",
+					"moderate": "Mittel",
+					"close": "Nah"
+				}
+			},
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Schnittabstand",
 				"state": {

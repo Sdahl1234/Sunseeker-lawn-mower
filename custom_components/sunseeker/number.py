@@ -9,7 +9,6 @@ from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
     MODEL_OLD,
     MODEL_S,
-    MODEL_V,
     MODEL_X,
     SUB_MODEL_GEN1,
     SUB_MODEL_GEN2,
@@ -92,7 +91,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     async_add_entities(zigzag_angle_custom)
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model in (MODEL_S, MODEL_X, MODEL_V):
+        if coordinator.model in (MODEL_S, MODEL_X):
             async_add_entities(
                 [
                     SunseekerBladespeedNumber(

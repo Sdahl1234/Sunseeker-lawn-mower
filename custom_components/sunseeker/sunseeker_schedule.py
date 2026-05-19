@@ -430,6 +430,114 @@ class Sunseeker_new_schedule:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Get device schedule: failed {error}")  # noqa: G004
 
+    def parse_schedule_data_V(self, data):
+        """Parsing schedule data V model."""
+        need_update = False
+        data = data.get("data")
+
+        def update_var_if_changed(old_value: Any, new_value: Any) -> Any:
+            """Update a variable if the new value is different."""
+            nonlocal need_update
+            if isinstance(old_value, dict) and isinstance(new_value, dict):
+                if old_value != new_value:
+                    _LOGGER.debug(
+                        f"dict - Old_value: {old_value} New_value: {new_value}"  # noqa: G004
+                    )
+                    need_update = True
+                    return new_value.copy()
+                return old_value
+            if isinstance(old_value, list) and isinstance(new_value, list):
+                if old_value != new_value:
+                    _LOGGER.debug(
+                        f"list - Old_value: {old_value} New_value: {new_value}"  # noqa: G004
+                    )
+                    need_update = True
+                    return new_value.copy()
+                return old_value
+            if old_value != new_value:
+                _LOGGER.debug(f"simple - Old_value: {old_value} New_value: {new_value}")  # noqa: G004
+                need_update = True
+                return new_value
+            return old_value
+
+        self.schedule_recommended = update_var_if_changed(
+            self.schedule_recommended,
+            data.get("recommendedTimeFlag", self.schedule_recommended),
+        )
+        self.schedule_custom = update_var_if_changed(
+            self.schedule_custom, data.get("timeCustomFlag", self.schedule_custom)
+        )
+        self.schedule_pause = update_var_if_changed(
+            self.schedule_pause, data.get("pause", self.schedule_pause)
+        )
+        self.timezone = update_var_if_changed(
+            self.timezone, data.get("timeZone", self.timezone)
+        )
+
+        if "time" in data:
+            ctime = data.get("time")
+            if isinstance(ctime, list):
+                need_update = True
+                for day in self.days:
+                    day.enabled = False
+
+                oldperiod = -1
+                index = 1
+                for day in ctime:
+                    period = day.get("period")
+                    for pday in period:
+                        if oldperiod == period:
+                            index = index + 1
+                        else:
+                            index = 1
+                        oldperiod = period
+
+                        dayobj: Sunseeker_new_schedule_day = self.GetDay(pday, index)
+                        if dayobj:
+                            dayobj.enabled = True
+                            dayobj.unlock = day.get("unlock", dayobj.unlock)
+                            dayobj.active = day.get("active", dayobj.active)
+                            dayobj.region_id = day.get("region_id", dayobj.region_id)
+                            dayobj.need_fllow_boader = day.get(
+                                "needFllowBoader",
+                                dayobj.need_fllow_boader,
+                            )
+                            dayobj.start = day.get("start", dayobj.start)
+                            dayobj.end = day.get("end", dayobj.end)
+
+    def Get_schedule_data_V(self):
+        """Get schedule data for V. Date read from MQTT."""
+        endpoint = f"/app_wireless_mower/device-setting/getTime/{self.mower.devicesn}"
+        try:
+            url_ = self.mower.url + endpoint
+            headers_ = {
+                "Content-Type": "application/json",
+                "Accept-Language": self.mower.language,
+                "Authorization": "bearer " + self.mower.access_token,
+                "Host": self.mower.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get schedule V data header: {headers_} url: {url_}")  # noqa: G004
+            response = requests.get(
+                url=url_,
+                headers=headers_,
+                timeout=10,
+            )
+            response_data = response.json()
+            logdata = json.dumps(response_data)
+            self.parse_schedule_data_V(response_data)
+            _LOGGER.debug(f"Get device schedule {logdata}")  # noqa: G004
+
+            if response_data["code"] != 0:
+                _LOGGER.debug("Error getting device schedule")
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"Get device schedule: failed {error}")  # noqa: G004
+
 
 class SunseekerScheduleDay:
     """Day."""

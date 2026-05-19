@@ -57,6 +57,14 @@
 					"far": "Fjern"
 				}
 			},
+			"sunseeker_dis_along_border": {
+				"name": "Kantafstand",
+				"state": {
+					"far": "Langt",
+					"moderate": "Moderat",
+					"close": "Tæt"
+				}
+			},
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Klippeafstand",
 				"state": {

@@ -57,6 +57,14 @@
 					"far": "Daleko"
 				}
 			},
+			"sunseeker_dis_along_border": {
+				"name": "Odległość od krawędzi",
+				"state": {
+					"far": "Daleko",
+					"moderate": "Umiarkowanie",
+					"close": "Blisko"
+				}
+			},
 			"sunseeker_gap_custom": {
 				"name": "{post_name} Odstęp między przejazdami",
 				"state": {
