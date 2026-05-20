@@ -115,6 +115,8 @@ class SunseekerMap:
         if change_image and self.image_path:
             image = self.image_path.copy()
         else:
+            if self.image is None:
+                return
             image = self.image.copy()
         draw = ImageDraw.Draw(image)
 
@@ -128,10 +130,11 @@ class SunseekerMap:
                 int((1 - y_norm) * self.canvas_height),
             )
 
-        points = [transform([x, y]) for x, y, _ in data]
+        if self.map_max_x != self.map_min_x and self.map_max_y != self.map_min_y:
+            points = [transform([x, y]) for x, y, _ in data]
 
-        # Draw a line between the points
-        draw.line(points, fill=self.work_color, width=1)
+            # Draw a line between the points
+            draw.line(points, fill=self.work_color, width=1)
 
         self.image_path = image
 
@@ -158,10 +161,11 @@ class SunseekerMap:
                 int((1 - y_norm) * self.canvas_height),
             )
 
-        points = [transform([x, y]) for x, y, _ in data]
+        if self.map_max_x != self.map_min_x and self.map_max_y != self.map_min_y:
+            points = [transform([x, y]) for x, y, _ in data]
 
-        # Draw a line between the points
-        draw.line(points, fill=self.work_color, width=1)
+            # Draw a line between the points
+            draw.line(points, fill=self.work_color, width=1)
 
         self.livepathpoints = [self.livepathpoints[-1]]
 
@@ -177,6 +181,8 @@ class SunseekerMap:
             return
         draw = ImageDraw.Draw(image)
 
+        if self.map_max_x == self.map_min_x or self.map_max_y == self.map_min_y:
+            return
         x_norm = (self.charger_pos_x - self.map_min_x) / (
             self.map_max_x - self.map_min_x
         )
@@ -269,6 +275,8 @@ class SunseekerMap:
             return (int(x_norm * canvas_width), int((1 - y_norm) * canvas_height))
 
         def get_min_max(pts_):
+            if not pts_:
+                return
             nonlocal min_x, max_x, min_y, max_y
             gmin_x = min(p[0] for p in pts_)
             gmax_x = max(p[0] for p in pts_)
