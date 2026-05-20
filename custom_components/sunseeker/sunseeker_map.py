@@ -165,9 +165,8 @@ class SunseekerMap:
 
         self.livepathpoints = [self.livepathpoints[-1]]
 
-    async def generate_livemap(self, x: float, y: float) -> None:
+    async def generate_livemap(self) -> None:
         """Generate livemap."""
-        # _LOGGER.debug(f"Generate livemap: {x}, {y}")  noqa: G004
         await self.add_live_points(self.image_path)
 
         if self.image_path:
@@ -209,8 +208,8 @@ class SunseekerMap:
         # Paste the charger image on top of the map, using itself as the mask for transparency
         image.paste(charger_img, (xx_centered, yy_centered), charger_img)
 
-        x_norm = (x - self.map_min_x) / (self.map_max_x - self.map_min_x)
-        y_norm = (y - self.map_min_y) / (self.map_max_y - self.map_min_y)
+        x_norm = (self.mower_pos_x - self.map_min_x) / (self.map_max_x - self.map_min_x)
+        y_norm = (self.mower_pos_y - self.map_min_y) / (self.map_max_y - self.map_min_y)
         # Flip Y-axis for image coordinates
         xx, yy = (
             int(x_norm * self.canvas_width),
@@ -415,9 +414,7 @@ class SunseekerMap:
                 _LOGGER.debug("reload_maps -> generate_path")
                 await self.generate_path()  # opret image med path på nyt kort
                 _LOGGER.debug("reload_maps -> generate_livemap")
-                await self.generate_livemap(
-                    self.mower_pos_x, self.mower_pos_y
-                )  # Opret live image med robot
+                await self.generate_livemap()  # Opret live image med robot
             self.image_state = "Loaded"
 
     def get_heat_map(self):

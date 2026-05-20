@@ -286,10 +286,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.dataUpdating = True
         try:
             if uv.live_move_update or uv.start_new_path:
-                await self.device.map.generate_livemap(
-                    self.device.map.mower_pos_x,
-                    self.device.map.mower_pos_y,
-                )
+                await self.device.map.generate_livemap()
             if uv.fetch_new_map_data or uv.start_new_path:
                 await self.hass.async_add_executor_job(self.device.map.get_map_info)
                 await self.hass.async_add_executor_job(
