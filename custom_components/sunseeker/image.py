@@ -119,7 +119,7 @@ class MowerImage(SunseekerEntity, ImageEntity):
         elif mapid == 2:
             self.data_coordinator.wifimap_entity = self
         elif mapid == 3:
-            self.data_coordinator.nemap_entity = self
+            self.data_coordinator.netmap_entity = self
         self.device = self._data_handler.get_device(self._sn)
         self.mapid = mapid
 
