@@ -175,8 +175,9 @@ class SunseekerRoboticmower:
         for mc in self.mqtt_controllers:
             mc.Start_mqtt()
 
+        refresh_fn = self.refresh_token if self.apptype == APPTYPE_OLD else self.refresh_token_new
         self.refresh_token_interval = Timer(
-            (self.session.get("expires_in") or 3600), self.refresh_token
+            (self.session.get("expires_in") or 3600), refresh_fn
         )
         self.refresh_token_interval.start()
 
@@ -344,7 +345,8 @@ class SunseekerRoboticmower:
         """Callback from the device."""
         if self.refresh_token_timeout:
             self.refresh_token_timeout.cancel()
-        self.refresh_token_timeout = Timer(60, self.refresh_token)
+        refresh_fn = self.refresh_token if self.apptype == APPTYPE_OLD else self.refresh_token_new
+        self.refresh_token_timeout = Timer(60, refresh_fn)
         self.refresh_token_timeout.start()
 
     def refresh_token(self):
@@ -380,16 +382,18 @@ class SunseekerRoboticmower:
             )
             response_data = response.json()
             _LOGGER.debug(json.dumps(response_data))
-            self.session = response_data
-            access_token = self.session["access_token"]
-            for mc in self.mqtt_controllers:
-                mc.access_token = access_token
-            for device_sn in self.deviceArray:
-                ad = self.get_device(device_sn)
-                if ad:
-                    ad.access_token = access_token
-
-            _LOGGER.debug("Refresh successful")
+            if "access_token" not in response_data:
+                _LOGGER.error("Refresh_token returned no access_token: %s", response_data)
+            else:
+                self.session = response_data
+                access_token = response_data["access_token"]
+                for mc in self.mqtt_controllers:
+                    mc.access_token = access_token
+                for device_sn in self.deviceArray:
+                    ad = self.get_device(device_sn)
+                    if ad:
+                        ad.access_token = access_token
+                _LOGGER.debug("Refresh successful")
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error("Refresh_token failed %s", error)  # pylint: disable=broad-except
@@ -425,16 +429,18 @@ class SunseekerRoboticmower:
             )
             response_data = response.json()
             _LOGGER.debug(json.dumps(response_data))
-            self.session = response_data
-            access_token = self.session["access_token"]
-            for mc in self.mqtt_controllers:
-                mc.access_token = access_token
-            for device_sn in self.deviceArray:
-                ad = self.get_device(device_sn)
-                if ad:
-                    ad.access_token = access_token
-
-            _LOGGER.debug("Refresh successful")
+            if "access_token" not in response_data:
+                _LOGGER.error("Refresh_token_new returned no access_token: %s", response_data)
+            else:
+                self.session = response_data
+                access_token = response_data["access_token"]
+                for mc in self.mqtt_controllers:
+                    mc.access_token = access_token
+                for device_sn in self.deviceArray:
+                    ad = self.get_device(device_sn)
+                    if ad:
+                        ad.access_token = access_token
+                _LOGGER.debug("Refresh successful")
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error("Refresh_token failed %s", error)  # pylint: disable=broad-except
