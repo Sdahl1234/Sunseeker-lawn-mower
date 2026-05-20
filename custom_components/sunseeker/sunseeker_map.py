@@ -547,6 +547,11 @@ class SunseekerMap:
             )
             response_data = response.json()
             _LOGGER.debug(json.dumps(response_data))
+            if response_data["code"] != 0:
+                _LOGGER.debug(f"Error getting heatmap for {self.mower.devicesn}")  # noqa: G004
+                _LOGGER.debug(json.dumps(response_data))
+                return
+
             heat_url = response_data["data"].get("url")
             wifi_url = response_data["data"].get("wifiUrl")
             net_url = response_data["data"].get("netUrl")
@@ -557,10 +562,6 @@ class SunseekerMap:
             if net_url:
                 self.netmap_url = net_url
 
-            if response_data["code"] != 0:
-                _LOGGER.debug(f"Error getting heatmap for {self.mower.devicesn}")  # noqa: G004
-                _LOGGER.debug(json.dumps(response_data))
-                return
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Get heatmap: failed {error}")  # noqa: G004
