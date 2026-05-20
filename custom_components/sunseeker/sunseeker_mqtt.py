@@ -270,11 +270,12 @@ class SunseekermqttController:
         index = 1
         for slice_obj in daydata["slice"]:
             day = device.Schedule_new.GetDay(dayindex, index)
-            day.enabled = True
-            day.start = slice_obj["start"] * 60
-            day.end = slice_obj["end"] * 60
-            day.need_fllow_boader = trim
-            index = index + 1
+            if day:
+                day.enabled = True
+                day.start = slice_obj["start"] * 60
+                day.end = slice_obj["end"] * 60
+                day.need_fllow_boader = trim
+                index = index + 1
 
     def update_schedule_from_mqtt_v1(self, data, device: SunseekerDevice) -> None:
         """Update schedule on V models from mqqt using old format."""
@@ -954,7 +955,7 @@ class SunseekermqttController:
             nu, datanode, [], "plan_mode", device.plan_mode
         )
         device.plan_angle = self.setvalue(
-            nu, datanode, ["plan_angle"], "plan_value", device.plan_mode
+            nu, datanode, ["plan_angle"], "plan_value", device.plan_angle
         )
         device.plan_mode = self.setvalue(
             nu, datanode, ["plan_angle"], "plan_mode", device.plan_mode
