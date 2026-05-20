@@ -4,7 +4,7 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.12.2 Beta
+#### V1.2.13
 
 ## Tested models
   - Adano RM5, RM6, RM9
@@ -101,37 +101,17 @@ All states and actions (Start, Pause, Stop, Home)
 
 ## V models (V18, V3)
 
-In addition to the shared entities above, V models include:
+In addition to the shared entities above, V8 and V3 models include:
 
 ### Buttons
 - **Border** - Cut border
 - **Stop** - Stop the mower
 
-### Switches (V3)
-- **Energy saving** - Enable/disable energy saving mode
-- **Cut edge first** - Mow the edge before the main area
-- **Night work** - Enable/disable mowing during night hours
-- **Ride on edge** - Mow on top of the edge when cutting border
-- **Repeat time work** - Continue mowing after the end of a cycle
-
-### Switches (V18)
+### Switches
 - **Ride on edge** - Mow on top of the edge when cutting border
 
-### Select (V3)
-- **Work speed** - Slow, Normal, Fast
-- **Cutting gap** - Narrow, Normal, Wide
-- **Cutting pattern** - Standard, Change pattern, User defined
-- **AI Sensitivity** - Low, High
-- **Edge trim frequency** - Every time, Every 2nd time, Every 3rd time
-- **Avoiding objects** - No touch, Slow touch
-
-### Select (V18)
+### Select
 - **Border distance** - Far, Moderate, Close
-
-### Numbers (V3)
-- **Blade speed** - Speed of the cutting blades
-- **Blade height** - Height of the cutting blades
-- **Cutting angle** *(Gen1 only)* - Cutting angle when pattern is User defined
 
 ### Sensors
 - **Blade speed** - Current blade speed
@@ -139,7 +119,6 @@ In addition to the shared entities above, V models include:
 
 ### Sensors (V3)
 - **Actual mowing time** - Time mowed since last charge
-
 
 ---
 
