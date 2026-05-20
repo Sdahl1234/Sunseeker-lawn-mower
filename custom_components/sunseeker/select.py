@@ -12,8 +12,6 @@ from .const import (
     MODEL_X,
     SUB_MODEL_GEN2,
     SUB_MODEL_GEN3,
-    SUB_MODEL_V3,
-    SUB_MODEL_V18,
 )
 from .entity import SunseekerEntity
 
@@ -140,49 +138,13 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                     ),
                 ]
             )
-        if coordinator.model in (MODEL_V) and coordinator.submodel in (SUB_MODEL_V18):
+        if coordinator.model in (MODEL_V):
             async_add_entities(
                 [
                     SunseekerDisAlongBorderSelect(
                         coordinator,
                         "Border distance",
                         "sunseeker_dis_along_border",
-                    ),
-                ]
-            )
-
-        if coordinator.model in (MODEL_V) and coordinator.submodel in (SUB_MODEL_V3):
-            async_add_entities(
-                [
-                    SunseekerSpeedSelect(
-                        coordinator,
-                        "Work speed",
-                        "sunseeker_work_speed",
-                    ),
-                    SunseekerGapSelect(
-                        coordinator,
-                        "Cutting gap",
-                        "sunseeker_gap",
-                    ),
-                    SunseekerPlanModeSelect(
-                        coordinator,
-                        "Cutting pattern",
-                        "sunseeker_cutting_pattern",
-                    ),
-                    SunseekerAISensSelect(
-                        coordinator,
-                        "AI Sensitivity",
-                        "sunseeker_ai_sensitivity",
-                    ),
-                    SunseekerBorderSelect(
-                        coordinator,
-                        "Edge trim frequency",
-                        "sunseeker_edge_freq",
-                    ),
-                    SunseekerAvoidObjectsSelect(
-                        coordinator,
-                        "Avoiding objects",
-                        "sunseeker_avoiding_objects",
                     ),
                 ]
             )

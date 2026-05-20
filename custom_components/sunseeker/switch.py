@@ -15,7 +15,6 @@ from .const import (
     MODEL_X,
     SUB_MODEL_GEN2,
     SUB_MODEL_GEN3,
-    SUB_MODEL_V3,
 )
 from .entity import SunseekerEntity
 
@@ -36,27 +35,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                         coordinator,
                         "Ride on edge",
                         "sunseeker_above_edge",
-                    ),
-                ]
-            )
-        if coordinator.model in (MODEL_V) and coordinator.submodel in (SUB_MODEL_V3):
-            async_add_entities(
-                [
-                    SunseekerEnergySavingSwitch(
-                        coordinator,
-                        "Energy saving",
-                        "sunseeker_energy_saving",
-                    ),
-                    SunseekerBorderFirstSwitch(
-                        coordinator, "Cut edge first", "sunseeker_border_first"
-                    ),
-                    SunseekerNightWorkSwitch(
-                        coordinator,
-                        "Night work",
-                        "sunseeker_night_work",
-                    ),
-                    SunseekerTimeWorkRepeatSwitch(
-                        coordinator, "Repeat time work", "sunseeker_time_work_repeat"
                     ),
                 ]
             )
