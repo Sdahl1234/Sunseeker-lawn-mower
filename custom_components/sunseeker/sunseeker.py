@@ -386,7 +386,8 @@ class SunseekerRoboticmower:
                 mc.access_token = access_token
             for device_sn in self.deviceArray:
                 ad = self.get_device(device_sn)
-                ad.access_token = access_token
+                if ad:
+                    ad.access_token = access_token
 
             _LOGGER.debug("Refresh successful")
 
@@ -430,7 +431,8 @@ class SunseekerRoboticmower:
                 mc.access_token = access_token
             for device_sn in self.deviceArray:
                 ad = self.get_device(device_sn)
-                ad.access_token = access_token
+                if ad:
+                    ad.access_token = access_token
 
             _LOGGER.debug("Refresh successful")
 
@@ -456,7 +458,8 @@ class SunseekerRoboticmower:
             mc.unload()
         for device_sn in self.deviceArray:
             ad = self.get_device(device_sn)
-            if ad.ota_timer:
-                ad.ota_timer.cancel()
-            if ad.update_timer:
-                ad.update_timer.cancel()
+            if ad:
+                if ad.ota_timer:
+                    ad.ota_timer.cancel()
+                if ad.update_timer:
+                    ad.update_timer.cancel()
