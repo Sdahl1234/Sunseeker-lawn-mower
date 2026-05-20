@@ -175,7 +175,11 @@ class SunseekerRoboticmower:
         for mc in self.mqtt_controllers:
             mc.Start_mqtt()
 
-        refresh_fn = self.refresh_token if self.apptype == APPTYPE_OLD else self.refresh_token_new
+        refresh_fn = (
+            self.refresh_token
+            if self.apptype == APPTYPE_OLD
+            else self.refresh_token_new
+        )
         self.refresh_token_interval = Timer(
             (self.session.get("expires_in") or 3600), refresh_fn
         )
@@ -345,7 +349,11 @@ class SunseekerRoboticmower:
         """Callback from the device."""
         if self.refresh_token_timeout:
             self.refresh_token_timeout.cancel()
-        refresh_fn = self.refresh_token if self.apptype == APPTYPE_OLD else self.refresh_token_new
+        refresh_fn = (
+            self.refresh_token
+            if self.apptype == APPTYPE_OLD
+            else self.refresh_token_new
+        )
         self.refresh_token_timeout = Timer(60, refresh_fn)
         self.refresh_token_timeout.start()
 
@@ -383,7 +391,9 @@ class SunseekerRoboticmower:
             response_data = response.json()
             _LOGGER.debug(json.dumps(response_data))
             if "access_token" not in response_data:
-                _LOGGER.error("Refresh_token returned no access_token: %s", response_data)
+                _LOGGER.error(
+                    "Refresh_token returned no access_token: %s", response_data
+                )
             else:
                 self.session = response_data
                 access_token = response_data["access_token"]
@@ -422,7 +432,7 @@ class SunseekerRoboticmower:
                 "User-Agent": "okhttp/4.8.1",
             }
             _LOGGER.debug("Refresh token header: %s url: %s", headers, url)
-            response = requests.post(
+            response = requests.get(
                 url=url,
                 headers=headers,
                 timeout=10,
@@ -430,7 +440,9 @@ class SunseekerRoboticmower:
             response_data = response.json()
             _LOGGER.debug(json.dumps(response_data))
             if "access_token" not in response_data:
-                _LOGGER.error("Refresh_token_new returned no access_token: %s", response_data)
+                _LOGGER.error(
+                    "Refresh_token_new returned no access_token: %s", response_data
+                )
             else:
                 self.session = response_data
                 access_token = response_data["access_token"]
