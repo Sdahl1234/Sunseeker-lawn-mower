@@ -122,7 +122,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     async_add_devices(est_size)
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.submodel not in (SUB_MODEL_V18):
+        if coordinator.submodel not in (SUB_MODEL_V18,):
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -582,7 +582,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             MODEL_OLD,
             MODEL_X,
             MODEL_V,
-        ] and coordinator.submodel not in (SUB_MODEL_V18):
+        ] and coordinator.submodel not in (SUB_MODEL_V18,):
             async_add_devices(
                 [
                     SunseekerSensor(
