@@ -429,6 +429,9 @@
             },
             "mower_netmap": {
                 "name": "4G-verkkokartta"
+            },
+            "mower_robot_image": {
+                "name": "Leikkurikuva"
             }
         },
         "switch": {

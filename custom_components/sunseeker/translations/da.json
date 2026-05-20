@@ -450,8 +450,10 @@
 			},
 			"mower_netmap": {
 				"name": "4G net kort"
+            },
+            "mower_robot_image": {
+                "name": "Klipperbillede"
 			}
-
 		},
 		"switch": {
 			"sunseeker_pause_schedule": {

@@ -263,7 +263,10 @@ class SunseekerRoboticmower:
                         ad.submodel = SUB_MODEL_GEN1
                 else:
                     ad.submodel = SUB_MODEL_NONE
-                ad.map.robot_image_url = device.get("picUrlDetail", None)
+                if model == MODEL_OLD:
+                    ad.map.robot_image_url = device.get("picUrl", None)
+                else:
+                    ad.map.robot_image_url = device.get("picUrlDetail", None)
                 ad.DeviceName = device.get("deviceName", None)
                 ad.apptype = apptype
                 ad.model = model

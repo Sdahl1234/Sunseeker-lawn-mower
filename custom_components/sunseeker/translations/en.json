@@ -450,6 +450,9 @@
 			},
 			"mower_netmap": {
 				"name": "4G net Map"
+			},
+			"mower_robot_image": {
+				"name": "Mower image"
 			}
 
 		},

@@ -450,8 +450,9 @@
 			},
 			"mower_netmap": {
 				"name": "Mapa zasięgu 4G"
-			}
-
+            },
+            "mower_robot_image": {
+                "name": "Zdjęcie kosiarki"}
 		},
       "switch": {
 			"sunseeker_pause_schedule": {

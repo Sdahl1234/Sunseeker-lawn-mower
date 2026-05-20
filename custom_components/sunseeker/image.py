@@ -4,13 +4,21 @@ import io
 import json
 import logging
 
-# from PIL import Image
 from homeassistant.components.image import ImageEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
+import requests
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import MODEL_S, MODEL_X, SUB_MODEL_GEN2, SUB_MODEL_GEN3
+from .const import (
+    MODEL_OLD,
+    MODEL_S,
+    MODEL_V,
+    MODEL_V1,
+    MODEL_X,
+    SUB_MODEL_GEN2,
+    SUB_MODEL_GEN3,
+)
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -18,6 +26,20 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
+
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model in (MODEL_OLD, MODEL_V, MODEL_V1, MODEL_S, MODEL_X):
+            async_add_entities(
+                [
+                    MowerRobotImageUrl(
+                        hass,
+                        coordinator,
+                        "Mower image",
+                        "mower_robot_image",
+                        "mdi:robot-mower",
+                    ),
+                ]
+            )
 
     for coordinator in robot_coordinators(hass, entry):
         if coordinator.model in (MODEL_S, MODEL_X):
@@ -153,3 +175,55 @@ class MowerImage(SunseekerEntity, ImageEntity):
             _LOGGER.debug(ex)
             return None
         return img_byte_arr
+
+
+class MowerRobotImageUrl(SunseekerEntity, ImageEntity):
+    """Image entity showing the robot image from a URL."""
+
+    data_coordinator: SunseekerDataCoordinator
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+        icon: str,
+    ) -> None:
+        """Init."""
+        self.hass = hass
+        super().__init__(coordinator)
+        ImageEntity.__init__(self, hass, False)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._icon = icon
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self._cached_image: bytes | None = None
+
+    @property
+    def state(self):
+        """State."""
+        return self.image_last_updated
+
+    async def async_image(self) -> bytes | None:
+        """Return bytes of image fetched from robot_image_url, cached after first successful fetch."""
+        if self._cached_image is not None:
+            return self._cached_image
+        url = self.device.map.robot_image_url
+        if not url:
+            return None
+        try:
+            response = await self.hass.async_add_executor_job(
+                lambda: requests.get(url, timeout=10)
+            )
+            if response.status_code == 200:
+                self._cached_image = response.content
+                return self._cached_image
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug("Failed to fetch robot image: %s", ex)
+        return None

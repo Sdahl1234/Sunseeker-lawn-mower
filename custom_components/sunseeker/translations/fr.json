@@ -440,6 +440,9 @@
             },
             "mower_netmap": {
                 "name": "Carte réseau 4G"
+            },
+            "mower_robot_image": {
+                "name": "Image de la tondeuse"
             }
         },
         "switch": {

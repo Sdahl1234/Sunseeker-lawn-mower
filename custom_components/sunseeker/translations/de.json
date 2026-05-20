@@ -441,6 +441,9 @@
       },
       "mower_netmap": {
         "name": "4G-Netzkarte"
+      },
+      "mower_robot_image": {
+        "name": "Mäherbild"
       }
     },
     "switch": {
