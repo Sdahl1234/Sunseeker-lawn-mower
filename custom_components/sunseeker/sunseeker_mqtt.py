@@ -1116,6 +1116,9 @@ class SunseekermqttController:
         upd = mqtt_update_values()
         devicesn = data.get("deviceSn")
         device: SunseekerDevice = self.Sunseeker.get_device(devicesn)
+        if not device:
+            _LOGGER.debug(f"MQTT message error, DeviceSn: {devicesn} not found")
+            return
         _LOGGER.debug(
             device.DeviceName  # noqa: G003
             + " MQTT message: "
