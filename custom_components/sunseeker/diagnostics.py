@@ -118,10 +118,10 @@ async def async_get_config_entry_diagnostics(
             "devicelist_OLD_models": (
                 data_handler.devicelist_OLD_models if data_handler else {}
             ),
-            "devicelist_V_models": data_handler.devicelist_V_models
+            "devicelist_V1_models": data_handler.devicelist_V1_models
             if data_handler
             else {},
-            "devicelist_X_models": data_handler.devicelist_X_models
+            "devicelist_SXV_models": data_handler.devicelist_SXV_models
             if data_handler
             else {},
         },

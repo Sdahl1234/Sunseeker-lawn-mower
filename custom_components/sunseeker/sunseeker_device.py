@@ -95,7 +95,7 @@ class SunseekerDevice:
         self.gap = 0
         self.work_speed = 0
         self.border_mode = 0
-        self.border_first = bool
+        self.border_first = None  # can be both Bool and Int
         self.robotsignal = 0
         self.taskCoverArea = 0
         self.taskTotalArea = 0

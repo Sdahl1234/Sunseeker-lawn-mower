@@ -127,7 +127,7 @@ class SunseekerRoboticmower:
         self.login_ok = True
         if self.apptype == APPTYPE_OLD:
             devicelist = self.get_device_list(APPTYPE_OLD, MODEL_OLD)
-            if devicelist.get("data", []):
+            if devicelist and devicelist.get("data", []):
                 if self.add_devices(devicelist, APPTYPE_OLD, MODEL_OLD):
                     mqtt_controller = SunseekermqttController(
                         self,
@@ -145,7 +145,7 @@ class SunseekerRoboticmower:
             dtypes = [MODEL_SXV, MODEL_V1]
             for model in dtypes:
                 devicelist = self.get_device_list(self.apptype, model)
-                if devicelist.get("data", []):
+                if devicelist and devicelist.get("data", []):
                     if self.add_devices(devicelist, self.apptype, model):
                         mqtt_controller = SunseekermqttController(
                             self,

@@ -181,10 +181,6 @@ class SunseekerRainSwitch(SunseekerEntity, SwitchEntity):
             self.device.rain_delay_set,
         )
 
-    async def async_update(self) -> None:
-        """Fetch new state data for the sensor."""
-        self.is_on = await self.device.rain_en
-
     @property
     def is_on(self):
         """IsOn."""
@@ -259,10 +255,6 @@ class SunseekerMultiZoneSwitch(SunseekerEntity, SwitchEntity):
             self.device.mulpro_zon4,
         )
 
-    async def async_update(self) -> None:
-        """Fetch new state data for the sensor."""
-        self.is_on = await self.device.mul_en
-
     @property
     def is_on(self):
         """IsOn."""
@@ -336,10 +328,6 @@ class SunseekerMultiZoneAutoSwitch(SunseekerEntity, SwitchEntity):
             self.device.mulpro_zon3,
             self.device.mulpro_zon4,
         )
-
-    async def async_update(self) -> None:
-        """Fetch new state data for the sensor."""
-        self.is_on = await self.device.mul_auto
 
     @property
     def is_on(self):
@@ -451,10 +439,6 @@ class SunseekerScheduleSwitch(SunseekerEntity, SwitchEntity):
             self.device.Schedule.days,
         )
 
-    async def async_update(self) -> None:
-        """Fetch new state data for the sensor."""
-        self.is_on = not await self.device.Schedule.IsEmpty()
-
     @property
     def is_on(self):
         """IsOn."""
@@ -502,10 +486,6 @@ class SunseekerBorderFirstSwitch(SunseekerEntity, SwitchEntity):
             self.device.set_border_first,
             not self.is_on,
         )
-
-    async def async_update(self) -> None:
-        """Fetch new state data for the sensor."""
-        self.is_on = await self.device.border_first
 
     @property
     def is_on(self):
@@ -555,10 +535,6 @@ class SunseekerTimeWorkRepeatSwitch(SunseekerEntity, SwitchEntity):
             not self.is_on,
         )
 
-    async def async_update(self) -> None:
-        """Fetch new state data for the sensor."""
-        self.is_on = await self.device.time_work_repeat
-
     @property
     def is_on(self):
         """IsOn."""
@@ -606,10 +582,6 @@ class SunseekerCustomEnableSwitch(SunseekerEntity, SwitchEntity):
             self.device.set_custom_flag,
             not self.is_on,
         )
-
-    async def async_update(self) -> None:
-        """Fetch new state data for the sensor."""
-        self.is_on = await self.device.custom_zones
 
     @property
     def is_on(self):
@@ -678,10 +650,6 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
             await self.hass.async_add_executor_job(
                 self.device.set_schedule_data,
             )
-
-    async def async_update(self) -> None:
-        """Fetch new state data for the sensor."""
-        self.is_on = await self.device.Schedule_new.schedule_pause
 
     @property
     def is_on(self):
