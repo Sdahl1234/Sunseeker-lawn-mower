@@ -28,6 +28,31 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
         async_add_entities(
             [SunseekerRainSwitch(coordinator, "Rain sensor", "sunseeker_rain_sensor")]
         )
+
+        if coordinator.model in (MODEL_OLD):
+            async_add_entities(
+                [
+                    SunseekerMultiZoneSwitch(
+                        coordinator, "MultiZone", "sunseeker_multi_zone"
+                    ),
+                    SunseekerMultiZoneAutoSwitch(
+                        coordinator, "MultiZone auto", "sunseeker_multi_zone_auto"
+                    ),
+                    SunseekerScheduleSwitch(
+                        coordinator, "Schedule active", "schedule_active"
+                    ),
+                ]
+            )
+
+        if coordinator.model in (MODEL_V1):
+            async_add_entities(
+                [
+                    SunseekerSchedulePauseSwitch(
+                        coordinator, "Pause schedule", "sunseeker_pause_schedule"
+                    )
+                ]
+            )
+
         if coordinator.model in (MODEL_V):
             async_add_entities(
                 [
@@ -35,6 +60,9 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                         coordinator,
                         "Ride on edge",
                         "sunseeker_above_edge",
+                    ),
+                    SunseekerSchedulePauseSwitch(
+                        coordinator, "Pause schedule", "sunseeker_pause_schedule"
                     ),
                 ]
             )
@@ -50,6 +78,9 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                     SunseekerBorderFirstSwitch(
                         coordinator, "Cut edge first", "sunseeker_border_first"
+                    ),
+                    SunseekerSchedulePauseSwitch(
+                        coordinator, "Pause schedule", "sunseeker_pause_schedule"
                     ),
                 ]
             )
@@ -93,7 +124,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                             for i in range(1, 5)
                         )
                 async_add_entities(zigzag_active_custom)
-            if coordinator.submodel == SUB_MODEL_GEN2:
+            if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
                 async_add_entities(
                     [
                         SunseekerAutoRideEdgeSwitch(
@@ -103,29 +134,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                         ),
                     ]
                 )
-        if coordinator.model in (MODEL_S, MODEL_X, MODEL_V1, MODEL_V):
-            async_add_entities(
-                [
-                    SunseekerSchedulePauseSwitch(
-                        coordinator, "Pause schedule", "sunseeker_pause_schedule"
-                    )
-                ]
-            )
-
-        if coordinator.model == MODEL_OLD:
-            async_add_entities(
-                [
-                    SunseekerMultiZoneSwitch(
-                        coordinator, "MultiZone", "sunseeker_multi_zone"
-                    ),
-                    SunseekerMultiZoneAutoSwitch(
-                        coordinator, "MultiZone auto", "sunseeker_multi_zone_auto"
-                    ),
-                    SunseekerScheduleSwitch(
-                        coordinator, "Schedule active", "schedule_active"
-                    ),
-                ]
-            )
 
 
 class SunseekerRainSwitch(SunseekerEntity, SwitchEntity):

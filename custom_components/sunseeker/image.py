@@ -40,8 +40,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                 ]
             )
-
-    for coordinator in robot_coordinators(hass, entry):
         if coordinator.model in (MODEL_S, MODEL_X):
             async_add_entities(
                 [

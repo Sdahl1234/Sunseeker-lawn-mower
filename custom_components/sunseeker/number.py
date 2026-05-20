@@ -22,13 +22,6 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
     """Do setup entry."""
 
-    async_add_entities(
-        [
-            SunseekerRainDelayNumber(coordinator, "Rain delay", "sunseeker_rain_delay")
-            for coordinator in robot_coordinators(hass, entry)
-        ]
-    )
-
     blade_speed = []
     blade_height = []
     plan_angle = []
@@ -91,6 +84,13 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
     async_add_entities(zigzag_angle_custom)
 
     for coordinator in robot_coordinators(hass, entry):
+        async_add_entities(
+            [
+                SunseekerRainDelayNumber(
+                    coordinator, "Rain delay", "sunseeker_rain_delay"
+                ),
+            ]
+        )
         if coordinator.model in (MODEL_S, MODEL_X):
             async_add_entities(
                 [
@@ -123,7 +123,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ]
                 )
 
-    for coordinator in robot_coordinators(hass, entry):
         if coordinator.model == MODEL_OLD:
             async_add_entities(
                 [

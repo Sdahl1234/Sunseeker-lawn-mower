@@ -98,21 +98,19 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                     ),
                 ]
             )
-
-    for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model in (MODEL_X, MODEL_S) and coordinator.submodel in (
-            SUB_MODEL_GEN2,
-            SUB_MODEL_GEN3,
-        ):
-            async_add_entities(
-                [
-                    SunseekerRechargeModeSelect(
-                        coordinator,
-                        "Docking mode",
-                        "sunseeker_docking_mode_x3gen2",
-                    ),
-                ]
-            )
+            if coordinator.submodel in (
+                SUB_MODEL_GEN2,
+                SUB_MODEL_GEN3,
+            ):
+                async_add_entities(
+                    [
+                        SunseekerRechargeModeSelect(
+                            coordinator,
+                            "Docking mode",
+                            "sunseeker_docking_mode_x3gen2",
+                        ),
+                    ]
+                )
         if coordinator.model in (MODEL_V1):
             async_add_entities(
                 [

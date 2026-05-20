@@ -20,6 +20,7 @@ from .const import (
     SUB_MODEL_GEN1,
     SUB_MODEL_GEN2,
     SUB_MODEL_GEN3,
+    SUB_MODEL_V3,
     SUB_MODEL_V18,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
@@ -91,7 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     est_time = []
     est_size = []
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model in [MODEL_S, MODEL_X]:
+        if coordinator.model in (MODEL_S, MODEL_X):
             zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
             for zone in zones:
                 zid, zname = zone
@@ -122,21 +123,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
     async_add_devices(est_size)
 
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.submodel not in (SUB_MODEL_V18,):
-            async_add_devices(
-                [
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Robot sginal",
-                        "",
-                        "robot_sig",
-                        "",
-                        "mdi:wifi",
-                        "sunseeker_robot_signal",
-                    ),
-                ]
-            )
         async_add_devices(
             [
                 SunseekerSensor(
@@ -219,6 +205,16 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     "mdi:alert-circle",
                     "sunseeker_error_text",
                 ),
+                SunseekerSensor(
+                    coordinator,
+                    None,
+                    "Event",
+                    None,
+                    "event",
+                    "",
+                    "mdi:calendar-alert",
+                    "sunseeker_events",
+                ),
             ]
         )
         if coordinator.model == MODEL_OLD:
@@ -284,9 +280,29 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:calendar",
                         "sunseeker_schedule",
                     ),
+                    SunseekerSensor(
+                        coordinator,
+                        SensorDeviceClass.DURATION,
+                        "Actual mowing time",
+                        "min",
+                        "cur_min",
+                        "",
+                        "mdi:clock-time-three-outline",
+                        "sunseeker_mowing_time",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Robot sginal",
+                        "",
+                        "robot_sig",
+                        "",
+                        "mdi:wifi",
+                        "sunseeker_robot_signal",
+                    ),
                 ]
             )
-        if coordinator.model in [MODEL_S, MODEL_V, MODEL_V1, MODEL_X]:
+        if coordinator.model in (MODEL_V1):
             async_add_devices(
                 [
                     SunseekerScheduleSensor(
@@ -309,9 +325,40 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:wifi",
                         "sunseeker_wifi_level",
                     ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Mower firmware",
+                        "",
+                        "mower_firmware",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_mower_firmware",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Mower new firmware",
+                        "",
+                        "mower_new_firmware",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_mower_new_firmware",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Robot sginal",
+                        "",
+                        "robot_sig",
+                        "",
+                        "mdi:wifi",
+                        "sunseeker_robot_signal",
+                    ),
                 ]
             )
-        if coordinator.model == MODEL_V:
+
+        if coordinator.model in (MODEL_V):
             async_add_devices(
                 [
                     SunseekerSensor(
@@ -334,12 +381,98 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:saw-blade",
                         "sunseeker_blade_height",
                     ),
+                    SunseekerScheduleSensor(
+                        coordinator,
+                        None,
+                        "Schedule",
+                        None,
+                        "schedule",
+                        "",
+                        "mdi:calendar",
+                        "sunseeker_schedule",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Wifi level",
+                        "dBm",
+                        "wifi_lv",
+                        "",
+                        "mdi:wifi",
+                        "sunseeker_wifi_level",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Mower firmware",
+                        "",
+                        "mower_firmware",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_mower_firmware",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Mower new firmware",
+                        "",
+                        "mower_new_firmware",
+                        "",
+                        "mdi:chip",
+                        "sunseeker_mower_new_firmware",
+                    ),
                 ]
             )
-
-        if coordinator.model in (MODEL_X, MODEL_S):
+            if coordinator.submodel in (SUB_MODEL_V18):
+                async_add_devices([])
+            if coordinator.submodel in (SUB_MODEL_V3):
+                async_add_devices(
+                    [
+                        SunseekerSensor(
+                            coordinator,
+                            SensorDeviceClass.DURATION,
+                            "Actual mowing time",
+                            "min",
+                            "cur_min",
+                            "",
+                            "mdi:clock-time-three-outline",
+                            "sunseeker_mowing_time",
+                        ),
+                        SunseekerSensor(
+                            coordinator,
+                            None,
+                            "Robot sginal",
+                            "",
+                            "robot_sig",
+                            "",
+                            "mdi:wifi",
+                            "sunseeker_robot_signal",
+                        ),
+                    ]
+                )
+        if coordinator.model in (MODEL_S, MODEL_X):
             async_add_devices(
                 [
+                    SunseekerScheduleSensor(
+                        coordinator,
+                        None,
+                        "Schedule",
+                        None,
+                        "schedule",
+                        "",
+                        "mdi:calendar",
+                        "sunseeker_schedule",
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Wifi level",
+                        "dBm",
+                        "wifi_lv",
+                        "",
+                        "mdi:wifi",
+                        "sunseeker_wifi_level",
+                    ),
                     SunseekerSensor(
                         coordinator,
                         PERCENTAGE,
@@ -440,61 +573,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:saw-blade",
                         "sunseeker_blade_height",
                     ),
-                ]
-            )
-
-        if coordinator.model in (MODEL_X, MODEL_S) and coordinator.submodel in (
-            SUB_MODEL_GEN2,
-            SUB_MODEL_GEN3,
-        ):
-            async_add_devices(
-                [
-                    SunseekerSensor(
-                        coordinator,
-                        PERCENTAGE,
-                        "Small blade health",
-                        "%",
-                        "small_blade_health",
-                        "",
-                        "mdi:heart",
-                        "sunseeker_small_blade_health",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        UnitOfTime.HOURS,
-                        "Small blade time left",
-                        UnitOfTime.HOURS,
-                        "small_blade_time_left",
-                        "",
-                        "mdi:timer-sand",
-                        "sunseeker_small_blade_time_left",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        PERCENTAGE,
-                        "Small cutterplade health",
-                        "%",
-                        "small_cutterplade_health",
-                        "",
-                        "mdi:heart",
-                        "sunseeker_small_cutterplade_health",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        UnitOfTime.HOURS,
-                        "Small cutterplade time left",
-                        UnitOfTime.HOURS,
-                        "small_cutterplade_time_left",
-                        "",
-                        "mdi:timer-sand",
-                        "sunseeker_small_cutterplade_time_left",
-                    ),
-                ]
-            )
-
-        if coordinator.model in (MODEL_S, MODEL_V, MODEL_V1, MODEL_X):
-            async_add_devices(
-                [
                     SunseekerSensor(
                         coordinator,
                         None,
@@ -515,50 +593,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:chip",
                         "sunseeker_mower_new_firmware",
                     ),
-                ]
-            )
-        if (
-            coordinator.model in (MODEL_X, MODEL_S)
-            and coordinator.submodel == SUB_MODEL_GEN1
-        ):
-            async_add_devices(
-                [
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Base firmware",
-                        "",
-                        "base_firmware",
-                        "",
-                        "mdi:chip",
-                        "sunseeker_base_firmware",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Base new firmware",
-                        "",
-                        "base_new_firmware",
-                        "",
-                        "mdi:chip",
-                        "sunseeker_base_new_firmware",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Base serialnumber",
-                        "",
-                        "base_serialnumber",
-                        "",
-                        "mdi:chip",
-                        "sunseeker_base_serialnumber",
-                    ),
-                ]
-            )
-
-        if coordinator.model in (MODEL_X, MODEL_S):
-            async_add_devices(
-                [
                     SunseekerWorkRecordSensor(
                         coordinator,
                         None,
@@ -574,17 +608,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "Work Region",
                         "sunseeker_work_region",
                     ),
-                ]
-            )
-
-        if coordinator.model in [
-            MODEL_S,
-            MODEL_OLD,
-            MODEL_X,
-            MODEL_V,
-        ] and coordinator.submodel not in (SUB_MODEL_V18,):
-            async_add_devices(
-                [
                     SunseekerSensor(
                         coordinator,
                         SensorDeviceClass.DURATION,
@@ -594,23 +617,105 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "",
                         "mdi:clock-time-three-outline",
                         "sunseeker_mowing_time",
-                    )
+                    ),
+                    SunseekerSensor(
+                        coordinator,
+                        None,
+                        "Robot sginal",
+                        "",
+                        "robot_sig",
+                        "",
+                        "mdi:wifi",
+                        "sunseeker_robot_signal",
+                    ),
                 ]
             )
-        async_add_devices(
-            [
-                SunseekerSensor(
-                    coordinator,
-                    None,
-                    "Event",
-                    None,
-                    "event",
-                    "",
-                    "mdi:calendar-alert",
-                    "sunseeker_events",
-                ),
-            ]
-        )
+
+            if coordinator.submodel in (
+                SUB_MODEL_GEN2,
+                SUB_MODEL_GEN3,
+            ):
+                async_add_devices(
+                    [
+                        SunseekerSensor(
+                            coordinator,
+                            PERCENTAGE,
+                            "Small blade health",
+                            "%",
+                            "small_blade_health",
+                            "",
+                            "mdi:heart",
+                            "sunseeker_small_blade_health",
+                        ),
+                        SunseekerSensor(
+                            coordinator,
+                            UnitOfTime.HOURS,
+                            "Small blade time left",
+                            UnitOfTime.HOURS,
+                            "small_blade_time_left",
+                            "",
+                            "mdi:timer-sand",
+                            "sunseeker_small_blade_time_left",
+                        ),
+                        SunseekerSensor(
+                            coordinator,
+                            PERCENTAGE,
+                            "Small cutterplade health",
+                            "%",
+                            "small_cutterplade_health",
+                            "",
+                            "mdi:heart",
+                            "sunseeker_small_cutterplade_health",
+                        ),
+                        SunseekerSensor(
+                            coordinator,
+                            UnitOfTime.HOURS,
+                            "Small cutterplade time left",
+                            UnitOfTime.HOURS,
+                            "small_cutterplade_time_left",
+                            "",
+                            "mdi:timer-sand",
+                            "sunseeker_small_cutterplade_time_left",
+                        ),
+                    ]
+                )
+
+            if coordinator.submodel == SUB_MODEL_GEN1:
+                async_add_devices(
+                    [
+                        SunseekerSensor(
+                            coordinator,
+                            None,
+                            "Base firmware",
+                            "",
+                            "base_firmware",
+                            "",
+                            "mdi:chip",
+                            "sunseeker_base_firmware",
+                        ),
+                        SunseekerSensor(
+                            coordinator,
+                            None,
+                            "Base new firmware",
+                            "",
+                            "base_new_firmware",
+                            "",
+                            "mdi:chip",
+                            "sunseeker_base_new_firmware",
+                        ),
+                        SunseekerSensor(
+                            coordinator,
+                            None,
+                            "Base serialnumber",
+                            "",
+                            "base_serialnumber",
+                            "",
+                            "mdi:chip",
+                            "sunseeker_base_serialnumber",
+                        ),
+                    ]
+                )
+
         if Test:
             async_add_devices(
                 [
