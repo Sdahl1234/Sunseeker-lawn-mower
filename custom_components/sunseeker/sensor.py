@@ -880,7 +880,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             ival = self.device.mode
             if self.device.errortype != 0:
                 val = (
-                    self.device.devicedata["data"].get("faultStatusCode")
+                    self.device.devicedata["data"].get("faultStatusCode", "")
                     + " ("
                     + str(self.device.errortype)
                     + ")"

@@ -101,7 +101,7 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
         """Return the current state."""
         if self.device.errortype != 0:
             return (
-                self.device.devicedata["data"].get("faultStatusCode")
+                self.device.devicedata["data"].get("faultStatusCode", "")
                 + " ("
                 + str(self.device.errortype)
                 + ")"
