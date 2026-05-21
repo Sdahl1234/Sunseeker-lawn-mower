@@ -4,7 +4,7 @@ import base64
 import contextlib
 import json
 import logging
-from threading import Thread
+from threading import Thread, Timer
 from typing import TYPE_CHECKING, Any
 import uuid
 
@@ -72,6 +72,7 @@ class SunseekermqttController:
         """Init."""
         self.Sunseeker: SunseekerRoboticmower = mower
         self.mqttdata = {}
+        self._unloading = False
         self.client_id = str(uuid.uuid4())
         self.mqtt_client = None
         self.mqtt_client_new = None
@@ -96,12 +97,13 @@ class SunseekermqttController:
 
     def unload(self):
         """Unload."""
+        self._unloading = True
         if self.mqtt_client is not None:
-            if self.mqtt_client.is_connected():
-                self.mqtt_client.disconnect()
+            self.mqtt_client.disconnect()
+            self.mqtt_client.loop_stop()
         if self.mqtt_client_new is not None:
-            if self.mqtt_client_new.is_connected():
-                self.mqtt_client_new.disconnect()
+            self.mqtt_client_new.disconnect()
+            self.mqtt_client_new.loop_stop()
 
     def encrypt_rsa_base64(self, text: str, public_key_pem: str) -> str:
         """Encrypt text with RSA public key and return base64 encoded string."""
@@ -152,6 +154,7 @@ class SunseekermqttController:
 
         if self.mqtt_client_new:
             self.mqtt_client_new.disconnect()
+            self.mqtt_client_new.loop_stop()
 
         self.mqtt_client_new = mqtt.Client(
             client_id=self.client_id + "new", protocol=mqtt.MQTTv311
@@ -196,6 +199,13 @@ class SunseekermqttController:
 
     def on_mqtt_connect_new(self, client, userdata, flags, rc):
         """On mqtt connect."""
+        if rc != 0:
+            _LOGGER.debug(
+                f"MQTT new connect rejected rc={rc}, re-uploading password and retrying"
+            )
+            if not self._unloading:
+                Timer(30, self.connect_mqtt_new).start()
+            return
         _LOGGER.debug("MQTT new connected event")
         if self.model in (MODEL_V1):
             ep = "wirelessmower"
@@ -221,6 +231,7 @@ class SunseekermqttController:
         """Connect mqtt."""
         if self.mqtt_client:
             self.mqtt_client.disconnect()
+            self.mqtt_client.loop_stop()
 
         self.mqtt_client = mqtt.Client(client_id=self.client_id)
         self.mqtt_client.on_connect = self.on_mqtt_connect
