@@ -91,6 +91,10 @@ class SunseekermqttController:
     def Start_mqtt(self):
         """Create and connect."""
         if self.apptype == APPTYPE_NEW:
+            encrypted_pass = self.encrypt_rsa_base64(self.mqtt_passwd, self.public_key)
+            _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
+            _LOGGER.debug("MQTT encrypted password: " + encrypted_pass)  # noqa: G003
+            self.edit_password_mqtt(encrypted_pass)
             self.connect_mqtt_new()
         else:
             self.connect_mqtt()
@@ -145,13 +149,17 @@ class SunseekermqttController:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Set MQTT password failed {error}")  # noqa: G004
 
-    def connect_mqtt_new(self):
-        """Connect mqtt new."""
+    def _reconnect_with_new_password(self):
+        """Generate a new MQTT password, upload it, and reconnect."""
+        self.mqtt_passwd = str(uuid.uuid4()).replace("-", "")[:24]
         encrypted_pass = self.encrypt_rsa_base64(self.mqtt_passwd, self.public_key)
-        _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
+        _LOGGER.debug("MQTT new password: " + self.mqtt_passwd)  # noqa: G003
         _LOGGER.debug("MQTT encrypted password: " + encrypted_pass)  # noqa: G003
         self.edit_password_mqtt(encrypted_pass)
+        self.connect_mqtt_new()
 
+    def connect_mqtt_new(self):
+        """Connect mqtt new."""
         if self.mqtt_client_new:
             self.mqtt_client_new.disconnect()
             self.mqtt_client_new.loop_stop()
@@ -200,11 +208,24 @@ class SunseekermqttController:
     def on_mqtt_connect_new(self, client, userdata, flags, rc):
         """On mqtt connect."""
         if rc != 0:
-            _LOGGER.debug(
-                f"MQTT new connect rejected rc={rc}, re-uploading password and retrying"
-            )
-            if not self._unloading:
-                Timer(30, self.connect_mqtt_new).start()
+            _MQTT_CONNECT_RC = {  # noqa: N806
+                1: "incorrect protocol version",
+                2: "invalid client identifier",
+                3: "server unavailable",
+                4: "bad username or password",
+                5: "not authorised",
+            }
+            reason = _MQTT_CONNECT_RC.get(rc, f"unknown rc={rc}")
+            if rc in (4, 5):
+                _LOGGER.debug(
+                    f"MQTT new connect rejected ({reason}), generating new password and retrying"  # noqa: G004
+                )
+                if not self._unloading:
+                    Timer(30, self._reconnect_with_new_password).start()
+            else:
+                _LOGGER.debug(
+                    f"MQTT new connect failed ({reason}), not retrying"  # noqa: G004
+                )
             return
         _LOGGER.debug("MQTT new connected event")
         if self.model in (MODEL_V1):
