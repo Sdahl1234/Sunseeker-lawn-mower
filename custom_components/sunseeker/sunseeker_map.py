@@ -98,11 +98,26 @@ class SunseekerMap:
             return Image.open(img_path)
 
     def load_robot_image(self) -> Image.Image:
-        """Load robot.png from the integration folder."""
+        """Load robot image, using robot_image_url if set, otherwise robot.png."""
         with importlib.resources.path(
             "custom_components.sunseeker", "robot.png"
         ) as img_path:
-            return Image.open(img_path)
+            default_img = Image.open(img_path)
+            default_size = default_img.size
+
+        if self.robot_image_url:
+            try:
+                response = requests.get(self.robot_image_url, timeout=10)
+                response.raise_for_status()
+                url_img = Image.open(BytesIO(response.content))
+                return url_img.resize(default_size, Image.LANCZOS)
+            except Exception:  # pylint: disable=broad-except  # noqa: BLE001
+                _LOGGER.debug(
+                    "Failed to load robot image from URL %s, falling back to robot.png",
+                    self.robot_image_url,
+                )
+
+        return default_img
 
     def _draw_path_runs(self, draw, data, transform) -> None:
         """Draw path data using run-length-aware type classification.
