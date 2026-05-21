@@ -96,6 +96,11 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             version=1,
             key=f"{DOMAIN}.charger_gps.{self.devicesn.replace(' ', '_')}",
         )
+        self._map_settings_store: Store = Store(
+            hass,
+            version=1,
+            key=f"{DOMAIN}.map_settings.{self.devicesn.replace(' ', '_')}",
+        )
         self.jdata = self.data_default
         self.livemap_entity = None  # MowerImage
         self.map_entity = None  # MowerImage
@@ -106,6 +111,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.add_job(self.set_schedule_data)
             self.hass.add_job(self.schedule_load_data)
         self.hass.add_job(self.charger_gps_load_data)
+        self.hass.add_job(self.map_settings_load_data)
         self.hass.add_job(self.device.map.reload_maps)
         if self.device.model in (MODEL_X, MODEL_S):
             uv = mqtt_update_values()
@@ -215,6 +221,31 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         await self._charger_gps_store.async_save(
             {"lat": self.charger_gps_lat, "lng": self.charger_gps_lng}
         )
+
+    async def map_settings_load_data(self):
+        """Load map settings from storage."""
+        data = await self._map_settings_store.async_load()
+        if data:
+            try:
+                self.device.map.draw_mode = str(data["draw_mode"])
+            except (KeyError, TypeError) as ex:
+                _LOGGER.debug("map settings load failed: %s", ex)
+
+    async def map_settings_save_data(self):
+        """Save map settings to storage."""
+        await self._map_settings_store.async_save(
+            {"draw_mode": self.device.map.draw_mode}
+        )
+
+    async def set_map_draw_mode(self, mode: str) -> None:
+        """Set the map draw mode, persist it, and regenerate the map image."""
+        self.device.map.draw_mode = mode
+        await self.map_settings_save_data()
+        if self.device.map.image is not None:
+            await self.device.map.generate_path()
+            await self.device.map.generate_livemap()
+        if self.map_entity:
+            await self.map_entity.trigger_update()
 
     async def does_file_exits(self, filepath) -> bool:
         """Do file exists."""

@@ -153,6 +153,16 @@
           "normal": "Normal",
           "wide": "Breit"
         }
+      },
+      "sunseeker_map_draw_mode": {
+        "name": "Karten-Zeichenmodus",
+        "state": {
+          "simple": "Einfach",
+          "simple_border": "Einfach mit Rand",
+          "advanced": "Erweitert",
+          "advanced_border": "Erweitert mit Rand",
+          "draw_all": "Alles zeichnen"
+        }
       }
     },
     "sensor": {

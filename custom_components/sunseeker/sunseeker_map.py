@@ -11,7 +11,14 @@ from typing import TYPE_CHECKING
 from PIL import Image, ImageDraw
 import requests
 
-from .const import MODEL_S, MODEL_X
+from .const import (
+    MAP_DRAW_MODE_ALL,
+    MAP_DRAW_MODE_ADVANCED_BORDER,
+    MAP_DRAW_MODE_SIMPLE,
+    MAP_DRAW_MODE_SIMPLE_BORDER,
+    MODEL_S,
+    MODEL_X,
+)
 
 if TYPE_CHECKING:
     from .sunseeker import SunseekerDevice
@@ -38,6 +45,7 @@ class SunseekerMap:
         self.path_total = 0
         self.livepathpoints = []
         self.cached_pathpoints = []
+        self._live_type10_pending: list = []  # type-10 points awaiting run-end classification
         self.backupmap_data = None
         self.pathurl = ""
         self.image = None
@@ -54,6 +62,7 @@ class SunseekerMap:
         self.mower_pos_x = 0
         self.mower_pos_y = 0
         self.mower_orientation: float = 0
+        self.last_pos_timestamp: int = 0
         self.charger_pos_x = 0
         self.charger_pos_y = 0
         self.charger_orientation: float = 0
@@ -79,6 +88,7 @@ class SunseekerMap:
         self.placed_blank_color = (0, 0, 255, 255)
         self.work_regions: list[dict] = []
         self.charger_regions: list[list[tuple[float, float]]] = []
+        self.draw_mode: str = MAP_DRAW_MODE_ADVANCED_BORDER
 
     def load_charger_image(self) -> Image.Image:
         """Load robot.png from the integration folder."""
@@ -93,6 +103,112 @@ class SunseekerMap:
             "custom_components.sunseeker", "robot.png"
         ) as img_path:
             return Image.open(img_path)
+
+    def _draw_path_runs(self, draw, data, transform) -> None:
+        """Draw path data using run-length-aware type classification.
+
+        Type 10 has two meanings depending on run length:
+          - short run (<2 m): turn/transition between mowing rows → drawn as mowing
+          - long run (>=2 m): navigation from charger to work area  → skipped
+        Type 17 (and 13/19) are single-point GPS fixes at the same coordinates as
+        the next point; they act as transparent bridges so segments stay continuous.
+        """
+        draw_border = self.draw_mode in (
+            MAP_DRAW_MODE_SIMPLE_BORDER,
+            MAP_DRAW_MODE_ADVANCED_BORDER,
+        )
+        draw_transitions = self.draw_mode not in (
+            MAP_DRAW_MODE_SIMPLE,
+            MAP_DRAW_MODE_SIMPLE_BORDER,
+        )
+
+        type_colors: dict[int, tuple] = {9: self.work_color}  # always draw mowing
+        if draw_border:
+            type_colors[12] = (0, 200, 255)
+        # if draw_transitions:
+        #    type_colors[11] = (255, 165, 0)  # arc / approach turns
+        bridge_types = {17, 13, 19}
+        short_transit_max = 2.0  # metres
+
+        # Pre-segment data into (ptype, xy_points, total_distance) runs.
+        runs: list[tuple[int, list[tuple[float, float]], float]] = []
+        i = 0
+        while i < len(data):
+            ptype = int(data[i][2])
+            j = i + 1
+            while j < len(data) and int(data[j][2]) == ptype:
+                j += 1
+            pts = [(data[k][0], data[k][1]) for k in range(i, j)]
+            total_dist = sum(
+                math.sqrt(
+                    (pts[k + 1][0] - pts[k][0]) ** 2 + (pts[k + 1][1] - pts[k][1]) ** 2
+                )
+                for k in range(len(pts) - 1)
+            )
+            runs.append((ptype, pts, total_dist))
+            i = j
+
+        segment: list = []
+        seg_color: tuple | None = None
+
+        def flush() -> None:
+            nonlocal segment, seg_color
+            if len(segment) >= 2 and seg_color is not None:
+                draw.line(segment, fill=seg_color, width=1)
+            segment.clear()
+            seg_color = None
+
+        for ptype, pts, total_dist in runs:
+            if self.draw_mode == MAP_DRAW_MODE_ALL:
+                all_type_colors: dict[int, tuple] = {
+                    9: self.work_color,
+                    10: self.work_color,
+                    11: (255, 165, 0),
+                    12: (0, 200, 255),
+                    13: (180, 180, 180),
+                    14: (180, 180, 180),
+                    16: (200, 100, 100),
+                    17: (255, 220, 0),
+                    18: (100, 200, 100),
+                    19: (100, 100, 200),
+                }
+                color = all_type_colors.get(ptype, (128, 128, 128))
+                transformed = [transform(p) for p in pts]
+                if seg_color == color:
+                    segment.extend(transformed)
+                else:
+                    flush()
+                    segment = transformed[:]
+                    seg_color = color
+                continue
+
+            if ptype in bridge_types:
+                if segment:
+                    segment.extend(transform(p) for p in pts)
+                continue
+
+            if ptype == 10:
+                color = (
+                    self.work_color
+                    if draw_transitions and total_dist < short_transit_max
+                    else None
+                )
+            else:
+                color = type_colors.get(ptype)
+
+            if color is None:
+                flush()
+                continue
+
+            transformed = [transform(p) for p in pts]
+            if seg_color == color:
+                segment.extend(transformed)
+            else:
+                flush()
+                segment = transformed[:]
+                seg_color = color
+
+        flush()
 
     async def generate_path(self, pdata=None) -> None:
         """Generate livemap."""
@@ -131,10 +247,7 @@ class SunseekerMap:
             )
 
         if self.map_max_x != self.map_min_x and self.map_max_y != self.map_min_y:
-            points = [transform([x, y]) for x, y, _ in data]
-
-            # Draw a line between the points
-            draw.line(points, fill=self.work_color, width=1)
+            self._draw_path_runs(draw, data, transform)
 
         self.image_path = image
 
@@ -162,10 +275,39 @@ class SunseekerMap:
             )
 
         if self.map_max_x != self.map_min_x and self.map_max_y != self.map_min_y:
-            points = [transform([x, y]) for x, y, _ in data]
+            # In transitions-aware modes, type-10 runs are only drawn when short
+            # (<2 m). Because a run can span multiple MQTT batches, we buffer any
+            # trailing type-10 points and prepend them to the next call so the
+            # full run distance is known before deciding to draw or skip.
+            draw_transitions = self.draw_mode not in (
+                MAP_DRAW_MODE_SIMPLE,
+                MAP_DRAW_MODE_SIMPLE_BORDER,
+                MAP_DRAW_MODE_ALL,
+            )
+            if draw_transitions:
+                # Prepend buffered type-10 points from the previous call.
+                # The last buffered point is excluded because livepathpoints
+                # already retains it as its first element (continuity point).
+                if self._live_type10_pending:
+                    data = self._live_type10_pending + list(data)
+                    self._live_type10_pending = []
 
-            # Draw a line between the points
-            draw.line(points, fill=self.work_color, width=1)
+                # Find the trailing type-10 run — it may not be complete yet.
+                trailing_start = len(data)
+                for idx in range(len(data) - 1, -1, -1):
+                    if int(data[idx][2]) == 10:
+                        trailing_start = idx
+                    else:
+                        break
+                if trailing_start < len(data):
+                    # Save all but the last point (livepathpoints retains it).
+                    self._live_type10_pending = list(data[trailing_start:-1])
+                    data = data[:trailing_start]
+            else:
+                self._live_type10_pending = []  # clear on mode change
+
+            if len(data) >= 2:
+                self._draw_path_runs(draw, data, transform)
 
         self.livepathpoints = [self.livepathpoints[-1]]
 

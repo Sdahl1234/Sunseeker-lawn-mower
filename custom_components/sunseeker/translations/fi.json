@@ -153,6 +153,16 @@
                     "normal": "Normaali",
                     "wide": "Leveä"
                 }
+            },
+            "sunseeker_map_draw_mode": {
+                "name": "Kartan piirtotila",
+                "state": {
+                    "simple": "Yksinkertainen",
+                    "simple_border": "Yksinkertainen reunalla",
+                    "advanced": "Edistynyt",
+                    "advanced_border": "Edistynyt reunalla",
+                    "draw_all": "Piirrä kaikki"
+                }
             }
         },
         "sensor": {

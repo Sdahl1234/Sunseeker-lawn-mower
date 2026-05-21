@@ -159,6 +159,16 @@
 					"wide": "Bred"
 				}
 
+			},
+			"sunseeker_map_draw_mode": {
+				"name": "Korttegningstilstand",
+				"state": {
+					"simple": "Simpel",
+					"simple_border": "Simpel med kant",
+					"advanced": "Avanceret",
+					"advanced_border": "Avanceret med kant",
+					"draw_all": "Tegn alt"
+				}
 			}
 
 		},

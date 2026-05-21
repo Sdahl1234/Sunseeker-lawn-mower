@@ -6,6 +6,7 @@ from homeassistant.helpers.entity import EntityCategory
 
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
+    MAP_DRAW_MODES,
     MODEL_S,
     MODEL_V,
     MODEL_V1,
@@ -98,6 +99,15 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                     ),
                 ]
             )
+            async_add_entities(
+                [
+                    SunseekerMapDrawModeSelect(
+                        coordinator,
+                        "Map draw mode",
+                        "sunseeker_map_draw_mode",
+                    ),
+                ]
+            )
             if coordinator.submodel in (
                 SUB_MODEL_GEN2,
                 SUB_MODEL_GEN3,
@@ -146,6 +156,34 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                     ),
                 ]
             )
+
+
+class SunseekerMapDrawModeSelect(SunseekerEntity, SelectEntity):
+    """Select entity for the map path drawing mode."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_icon = "mdi:draw"
+
+    def __init__(
+        self, coordinator: SunseekerDataCoordinator, name: str, translationkey: str
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"map_draw_mode_{coordinator.devicesn}"
+        self._attr_options = MAP_DRAW_MODES
+
+    @property
+    def current_option(self) -> str:
+        """Return the current draw mode."""
+        return self.data_coordinator.device.map.draw_mode
+
+    async def async_select_option(self, option: str) -> None:
+        """Select a new draw mode."""
+        await self.data_coordinator.set_map_draw_mode(option)
+        self.async_write_ha_state()
 
 
 class SunseekerScreenTimeoutSelect(SunseekerEntity, SelectEntity):

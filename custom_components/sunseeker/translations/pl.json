@@ -160,6 +160,16 @@
 					"wide": "Szerzej"
 				}
 
+			},
+			"sunseeker_map_draw_mode": {
+				"name": "Tryb rysowania mapy",
+				"state": {
+					"simple": "Prosty",
+					"simple_border": "Prosty z obramowaniem",
+					"advanced": "Zaawansowany",
+					"advanced_border": "Zaawansowany z obramowaniem",
+					"draw_all": "Rysuj wszystko"
+				}
 			}
 
 		},

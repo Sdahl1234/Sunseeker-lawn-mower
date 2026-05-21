@@ -692,15 +692,18 @@ class SunseekermqttController:
                 device.map.charger_pos_x = x
                 device.map.charger_pos_y = y
                 upd.live_move_update = True
-        device.map.mower_orientation = self.setvalue(
-            nu, datanode, ["robot_pos"], "angle", device.map.mower_orientation
-        )
-        if "robot_pos" in datanode:
-            if "point" in datanode.get("robot_pos"):
-                x, y = data["data"]["robot_pos"]["point"]
-                device.map.mower_pos_x = x
-                device.map.mower_pos_y = y
-                upd.live_move_update = True
+        msg_timestamp = data.get("timestamp", 0)
+        if msg_timestamp >= device.map.last_pos_timestamp:
+            device.map.mower_orientation = self.setvalue(
+                nu, datanode, ["robot_pos"], "angle", device.map.mower_orientation
+            )
+            if "robot_pos" in datanode:
+                if "point" in datanode.get("robot_pos"):
+                    x, y = data["data"]["robot_pos"]["point"]
+                    device.map.mower_pos_x = x
+                    device.map.mower_pos_y = y
+                    device.map.last_pos_timestamp = msg_timestamp
+                    upd.live_move_update = True
 
         # id = report_path_change or report_path
         if "path_info" in datanode:
@@ -714,6 +717,7 @@ class SunseekermqttController:
                 upd.start_new_path = True
                 device.map.livepathpoints.clear()
                 device.map.cached_pathpoints.clear()
+                device.map._live_type10_pending.clear()
                 # This is not testet so skipping this for now
                 # device.map.skip_server_path = True
 

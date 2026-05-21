@@ -160,6 +160,16 @@
 					"wide": "Wide"
 				}
 
+			},
+			"sunseeker_map_draw_mode": {
+				"name": "Map draw mode",
+				"state": {
+					"simple": "Simple",
+					"simple_border": "Simple with border",
+					"advanced": "Advanced",
+					"advanced_border": "Advanced with border",
+					"draw_all": "Draw all"
+				}
 			}
 
 		},
