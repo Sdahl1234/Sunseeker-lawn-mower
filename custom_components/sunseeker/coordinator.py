@@ -310,10 +310,14 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             _LOGGER.debug(f"Image handler - start {self.devicesn}")  # noqa: G004
             if uv.live_move_update or uv.start_new_path:
                 await self.device.map.generate_livemap()
-            if uv.fetch_new_map_data or uv.start_new_path:
+            if uv.fetch_new_map_data:
                 await self.hass.async_add_executor_job(self.device.map.get_map_info)
                 await self.hass.async_add_executor_job(
                     self.device.map.get_backup_map_data
+                )
+            if uv.path_url_to_load:
+                await self.hass.async_add_executor_job(
+                    self.device.map.get_path_data, uv.path_url_to_load
                 )
             if (uv.livemap_update and uv.map_update) or uv.start_new_path:
                 await self.device.map.reload_maps()

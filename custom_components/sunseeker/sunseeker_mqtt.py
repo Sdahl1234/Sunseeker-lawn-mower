@@ -54,6 +54,7 @@ class mqtt_update_values:
         self.wifimap = False
         self.live_move_update = False
         self.netmap = False
+        self.path_url_to_load = ""  # URL to load path from directly, bypassing the API
 
 
 class SunseekermqttController:
@@ -755,6 +756,9 @@ class SunseekermqttController:
                 device.map.livepathpoints.clear()
                 device.map.cached_pathpoints.clear()
                 device.map._live_type10_pending.clear()
+                device.map.realPathmapdata = None
+                device.map.realPathFileUlr = ""
+                device.map.pathurl = ""
                 # This is not testet so skipping this for now
                 # device.map.skip_server_path = True
 
@@ -866,19 +870,28 @@ class SunseekermqttController:
                             upd.map_update = True
                             upd.livemap_update = True
                 if device.eventcode == 17:  # new path uploaded
-                    if datanode.get("url"):
-                        code17url = datanode.get("url")
+                    code17url = datanode.get("url", "")
+                    if code17url:
                         if code17url != device.map.pathurl:
-                            # device.map.pathurl = code17url
+                            device.map.pathurl = code17url
+                            upd.path_url_to_load = code17url
                             nu.need_update = True
-                            upd.fetch_new_map_data = True
                             upd.map_update = True
                             upd.livemap_update = True
-                if device.eventcode == 63:  # map restored
+                    else:
+                        device.map.realPathmapdata = None
+                        device.map.realPathFileUlr = ""
+                        device.map.pathurl = ""
+                        device.map.livepathpoints.clear()
+                        device.map.cached_pathpoints.clear()
+                        device.map._live_type10_pending.clear()
+                        nu.need_update = True
+                        upd.map_update = True
+                        upd.livemap_update = True
+                if device.eventcode == 63:  # map restored from backup
                     if datanode.get("url"):
-                        code17url = datanode.get("url")
-                        if code17url != device.map.pathurl:
-                            # device.map.pathurl = code17url
+                        restored_map_url = datanode.get("url")
+                        if restored_map_url != device.map.mapurl:
                             nu.need_update = True
                             upd.fetch_new_map_data = True
                             upd.map_update = True
