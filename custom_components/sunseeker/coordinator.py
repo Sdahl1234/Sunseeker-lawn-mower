@@ -68,7 +68,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             # Polling interval. Will only be polled if there are subscribers.
             # update_interval=timedelta(seconds=5),  # 60 * 60),
         )
-        self.dataUpdating: bool = False
+        self._image_update_lock: asyncio.Lock = asyncio.Lock()
         self.region = region
         # self.apptype = apptype
         self.brand = brand
@@ -306,16 +306,8 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         """Function to call none async."""
         if self.model in (MODEL_V, MODEL_V1):
             return
-        _LOGGER.debug(f"Image handler - check mutex {self.devicesn}")  # noqa: G004
-
-        for _ in range(50):
-            if not self.dataUpdating:
-                break
-            await asyncio.sleep(0.1)
-
-        _LOGGER.debug(f"Image handler - start {self.devicesn}")  # noqa: G004
-        self.dataUpdating = True
-        try:
+        async with self._image_update_lock:
+            _LOGGER.debug(f"Image handler - start {self.devicesn}")  # noqa: G004
             if uv.live_move_update or uv.start_new_path:
                 await self.device.map.generate_livemap()
             if uv.fetch_new_map_data or uv.start_new_path:
@@ -329,8 +321,6 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
                     await self.map_entity.trigger_update()
             elif uv.livemap_update:
                 await self.device.map.generate_livemap()
-        finally:
-            self.dataUpdating = False
         _LOGGER.debug(f"Image handler - end {self.devicesn}")  # noqa: G004
 
     async def get_heat_map(self, snr):

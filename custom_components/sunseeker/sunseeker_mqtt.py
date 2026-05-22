@@ -4,7 +4,8 @@ import base64
 import contextlib
 import json
 import logging
-from threading import Thread, Timer
+import queue
+from threading import Lock, Thread, Timer
 from typing import TYPE_CHECKING, Any
 import uuid
 
@@ -87,6 +88,8 @@ class SunseekermqttController:
         self.appId = "0123456789abcdef"
         self.mqtt_passwd = str(uuid.uuid4()).replace("-", "")[:24]
         self.public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u\n7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg\n2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeu\nCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrC\nftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWB\nSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4\nXwIDAQAB\n-----END PUBLIC KEY-----"
+        self._device_queues: dict[str, queue.Queue] = {}
+        self._queues_lock: Lock = Lock()
 
     def Start_mqtt(self):
         """Create and connect."""
@@ -102,6 +105,9 @@ class SunseekermqttController:
     def unload(self):
         """Unload."""
         self._unloading = True
+        with self._queues_lock:
+            for q in self._device_queues.values():
+                q.put(None)
         if self.mqtt_client is not None:
             self.mqtt_client.disconnect()
             self.mqtt_client.loop_stop()
@@ -330,9 +336,40 @@ class SunseekermqttController:
         if "pause" in data:
             device.Schedule_new.schedule_pause = data.get("pause")
 
+    def _get_or_create_queue(self, devicesn: str) -> queue.Queue:
+        """Return the per-device queue, creating it and its worker thread if needed."""
+        with self._queues_lock:
+            if devicesn not in self._device_queues:
+                q: queue.Queue = queue.Queue()
+                self._device_queues[devicesn] = q
+                Thread(
+                    target=self._worker,
+                    args=(q,),
+                    daemon=True,
+                    name=f"sunseeker_mqtt_{devicesn}",
+                ).start()
+            return self._device_queues[devicesn]
+
+    def _worker(self, q: queue.Queue):
+        """Worker thread: processes one device's MQTT messages in FIFO order."""
+        while True:
+            msg = q.get()
+            if msg is None:
+                q.task_done()
+                break
+            try:
+                self.handle_mqtt_message(msg)
+            finally:
+                q.task_done()
+
     def on_mqtt_message(self, client, userdata, message):
         """On mqtt message."""
-        Thread(target=self.handle_mqtt_message, args=(message,)).start()
+        try:
+            devicesn = json.loads(message.payload.decode()).get("deviceSn")
+        except Exception:  # noqa: BLE001
+            devicesn = None
+        if devicesn:
+            self._get_or_create_queue(devicesn).put(message)
 
     def update_var_if_changed(
         self, nu: mqtt_needupdate, s: str, old_value: Any, new_value: Any
