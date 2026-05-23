@@ -15,19 +15,15 @@ from homeassistant.core import HomeAssistant
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
     MODEL_OLD,
-    MODEL_S,
-    MODEL_V,
-    MODEL_X,
+    MODEL_V1,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
     SUNSEEKER_CONTINUE_CUTTING,
     SUNSEEKER_ENTERPIN,
     SUNSEEKER_ERROR,
     SUNSEEKER_FIRMWARE_UPDATE,
-    SUNSEEKER_GOING_HOME,
     SUNSEEKER_IDLE,
     SUNSEEKER_LOCATING,
-    SUNSEEKER_MOWING,
     SUNSEEKER_MOWING_BORDER,
     SUNSEEKER_OFFLINE,
     SUNSEEKER_PAUSE,
@@ -124,7 +120,7 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
                 codes = _OLD_ERROR_CODES_EN
             return codes.get(self.device.errortype, f"Error {self.device.errortype}")
         ival = self.device.mode
-        if self.device.model == MODEL_OLD:
+        if self.device.model in (MODEL_OLD, MODEL_V1):
             if ival == 0:
                 val = SUNSEEKER_STANDBY
             elif ival == 1:
@@ -143,34 +139,19 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
                 val = SUNSEEKER_ERROR
             return val
         if ival == 0:
-            if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
-                val = SUNSEEKER_UNKNOWN
-            else:
-                val = SUNSEEKER_STANDBY
+            val = SUNSEEKER_UNKNOWN
         elif ival == 1:
-            if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
-                val = SUNSEEKER_IDLE
-            else:
-                val = SUNSEEKER_MOWING
+            val = SUNSEEKER_IDLE
         elif ival == 2:
-            if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
-                val = SUNSEEKER_WORKING
-            else:
-                val = SUNSEEKER_GOING_HOME
+            val = SUNSEEKER_WORKING
         elif ival == 3:
-            if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
-                val = SUNSEEKER_PAUSE
-            else:
-                val = SUNSEEKER_CHARGING
+            val = SUNSEEKER_PAUSE
         elif ival == 4:
             val = SUNSEEKER_UNKNOWN_4
         elif ival == 6:
             val = SUNSEEKER_ERROR
         elif ival == 7:
-            if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
-                val = SUNSEEKER_RETURN
-            else:
-                val = SUNSEEKER_MOWING_BORDER
+            val = SUNSEEKER_RETURN
         elif ival == 8:
             val = SUNSEEKER_RETURN_PAUSE
         elif ival == 9:

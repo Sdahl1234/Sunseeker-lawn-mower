@@ -31,10 +31,8 @@ from .const import (
     SUNSEEKER_ENTERPIN,
     SUNSEEKER_ERROR,
     SUNSEEKER_FIRMWARE_UPDATE,
-    SUNSEEKER_GOING_HOME,
     SUNSEEKER_IDLE,
     SUNSEEKER_LOCATING,
-    SUNSEEKER_MOWING,
     SUNSEEKER_MOWING_BORDER,
     SUNSEEKER_OFFLINE,
     SUNSEEKER_PAUSE,
@@ -954,7 +952,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                 else:
                     codes = _OLD_ERROR_CODES_EN
                 val = codes.get(self.device.errortype, f"Error {self.device.errortype}")
-            elif self.device.model == MODEL_OLD:
+            elif self.device.model in (MODEL_OLD, MODEL_V1):
                 if ival == 0:
                     val = SUNSEEKER_STANDBY
                 elif ival == 1:
@@ -972,34 +970,19 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                 else:
                     val = SUNSEEKER_ERROR
             elif ival == 0:
-                if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
-                    val = SUNSEEKER_UNKNOWN
-                else:
-                    val = SUNSEEKER_STANDBY
+                val = SUNSEEKER_UNKNOWN
             elif ival == 1:
-                if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
-                    val = SUNSEEKER_IDLE
-                else:
-                    val = SUNSEEKER_MOWING
+                val = SUNSEEKER_IDLE
             elif ival == 2:
-                if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
-                    val = SUNSEEKER_WORKING
-                else:
-                    val = SUNSEEKER_GOING_HOME
+                val = SUNSEEKER_WORKING
             elif ival == 3:
-                if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
-                    val = SUNSEEKER_PAUSE
-                else:
-                    val = SUNSEEKER_CHARGING
+                val = SUNSEEKER_PAUSE
             elif ival == 4:
                 val = SUNSEEKER_UNKNOWN_4
             elif ival == 6:
                 val = SUNSEEKER_ERROR
             elif ival == 7:
-                if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
-                    val = SUNSEEKER_RETURN
-                else:
-                    val = SUNSEEKER_MOWING_BORDER
+                val = SUNSEEKER_RETURN
             elif ival == 8:
                 val = SUNSEEKER_RETURN_PAUSE
             elif ival == 9:
