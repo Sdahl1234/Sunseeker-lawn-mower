@@ -289,7 +289,12 @@
 					"continue_mowing": "Fortsætter klipning",
           			"stuck": "Sidder fast",
 					"updating_firmware": "Opdatere firmware",
-					"enter_pin": "Indtast pinkode"
+					"enter_pin": "Indtast pinkode",
+					"auto_mapping": "Auto kortlægning",
+					"build_map_paused": "Kortlægning sat på pause",
+					"remote_control": "Fjernbetjening",
+					"sleep": "Dvale",
+					"edge_confirming": "Bekræfter kant"
 				}
 			},
 			"sunseeker_battery": {
@@ -397,7 +402,12 @@
 					"continue_mowing": "Fortsætter klipning",
           			"stuck": "Sidder fast",
 					"updating_firmware": "Opdatere firmware",
-					"enter_pin": "Indtast pinkode"
+					"enter_pin": "Indtast pinkode",
+					"auto_mapping": "Auto kortlægning",
+					"build_map_paused": "Kortlægning sat på pause",
+					"remote_control": "Fjernbetjening",
+					"sleep": "Dvale",
+					"edge_confirming": "Bekræfter kant"
 				}
 			}
 		},

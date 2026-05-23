@@ -281,7 +281,12 @@
                     "continue_mowing": "Continuer la tonte",
                     "stuck": "Bloqué",
                         "updating_firmware": "Mise a jour du firmware",
-                        "enter_pin": "Entrer le code PIN"
+                        "enter_pin": "Entrer le code PIN",
+                    "auto_mapping": "Cartographie automatique",
+                    "build_map_paused": "Construction de la carte en pause",
+                    "remote_control": "Télécommande",
+                    "sleep": "Veille",
+                    "edge_confirming": "Confirmation des bords"
                 }
             },
             "sunseeker_battery": {
@@ -389,7 +394,12 @@
                     "continue_mowing": "Continuer la tonte",
                     "stuck": "Bloqué",
                     "updating_firmware": "Mise a jour du firmware",
-                    "enter_pin": "Entrer le code PIN"
+                    "enter_pin": "Entrer le code PIN",
+                    "auto_mapping": "Cartographie automatique",
+                    "build_map_paused": "Construction de la carte en pause",
+                    "remote_control": "Télécommande",
+                    "sleep": "Veille",
+                    "edge_confirming": "Confirmation des bords"
                 }
             }
         },

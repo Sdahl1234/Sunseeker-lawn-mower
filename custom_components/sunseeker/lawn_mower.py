@@ -33,8 +33,12 @@ from .const import (
     SUNSEEKER_STOP,
     SUNSEEKER_STUCK,
     SUNSEEKER_UNKNOWN,
-    SUNSEEKER_UNKNOWN_4,
     SUNSEEKER_WORKING,
+    SUNSEEKER_AUTO_MAPPING,
+    SUNSEEKER_BUILD_MAP_PAUSED,
+    SUNSEEKER_REMOTE_CONTROL,
+    SUNSEEKER_SLEEP,
+    SUNSEEKER_EDGE_CONFIRMING,
 )
 from .entity import SunseekerEntity
 from .sensor import (
@@ -138,7 +142,7 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
             else:
                 val = SUNSEEKER_ERROR
             return val
-        if ival == 0:
+        elif ival == 0:
             val = SUNSEEKER_UNKNOWN
         elif ival == 1:
             val = SUNSEEKER_IDLE
@@ -147,7 +151,9 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
         elif ival == 3:
             val = SUNSEEKER_PAUSE
         elif ival == 4:
-            val = SUNSEEKER_UNKNOWN_4
+            val = SUNSEEKER_AUTO_MAPPING
+        elif ival == 5:
+            val = SUNSEEKER_BUILD_MAP_PAUSED
         elif ival == 6:
             val = SUNSEEKER_ERROR
         elif ival == 7:
@@ -158,6 +164,10 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
             val = SUNSEEKER_CHARGING
         elif ival == 10:
             val = SUNSEEKER_CHARGING_FULL
+        elif ival == 11:
+            val = SUNSEEKER_REMOTE_CONTROL
+        elif ival == 12:
+            val = SUNSEEKER_SLEEP
         elif ival == 13:
             val = SUNSEEKER_OFFLINE
         elif ival == 14:
@@ -170,11 +180,12 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
             val = SUNSEEKER_STUCK
         elif ival == 18:
             val = SUNSEEKER_STOP
+        elif ival == 19:
+            val = SUNSEEKER_EDGE_CONFIRMING
         elif ival == 20:
             val = SUNSEEKER_ENTERPIN
-
         else:
-            val = SUNSEEKER_UNKNOWN
+            val = SUNSEEKER_IDLE
         return val
 
     async def async_start_mowing(self) -> None:

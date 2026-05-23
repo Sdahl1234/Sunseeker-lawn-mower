@@ -290,7 +290,12 @@
  					"continue_mowing": "Continue mowing",
           "stuck": "Stuck",
           "updating_firmware": "Opdating firmware",
-		  "enter_pin": "Enter pin"
+		  "enter_pin": "Enter pin",
+          "auto_mapping": "Auto mapping",
+          "build_map_paused": "Build map paused",
+          "remote_control": "Remote control",
+          "sleep": "Sleep",
+          "edge_confirming": "Edge confirming"
           }
         },
         "sunseeker_battery": {
@@ -398,7 +403,12 @@
  					"continue_mowing": "Continue mowing",
           "stuck": "Stuck",
           "updating_firmware": "Opdating firmware",
-		  "enter_pin": "Enter pin"
+		  "enter_pin": "Enter pin",
+          "auto_mapping": "Auto mapping",
+          "build_map_paused": "Build map paused",
+          "remote_control": "Remote control",
+          "sleep": "Sleep",
+          "edge_confirming": "Edge confirming"
           }
         }
       },

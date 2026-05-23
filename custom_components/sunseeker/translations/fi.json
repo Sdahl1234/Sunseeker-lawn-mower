@@ -270,7 +270,12 @@
                     "continue_mowing": "Jatka leikkaamista",
                     "stuck": "Jumissa",
                     "updating_firmware": "Laiteohjelmistoa paivitetaan",
-                    "enter_pin": "Syota PIN-koodi"
+                    "enter_pin": "Syota PIN-koodi",
+                    "auto_mapping": "Automaattinen kartoitus",
+                    "build_map_paused": "Kartoituksen rakentaminen keskeytetty",
+                    "remote_control": "Kauko-ohjaus",
+                    "sleep": "Unitila",
+                    "edge_confirming": "Reunan vahvistus"
                 }
             },
             "sunseeker_battery": {
@@ -381,7 +386,12 @@
                     "continue_mowing": "Jatka leikkaamista",
                     "stuck": "Jumissa",
                     "updating_firmware": "Laiteohjelmistoa paivitetaan",
-                    "enter_pin": "Syota PIN-koodi"
+                    "enter_pin": "Syota PIN-koodi",
+                    "auto_mapping": "Automaattinen kartoitus",
+                    "build_map_paused": "Kartoituksen rakentaminen keskeytetty",
+                    "remote_control": "Kauko-ohjaus",
+                    "sleep": "Unitila",
+                    "edge_confirming": "Reunan vahvistus"
                 }
             }
         },

@@ -290,7 +290,12 @@
  					"continue_mowing": "Kontynuuje koszenie",
           "stuck": "Utknęła",
           "updating_firmware": "Aktualizacja firmware",
-		  "enter_pin": "Wprowadź pin"
+		  "enter_pin": "Wprowadź pin",
+          "auto_mapping": "Automatyczne mapowanie",
+          "build_map_paused": "Budowanie mapy wstrzymane",
+          "remote_control": "Pilot",
+          "sleep": "Uśpienie",
+          "edge_confirming": "Potwierdzanie krawędzi"
           }
         },
         "sunseeker_battery": {
@@ -398,7 +403,12 @@
  					"continue_mowing": "Kontynuuje koszenie",
           "stuck": "Utknęła",
           "updating_firmware": "Aktualizacja firmware",
-		  "enter_pin": "Wprowadź pin"
+		  "enter_pin": "Wprowadź pin",
+          "auto_mapping": "Automatyczne mapowanie",
+          "build_map_paused": "Budowanie mapy wstrzymane",
+          "remote_control": "Pilot",
+          "sleep": "Uśpienie",
+          "edge_confirming": "Potwierdzanie krawędzi"
           }
         }
       },

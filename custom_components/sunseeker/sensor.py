@@ -23,11 +23,14 @@ from .const import (
     SUB_MODEL_GEN3,
     SUB_MODEL_V3,
     SUB_MODEL_V18,
+    SUNSEEKER_AUTO_MAPPING,
+    SUNSEEKER_BUILD_MAP_PAUSED,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
     SUNSEEKER_CONTINUE_CUTTING,
     SUNSEEKER_DRY,
     SUNSEEKER_DRY_COUNTDOWN,
+    SUNSEEKER_EDGE_CONFIRMING,
     SUNSEEKER_ENTERPIN,
     SUNSEEKER_ERROR,
     SUNSEEKER_FIRMWARE_UPDATE,
@@ -36,13 +39,14 @@ from .const import (
     SUNSEEKER_MOWING_BORDER,
     SUNSEEKER_OFFLINE,
     SUNSEEKER_PAUSE,
+    SUNSEEKER_REMOTE_CONTROL,
     SUNSEEKER_RETURN,
     SUNSEEKER_RETURN_PAUSE,
+    SUNSEEKER_SLEEP,
     SUNSEEKER_STANDBY,
     SUNSEEKER_STOP,
     SUNSEEKER_STUCK,
     SUNSEEKER_UNKNOWN,
-    SUNSEEKER_UNKNOWN_4,
     SUNSEEKER_WET,
     SUNSEEKER_WORKING,
 )
@@ -937,7 +941,10 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             val = self.device.devicedata["data"].get(self._valuepair)
         elif self._valuepair == "Mode":
             ival = self.device.mode
-            if self.device.errortype != 0 and self.device.model == MODEL_OLD:
+            if self.device.errortype != 0 and self.device.model in (
+                MODEL_OLD,
+                MODEL_V1,
+            ):
                 lang = self.hass.config.language
                 if lang == "da":
                     codes = _OLD_ERROR_CODES_DA
@@ -978,7 +985,9 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             elif ival == 3:
                 val = SUNSEEKER_PAUSE
             elif ival == 4:
-                val = SUNSEEKER_UNKNOWN_4
+                val = SUNSEEKER_AUTO_MAPPING
+            elif ival == 5:
+                val = SUNSEEKER_BUILD_MAP_PAUSED
             elif ival == 6:
                 val = SUNSEEKER_ERROR
             elif ival == 7:
@@ -989,6 +998,10 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                 val = SUNSEEKER_CHARGING
             elif ival == 10:
                 val = SUNSEEKER_CHARGING_FULL
+            elif ival == 11:
+                val = SUNSEEKER_REMOTE_CONTROL
+            elif ival == 12:
+                val = SUNSEEKER_SLEEP
             elif ival == 13:
                 val = SUNSEEKER_OFFLINE
             elif ival == 14:
@@ -1001,10 +1014,12 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                 val = SUNSEEKER_STUCK
             elif ival == 18:
                 val = SUNSEEKER_STOP
+            elif ival == 19:
+                val = SUNSEEKER_EDGE_CONFIRMING
             elif ival == 20:
                 val = SUNSEEKER_ENTERPIN
             else:
-                val = SUNSEEKER_UNKNOWN + " (Code: " + str(ival) + ")"
+                val = SUNSEEKER_IDLE + " (Code: " + str(ival) + ")"
         elif self._valuepair == "wifi_lv":
             val = self.device.wifi_lv
         elif self._valuepair == "rain_status":
