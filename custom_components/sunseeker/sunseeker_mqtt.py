@@ -1090,7 +1090,12 @@ class SunseekermqttController:
         """Handle mqtt data."""
         device.power = self.setvalue(nu, data, [], "power", device.power)
         device.mode = self.setvalue(nu, data, [], "mode", device.mode)
-        device.errortype = self.setvalue(nu, data, [], "errortype", device.errortype)
+        if "mode" in data and "errortype" not in data:
+            device.errortype = 0
+        else:
+            device.errortype = self.setvalue(
+                nu, data, [], "errortype", device.errortype
+            )
         # msg/event code V1
         if self.model in (MODEL_V1, MODEL_OLD):
             device.eventcode = self.setvalue(nu, data, [], "msg", device.eventcode)
