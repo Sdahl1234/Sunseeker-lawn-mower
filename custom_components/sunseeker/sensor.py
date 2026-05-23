@@ -3,6 +3,7 @@
 # import logging
 import pathlib
 import time
+import xml.etree.ElementTree as ET
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import AREA, PERCENTAGE, UnitOfTime
@@ -71,6 +72,59 @@ def _load_event_codes(lang: str, prefix: str = "EventCodes") -> dict[int, str]:
 
 Test = LOGLEVEL == 10
 
+_OLD_ERROR_INT_TO_NAME: dict[int, str] = {
+    1: "updown",
+    2: "trapped",
+    3: "work_area_exceeds_set_value",
+    4: "lift_up",
+    8: "dock_toomany_failed",
+    16: "no_border",
+    32: "outofarea",
+    64: "sensor_timeout",
+    128: "battery_too_high",
+    256: "battery_too_low",
+    512: "battery_error",
+    1024: "border_unconnect",
+    2048: "timeout_along_line",
+    4096: "nosignal_one",
+    8192: "over_dl",
+    16384: "overtime_dl",
+    32768: "battery_comm_error",
+    65536: "overlage",
+    131072: "charging_overtime",
+    262144: "charging_current_too_low",
+    524288: "wheel_block",
+    1048576: "blade_block",
+    2097152: "sloop_steep",
+    4194304: "display_error",
+    8388608: "boundary_error",
+    16777216: "battery2_too_high",
+    33554432: "battery2_too_low",
+    67108864: "ultrasonic_sensor_error",
+    134217728: "hardware_module_error",
+    1342177279: "other_error",
+}
+
+
+def _load_old_error_codes(lang: str) -> dict[int, str]:
+    """Load OLD model error codes from the bundled XML file for the given language."""
+    filepath = pathlib.Path(__file__).parent / "lang_files" / f"old_{lang}.xml"
+    name_to_text: dict[str, str] = {}
+    try:
+        tree = ET.parse(filepath)  # noqa: S314
+        for elem in tree.getroot().iter("string"):
+            name = elem.get("name")
+            if name and elem.text:
+                name_to_text[name] = elem.text
+    except (FileNotFoundError, ET.ParseError):
+        pass
+    return {
+        code: name_to_text[name]
+        for code, name in _OLD_ERROR_INT_TO_NAME.items()
+        if name in name_to_text
+    }
+
+
 _EVENT_CODES_DA: dict[int, str] = _load_event_codes("da")
 _EVENT_CODES_EN: dict[int, str] = _load_event_codes("en")
 _EVENT_CODES_DE: dict[int, str] = _load_event_codes("de")
@@ -84,6 +138,13 @@ _V1_EVENT_CODES_DE: dict[int, str] = _load_event_codes("de", "V1_EventCodes")
 _V1_EVENT_CODES_FR: dict[int, str] = _load_event_codes("fr", "V1_EventCodes")
 _V1_EVENT_CODES_FI: dict[int, str] = _load_event_codes("fi", "V1_EventCodes")
 _V1_EVENT_CODES_PL: dict[int, str] = _load_event_codes("pl", "V1_EventCodes")
+
+_OLD_ERROR_CODES_DA: dict[int, str] = _load_old_error_codes("da")
+_OLD_ERROR_CODES_EN: dict[int, str] = _load_old_error_codes("en")
+_OLD_ERROR_CODES_DE: dict[int, str] = _load_old_error_codes("de")
+_OLD_ERROR_CODES_FR: dict[int, str] = _load_old_error_codes("fr")
+_OLD_ERROR_CODES_FI: dict[int, str] = _load_old_error_codes("fi")
+_OLD_ERROR_CODES_PL: dict[int, str] = _load_old_error_codes("pl")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
@@ -878,13 +939,38 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             val = self.device.devicedata["data"].get(self._valuepair)
         elif self._valuepair == "Mode":
             ival = self.device.mode
-            if self.device.errortype != 0:
-                val = (
-                    self.device.devicedata["data"].get("faultStatusCode", "")
-                    + " ("
-                    + str(self.device.errortype)
-                    + ")"
-                )
+            if self.device.errortype != 0 and self.device.model == MODEL_OLD:
+                lang = self.hass.config.language
+                if lang == "da":
+                    codes = _OLD_ERROR_CODES_DA
+                elif lang == "de":
+                    codes = _OLD_ERROR_CODES_DE
+                elif lang == "fr":
+                    codes = _OLD_ERROR_CODES_FR
+                elif lang == "fi":
+                    codes = _OLD_ERROR_CODES_FI
+                elif lang == "pl":
+                    codes = _OLD_ERROR_CODES_PL
+                else:
+                    codes = _OLD_ERROR_CODES_EN
+                val = codes.get(self.device.errortype, f"Error {self.device.errortype}")
+            elif self.device.model == MODEL_OLD:
+                if ival == 0:
+                    val = SUNSEEKER_STANDBY
+                elif ival == 1:
+                    val = SUNSEEKER_WORKING
+                elif ival == 2:
+                    val = SUNSEEKER_RETURN
+                elif ival == 3:
+                    val = SUNSEEKER_CHARGING
+                elif ival == 5:
+                    val = SUNSEEKER_ENTERPIN
+                elif ival == 6:
+                    val = SUNSEEKER_FIRMWARE_UPDATE
+                elif ival == 7:
+                    val = SUNSEEKER_MOWING_BORDER
+                else:
+                    val = SUNSEEKER_ERROR
             elif ival == 0:
                 if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                     val = SUNSEEKER_UNKNOWN
@@ -1072,6 +1158,21 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             if self._source == "Etext":
                 if val == 0:
                     val = "normal"
+                elif self.device.model == MODEL_OLD:
+                    lang = self.hass.config.language
+                    if lang == "da":
+                        codes = _OLD_ERROR_CODES_DA
+                    elif lang == "de":
+                        codes = _OLD_ERROR_CODES_DE
+                    elif lang == "fr":
+                        codes = _OLD_ERROR_CODES_FR
+                    elif lang == "fi":
+                        codes = _OLD_ERROR_CODES_FI
+                    elif lang == "pl":
+                        codes = _OLD_ERROR_CODES_PL
+                    else:
+                        codes = _OLD_ERROR_CODES_EN
+                    val = codes.get(val, f"Error {val}")
                 elif val == 2:
                     val = "Trapped"
                 elif val == 16:

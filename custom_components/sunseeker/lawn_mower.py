@@ -14,6 +14,7 @@ from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
+    MODEL_OLD,
     MODEL_S,
     MODEL_V,
     MODEL_X,
@@ -40,6 +41,14 @@ from .const import (
     SUNSEEKER_WORKING,
 )
 from .entity import SunseekerEntity
+from .sensor import (
+    _OLD_ERROR_CODES_DA,
+    _OLD_ERROR_CODES_DE,
+    _OLD_ERROR_CODES_EN,
+    _OLD_ERROR_CODES_FI,
+    _OLD_ERROR_CODES_FR,
+    _OLD_ERROR_CODES_PL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -99,15 +108,40 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
     @property
     def state(self) -> str | None:
         """Return the current state."""
-        if self.device.errortype != 0:
-            return (
-                self.device.devicedata["data"].get("faultStatusCode", "")
-                + " ("
-                + str(self.device.errortype)
-                + ")"
-            )
+        if self.device.errortype != 0 and self.device.model == MODEL_OLD:
+            lang = self.hass.config.language
+            if lang == "da":
+                codes = _OLD_ERROR_CODES_DA
+            elif lang == "de":
+                codes = _OLD_ERROR_CODES_DE
+            elif lang == "fr":
+                codes = _OLD_ERROR_CODES_FR
+            elif lang == "fi":
+                codes = _OLD_ERROR_CODES_FI
+            elif lang == "pl":
+                codes = _OLD_ERROR_CODES_PL
+            else:
+                codes = _OLD_ERROR_CODES_EN
+            return codes.get(self.device.errortype, f"Error {self.device.errortype}")
         ival = self.device.mode
-
+        if self.device.model == MODEL_OLD:
+            if ival == 0:
+                val = SUNSEEKER_STANDBY
+            elif ival == 1:
+                val = SUNSEEKER_WORKING
+            elif ival == 2:
+                val = SUNSEEKER_RETURN
+            elif ival == 3:
+                val = SUNSEEKER_CHARGING
+            elif ival == 5:
+                val = SUNSEEKER_ENTERPIN
+            elif ival == 6:
+                val = SUNSEEKER_FIRMWARE_UPDATE
+            elif ival == 7:
+                val = SUNSEEKER_MOWING_BORDER
+            else:
+                val = SUNSEEKER_ERROR
+            return val
         if ival == 0:
             if self.device.model in (MODEL_X, MODEL_S, MODEL_V):
                 val = SUNSEEKER_UNKNOWN
