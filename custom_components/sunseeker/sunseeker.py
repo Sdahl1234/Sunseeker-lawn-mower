@@ -160,7 +160,7 @@ class SunseekerRoboticmower:
                         self.mqtt_controllers.append(mqtt_controller)
 
         if self.debug:
-            json_file = Path(__file__).parent / "GetDeviceList_V3.json"
+            json_file = Path(__file__).parent / "GetDeviceList.json"
             if json_file.is_file():
                 _LOGGER.warning("Loading device list from local file: %s", json_file)
                 with json_file.open(encoding="utf-8") as f:

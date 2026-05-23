@@ -1,4 +1,4 @@
 *.pyc
 custom_components/sunseeker/README.md
-custom_components/sunseeker/GetDeviceList_V3.json
+custom_components/sunseeker/GetDeviceList.json
 custom_components/sunseeker/Path.json
