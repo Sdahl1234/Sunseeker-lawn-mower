@@ -4,7 +4,7 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.13
+#### V1.2.14
 
 ## Tested models
   - Adano RM5, RM6, RM9
@@ -27,6 +27,9 @@ Search for *Sunseeker robotic mower* and add it.
 In Home Assistant, create a folder under *custom_components* named *sunseeker* and copy all the content of this project to that folder.
 Restart Home Assistant and go to *Devices and Services* and press *+Add integration*.
 Search for *Sunseeker robotic mower* and add it.
+
+## Python version
+This integration requires **Python 3.14 or newer**. Home Assistant 2025.1 and later ships with Python 3.14, so no manual action is needed when running a supported HA release.
 
 ## Configuration
 - Producent: If your mower is not on the list, just select sunseeker
@@ -168,6 +171,7 @@ In addition to the shared entities above, X and S models include:
 - **{zone} Cutting pattern** - Per-zone cutting pattern
 - **{zone} Work speed** - Per-zone work speed
 - **{zone} Cutting gap** - Per-zone cutting gap
+- **Map drawing** - Simple, Simple with border, Advanced, Advanced with border, All
 
 ### Numbers
 - **Blade speed** - Speed of the cutting blades
