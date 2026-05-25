@@ -1097,7 +1097,7 @@ class SunseekermqttController:
                 nu, data, [], "errortype", device.errortype
             )
         # msg/event code V1
-        if self.model in (MODEL_V1, MODEL_OLD):
+        if device.model in (MODEL_V1, MODEL_OLD):
             device.eventcode = self.setvalue(nu, data, [], "msg", device.eventcode)
 
         if "data" in data:
@@ -1161,7 +1161,7 @@ class SunseekermqttController:
             if "Sun" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Sun"), 7)
                 upd.schedule = True
-        if self.model in (MODEL_V, MODEL_V1):
+        if device.model in (MODEL_V, MODEL_V1):
             # V models
             device.screen_lock = self.setvalue(
                 nu, data, [], "duration", device.screen_lock

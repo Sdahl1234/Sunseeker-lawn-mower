@@ -70,6 +70,10 @@ MAP_DRAW_MODES = [
     MAP_DRAW_MODE_ALL,
 ]
 
+RCX4 = "RCX4"
+RCX6 = "RCX6"
+X = "X"
+S = "S"
 S3 = "S3"
 S4 = "S4"
 S5 = "S5"

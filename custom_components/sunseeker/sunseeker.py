@@ -23,6 +23,8 @@ from .const import (
     MODEL_V,
     MODEL_V1,
     MODEL_X,
+    RCX4,
+    RCX6,
     REGION_EU,
     REGION_US,
     SUB_MODEL_GEN1,
@@ -35,6 +37,13 @@ from .const import (
     URL_OLD,
     URL_XV_EU,
     URL_XV_US,
+    V1,
+    V18,
+    V3,
+    X,
+    S,
+    X5,
+    X7,
 )
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_mqtt import SunseekermqttController
@@ -63,8 +72,7 @@ class SunseekerRoboticmower:
         self.password = password
         self.deviceArray = []  # array of deviceSn
         self.session = {}  # response from login
-        self.devicelist_SXV_models = {}  # response from get devicelist X
-        self.devicelist_V1_models = {}
+        self.devicelist_NEW_models = {}  # response from get devicelist X
         self.devicelist_OLD_models = {}
         self.refresh_token_interval = None
         self.refresh_token_timeout = None
@@ -78,6 +86,8 @@ class SunseekerRoboticmower:
         self.host = self.getHOST(self.apptype)
 
         self.mqtt_controllers: list[SunseekermqttController] = []
+        self.need_sxv_mqtt = False
+        self.need_V1_mqtt = False
 
     def on_load(self):
         """Login."""
@@ -141,12 +151,12 @@ class SunseekerRoboticmower:
                     )
                     self.mqtt_controllers.append(mqtt_controller)
         else:
-            # dtypes = [MODEL_S, MODEL_X, MODEL_V, MODEL_V1]
-            dtypes = [MODEL_SXV, MODEL_V1]
-            for model in dtypes:
-                devicelist = self.get_device_list(self.apptype, model)
-                if devicelist and devicelist.get("data", []):
-                    if self.add_devices(devicelist, self.apptype, model):
+            devicelist = self.get_device_list(
+                self.apptype, MODEL_SXV
+            )  # any model just not old
+            if devicelist and devicelist.get("data", []):
+                if self.add_devices(devicelist, self.apptype, MODEL_SXV):
+                    if self.need_V1_mqtt:
                         mqtt_controller = SunseekermqttController(
                             self,
                             self.session["username"],
@@ -154,7 +164,19 @@ class SunseekerRoboticmower:
                             self.session["access_token"],
                             self.region,
                             self.apptype,
-                            model,
+                            MODEL_V1,
+                            self.url,
+                        )
+                        self.mqtt_controllers.append(mqtt_controller)
+                    if self.need_sxv_mqtt:
+                        mqtt_controller = SunseekermqttController(
+                            self,
+                            self.session["username"],
+                            self.session["user_id"],
+                            self.session["access_token"],
+                            self.region,
+                            self.apptype,
+                            MODEL_SXV,
                             self.url,
                         )
                         self.mqtt_controllers.append(mqtt_controller)
@@ -222,27 +244,26 @@ class SunseekerRoboticmower:
     def add_devices(self, devicelist, apptype: str, model: str) -> bool:
         """Adds the devices from a devicelist."""
         Added: bool = False
-        parsed_model = model
         for device in devicelist["data"]:
             device_sn = device["deviceSn"]
-            if device["modelName"].startswith(("V18", "V3")):
+            if device["modelName"].startswith((V18, V3)):
                 model = MODEL_V
-            elif device["modelName"].startswith("X"):
+            elif device["modelName"].startswith((X, RCX4, RCX6)):
                 model = MODEL_X
-            elif device["modelName"].startswith("S"):
+            elif device["modelName"].startswith(S):
                 model = MODEL_S
-            elif device["modelName"].startswith("V1"):
+            elif device["modelName"].startswith(V1):
                 model = MODEL_V1
-
-            # V1 models are diffrent.
-            if model == MODEL_V1 and parsed_model == MODEL_SXV:
-                continue
-            if (model != MODEL_V1) and parsed_model == MODEL_V1:
-                continue
 
             if device_sn not in self.deviceArray:
                 Added = True
-
+                self.need_sxv_mqtt = (
+                    model == MODEL_S
+                    or model == MODEL_X
+                    or model == MODEL_V
+                    or self.need_sxv_mqtt
+                )
+                self.need_V1_mqtt = model == MODEL_V1 or self.need_V1_mqtt
                 deviceId = device["deviceId"]
                 userid = device["appUserId"]
                 self.deviceArray.append(device_sn)
@@ -252,17 +273,22 @@ class SunseekerRoboticmower:
                 ad.language = self.language
                 ad.deviceId = deviceId
                 ad.DeviceModel = device["deviceModelName"]
-                ad.ModelName = device.get("modelName", "")
+                if device.get("modelName", "") == RCX4:
+                    ad.ModelName = X5
+                elif device.get("modelName", "") == RCX6:
+                    ad.ModelName = X7
+                else:
+                    ad.ModelName = device.get("modelName", "")
                 if apptype == APPTYPE_NEW:
                     if "Gen 3" in ad.ModelName:
                         ad.submodel = SUB_MODEL_GEN3
                     elif "Gen 2" in ad.ModelName:
                         ad.submodel = SUB_MODEL_GEN2
-                    elif "V18" in ad.ModelName:
+                    elif V18 in ad.ModelName:
                         ad.submodel = SUB_MODEL_V18
-                    elif "V3" in ad.ModelName:
+                    elif V3 in ad.ModelName:
                         ad.submodel = SUB_MODEL_V3
-                    elif "V1" in ad.ModelName:
+                    elif V1 in ad.ModelName:
                         ad.submodel = SUB_MODEL_V1
                     else:
                         ad.submodel = SUB_MODEL_GEN1
@@ -317,17 +343,15 @@ class SunseekerRoboticmower:
             # We don't need them but....
             if apptype == APPTYPE_OLD:
                 self.devicelist_OLD_models = response_data
-            elif model == MODEL_V1:
-                self.devicelist_V1_models = response_data
             else:
-                self.devicelist_SXV_models = response_data
+                self.devicelist_NEW_models = response_data
             _LOGGER.debug(json.dumps(response_data))
 
             if response_data["code"] != 0:
                 _LOGGER.debug("Error getting device list")
                 _LOGGER.debug(json.dumps(response_data))
                 return None
-            lg = f"Found {len(response_data['data'])} devices on server: {model}"
+            lg = f"Found {len(response_data['data'])} devices on server: {url}"
             _LOGGER.info(lg)
             return response_data  # noqa: TRY300
 
