@@ -137,21 +137,27 @@ class SunseekerMap:
             MAP_DRAW_MODE_SIMPLE_BORDER,
         )
 
-        type_colors: dict[int, tuple] = {9: self.work_color}  # always draw mowing
+        type_colors: dict[int, tuple] = {
+            9: self.work_color,
+            137: self.work_color,  # new firmware mowing type
+        }
         if draw_border:
             type_colors[12] = (0, 200, 255)
+            type_colors[140] = (0, 200, 255)  # new firmware border type
         # if draw_transitions:
         #    type_colors[11] = (255, 165, 0)  # arc / approach turns
-        bridge_types = {17, 13, 19}
+        bridge_types = {17, 13, 19, 139}  # 139 = new firmware bridge type
         short_transit_max = 2.0  # metres
 
         # Pre-segment data into (ptype, xy_points, total_distance) runs.
         runs: list[tuple[int, list[tuple[float, float]], float]] = []
         i = 0
         while i < len(data):
-            ptype = int(data[i][2])
+            ptype = int(data[i][2]) if len(data[i]) > 2 else -1
             j = i + 1
-            while j < len(data) and int(data[j][2]) == ptype:
+            while (
+                j < len(data) and (int(data[j][2]) if len(data[j]) > 2 else -1) == ptype
+            ):
                 j += 1
             pts = [(data[k][0], data[k][1]) for k in range(i, j)]
             total_dist = sum(
@@ -176,6 +182,7 @@ class SunseekerMap:
         for ptype, pts, total_dist in runs:
             if self.draw_mode == MAP_DRAW_MODE_ALL:
                 all_type_colors: dict[int, tuple] = {
+                    # Old firmware types
                     9: self.work_color,
                     10: self.work_color,
                     11: (255, 165, 0),
@@ -186,8 +193,15 @@ class SunseekerMap:
                     17: (255, 220, 0),
                     18: (100, 200, 100),
                     19: (100, 100, 200),
+                    # New firmware types
+                    137: self.work_color,  # new mowing (like 9)
+                    138: self.work_color,  # new transition (like 10)
+                    139: (255, 220, 0),  # new bridge connector (like 17)
+                    140: (0, 200, 255),  # new border/perimeter (like 12)
+                    144: (200, 100, 100),  # new obstacle-related (like 16)
+                    146: (100, 200, 100),  # new obstacle-related (like 18)
                 }
-                color = all_type_colors.get(ptype, (128, 128, 128))
+                color = all_type_colors.get(ptype, self.work_color)
                 transformed = [transform(p) for p in pts]
                 if seg_color == color:
                     segment.extend(transformed)
@@ -202,7 +216,7 @@ class SunseekerMap:
                     segment.extend(transform(p) for p in pts)
                 continue
 
-            if ptype == 10:
+            if ptype in (10, 138):  # 138 = new firmware transition type
                 color = (
                     self.work_color
                     if draw_transitions and total_dist < short_transit_max
@@ -307,10 +321,10 @@ class SunseekerMap:
                     data = self._live_type10_pending + list(data)
                     self._live_type10_pending = []
 
-                # Find the trailing type-10 run — it may not be complete yet.
+                # Find the trailing type-10/138 run — it may not be complete yet.
                 trailing_start = len(data)
                 for idx in range(len(data) - 1, -1, -1):
-                    if int(data[idx][2]) == 10:
+                    if len(data[idx]) > 2 and int(data[idx][2]) in (10, 138):
                         trailing_start = idx
                     else:
                         break
