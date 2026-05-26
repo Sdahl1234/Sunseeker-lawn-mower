@@ -502,6 +502,7 @@
       "sunseeker_night_work": { "name": "Nachtarbeit" },
       "sunseeker_energy_saving": { "name": "Energiesparmodus" },
       "sunseeker_auto_ride_edge": { "name": "Automatische Randfahrt" },
+      "sunseeker_cliff_detect": { "name": "Absturzerkennung" },
       "sunseeker_above_edge": { "name": "Kantenfahrt" }
     },
     "number": {

@@ -166,6 +166,7 @@ class SunseekerDevice:
         self.zigzag_2 = SunseekerZigZag()
         self.zigzag_3 = SunseekerZigZag()
         self.zigzag_4 = SunseekerZigZag()
+        self.cliff_detect = False
 
     def InitDevice(self) -> None:
         """Setup the device."""
@@ -213,6 +214,7 @@ class SunseekerDevice:
         elif self.model == MODEL_V1:
             self.device_firmware = self.devicedata["data"].get("firmwareVersion", "")
 
+        self.cliff_detect = self.settings["data"].get("cliffDetectEnable", False)
         self.dis_along_border = self.settings["data"].get("disAlongBorder", 1)
         self.above_edge = self.settings["data"].get("aboveEdge", False)
         self.device_firmware_new = self.device_firmware
@@ -227,6 +229,7 @@ class SunseekerDevice:
             self.schedule_cancel = self.settings["data"].get("scheduleCancel", "")
             self.task_type = self.settings["data"].get("taskType", "")
             self.oneshot_task_type = self.settings["data"].get("oneshotTaskType", "")
+            self.border_first = self.settings["data"].get("firstAlongBorder", "")
 
         self.InitMapAndZoneData()
 
@@ -322,7 +325,7 @@ class SunseekerDevice:
             if self.model in (MODEL_X, MODEL_S):
                 self.recharge_mode = self.settings["data"].get("rechargeMode", 0)
                 self.plan_mode = self.settings["data"].get("planMode", 0)
-                self.plan_angle = self.settings["data"].get("planValue", 0)
+                self.plan_angle = self.settings["data"].get("planValue") or 0
 
                 ci = self.settings["data"].get("consumableItemsObject", None)
                 if ci:
@@ -2227,7 +2230,7 @@ class SunseekerDevice:
                     return
 
     def set_auto_ride_edge(self, value: int):
-        """Set auto ride edge mode X gen2."""
+        """Set auto ride edge mode."""
         data = {
             "appId": self.userid,
             "deviceSn": self.devicesn,
@@ -2251,12 +2254,24 @@ class SunseekerDevice:
         self.set_property(data)
 
     def set_night_work(self, value: bool):
-        """Set nightwork X Gen2."""
+        """Set nightwork."""
         data = {
             "appId": self.userid,
             "deviceSn": self.devicesn,
             "id": "setNightWork",
             "key": "night_work",
+            "method": "set_property",
+            "value": value,
+        }
+        self.set_property(data)
+
+    def set_cliff_detect(self, value: bool):
+        """Set cliff detect."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setCliffDetect",
+            "key": "cliff_detect",
             "method": "set_property",
             "value": value,
         }

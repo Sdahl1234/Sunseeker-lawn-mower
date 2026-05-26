@@ -501,6 +501,7 @@
             "sunseeker_night_work": { "name": "Travail de nuit" },
             "sunseeker_energy_saving": { "name": "Mode économie d'énergie" },
             "sunseeker_auto_ride_edge": { "name": "Bord automatique" },
+            "sunseeker_cliff_detect": { "name": "Détection de falaise" },
             "sunseeker_above_edge": { "name": "Rouler sur la bordure" }
         },
         "number": {

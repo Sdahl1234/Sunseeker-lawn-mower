@@ -76,8 +76,9 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.data_handler = data_handler
         self.devicesn = devicesn
         self.device: SunseekerDevice = self.data_handler.get_device(devicesn)
-        self.model = self.device.model
-        self.submodel = self.device.submodel
+        self.model = self.device.model  # X MODELS
+        self.submodel = self.device.submodel  # GEN1
+        self.modelname = self.device.ModelName  # X3
         self.apptype = self.device.apptype
         self.device.dataupdated = self.dataupdated
         self._schedule_store: Store = Store(

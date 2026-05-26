@@ -510,6 +510,7 @@
         "sunseeker_night_work": { "name": "Praca nocna" },
         "sunseeker_energy_saving": { "name": "Oszczędzanie energii" },
         "sunseeker_auto_ride_edge": { "name": "Automatyczny przejazd krawędzi" },
+        "sunseeker_cliff_detect": { "name": "Wykrywanie urwisk" },
         "sunseeker_above_edge": { "name": "Jazda po krawędziach" }
       },
       "number": {

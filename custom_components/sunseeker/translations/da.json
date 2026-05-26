@@ -511,6 +511,7 @@
 			"sunseeker_night_work": { "name": "Natarbejde" },
 			"sunseeker_energy_saving": { "name": "Energibesparelse" },
 			"sunseeker_auto_ride_edge": { "name": "Auto kantkørsel" },
+			"sunseeker_cliff_detect": { "name": "Klippedetektion" },
 			"sunseeker_above_edge": { "name": "Kantklip på kanten" }
 		},
 		"number": {

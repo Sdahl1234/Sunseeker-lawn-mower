@@ -490,6 +490,7 @@
             "sunseeker_night_work": { "name": "Yötyö" },
             "sunseeker_energy_saving": { "name": "Energiansäästö" },
             "sunseeker_auto_ride_edge": { "name": "Automaattinen reunaajo" },
+            "sunseeker_cliff_detect": { "name": "Putoamistunnistus" },
             "sunseeker_above_edge": { "name": "Reunalla ajo" }
         },
         "number": {

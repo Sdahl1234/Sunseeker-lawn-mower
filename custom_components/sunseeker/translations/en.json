@@ -512,6 +512,7 @@
         "sunseeker_night_work": { "name": "Night work" },
         "sunseeker_energy_saving": { "name": "Energy saving" },
         "sunseeker_auto_ride_edge": { "name": "Auto ride edge" },
+        "sunseeker_cliff_detect": { "name": "Cliff detect" },
         "sunseeker_above_edge": { "name": "Ride on edge" }
       },
       "number": {

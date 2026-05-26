@@ -13,6 +13,18 @@ from .const import (
     MODEL_V,
     MODEL_V1,
     MODEL_X,
+    S4,
+    S5,
+    S5GEN2,
+    X3GEN2,
+    X4,
+    X5,
+    X5GEN2,
+    X5GEN3,
+    X7,
+    X7GEN2,
+    X7GEN3,
+    X9,
     SUB_MODEL_GEN2,
     SUB_MODEL_GEN3,
 )
@@ -84,7 +96,19 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                 ]
             )
-            if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+            if coordinator.modelname in (
+                S4,
+                S5,
+                S5GEN2,
+                X4,
+                X5,
+                X5GEN2,
+                X5GEN3,
+                X7,
+                X7GEN2,
+                X7GEN3,
+                X9,
+            ):
                 async_add_entities(
                     [
                         SunseekerNightWorkSwitch(
@@ -92,11 +116,32 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                             "Night work",
                             "sunseeker_night_work",
                         ),
+                    ]
+                )
+            if coordinator.modelname in (
+                S5,
+                X4,
+                X5,
+                X5GEN2,
+                X5GEN3,
+                X7,
+                X7GEN2,
+                X7GEN3,
+                X9,
+            ):
+                async_add_entities(
+                    [
                         SunseekerEnergySavingSwitch(
                             coordinator,
                             "Energy saving",
                             "sunseeker_energy_saving",
                         ),
+                    ]
+                )
+
+            if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+                async_add_entities(
+                    [
                         *[
                             SunseekerZigzagActiveSwitch(
                                 coordinator,
@@ -124,13 +169,32 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                             for i in range(1, 5)
                         )
                 async_add_entities(zigzag_active_custom)
-            if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+            if coordinator.modelname in (S4, X4, X5GEN2, X5GEN3, X7GEN2, X7GEN3, X9):
                 async_add_entities(
                     [
                         SunseekerAutoRideEdgeSwitch(
                             coordinator,
                             "Auto ride edge",
                             "sunseeker_auto_ride_edge",
+                        ),
+                    ]
+                )
+            if coordinator.modelname in (
+                S4,
+                X3GEN2,
+                X4,
+                X5GEN2,
+                X5GEN3,
+                X7GEN2,
+                X7GEN3,
+                X9,
+            ):
+                async_add_entities(
+                    [
+                        SunseekerCliffDetectSwitch(
+                            coordinator,
+                            "Cliff detect",
+                            "sunseeker_cliff_detect",
                         ),
                     ]
                 )
@@ -910,6 +974,54 @@ class SunseekerAutoRideEdgeSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return bool(self.device.auto_ride_edge)
+
+
+class SunseekerCliffDetectSwitch(SunseekerEntity, SwitchEntity):
+    """Switch entity for cliff detection (Model X only)."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:alert-octagram"
+        self.device = self._data_handler.get_device(self._sn)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(
+            self.device.set_Cliff_detect,
+            True,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(
+            self.device.set_Cliff_detect,
+            False,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(
+            self.device.set_Cliff_detect,
+            not self.is_on,
+        )
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return self.device.cliff_detect
 
 
 class SunseekerAboveEdgeSwitch(SunseekerEntity, SwitchEntity):

@@ -13,6 +13,18 @@ from .const import (
     MODEL_X,
     SUB_MODEL_GEN2,
     SUB_MODEL_GEN3,
+    S4,
+    S5,
+    X3,
+    X3GEN2,
+    X4,
+    X5,
+    X5GEN2,
+    X5GEN3,
+    X7,
+    X7GEN2,
+    X7GEN3,
+    X9,
 )
 from .entity import SunseekerEntity
 
@@ -67,16 +79,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                         "Zones",
                         "sunseeker_zones",
                     ),
-                    SunseekerAvoidObjectsSelect(
-                        coordinator,
-                        "Avoiding objects",
-                        "sunseeker_avoiding_objects",
-                    ),
-                    SunseekerAISensSelect(
-                        coordinator,
-                        "AI Sensitivity",
-                        "sunseeker_ai_sensitivity",
-                    ),
                     SunseekerSpeedSelect(
                         coordinator,
                         "Work speed",
@@ -108,9 +110,52 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                     ),
                 ]
             )
-            if coordinator.submodel in (
-                SUB_MODEL_GEN2,
-                SUB_MODEL_GEN3,
+            if coordinator.modelname in (
+                S4,
+                S5,
+                X3,
+                X3GEN2,
+                X4,
+                X5,
+                X5GEN2,
+                X5GEN3,
+                X7,
+                X7GEN2,
+                X7GEN3,
+                X9,
+            ):
+                async_add_entities(
+                    [
+                        SunseekerAvoidObjectsSelect(
+                            coordinator,
+                            "Avoiding objects",
+                            "sunseeker_avoiding_objects",
+                        ),
+                    ]
+                )
+
+            if coordinator.modelname in (S5, X3, X5, X7):
+                async_add_entities(
+                    [
+                        SunseekerAISensSelect(
+                            coordinator,
+                            "AI Sensitivity",
+                            "sunseeker_ai_sensitivity",
+                        ),
+                    ]
+                )
+
+            if coordinator.modelname in (
+                S4,
+                X3,
+                X3GEN2,
+                X5GEN3,
+                X4,
+                X5GEN2,
+                X5GEN3,
+                X7GEN2,
+                X7GEN3,
+                X9,
             ):
                 async_add_entities(
                     [
@@ -121,6 +166,27 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                         ),
                     ]
                 )
+            if coordinator.modelname in (
+                S4,
+                X3GEN2,
+                X3GEN2,
+                X4,
+                X5GEN2,
+                X5GEN3,
+                X7GEN2,
+                X7GEN3,
+                X9,
+            ):
+                async_add_entities(
+                    [
+                        SunseekerDisAlongBorderSelect(
+                            coordinator,
+                            "Border distance",
+                            "sunseeker_dis_along_border",
+                        ),
+                    ]
+                )
+
         if coordinator.model in (MODEL_V1):
             async_add_entities(
                 [

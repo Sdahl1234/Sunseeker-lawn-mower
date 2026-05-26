@@ -1076,6 +1076,10 @@ class SunseekermqttController:
         device.dis_along_border = self.setvalue(
             nu, datanode, [], "dis_along_border", device.dis_along_border
         )
+        device.cliff_detect = self.setvalue(
+            nu, datanode, [], "cliff_detect_enable", device.cliff_detect
+        )
+
         self.handle_mqtt_map_data(upd, nu, data, datanode, device)
         self.handle_mqtt_schedule_data(upd, nu, data, datanode, device)
         self.handle_mqtt_zone_data(upd, nu, data, datanode, device)
