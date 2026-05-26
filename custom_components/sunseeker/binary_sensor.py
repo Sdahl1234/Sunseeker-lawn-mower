@@ -26,7 +26,25 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "Station",
                         "",
                         "sunseeker_dock",
-                    )
+                    ),
+                    SunseekerBinarySensor(
+                        coordinator,
+                        None,
+                        "Multizone",
+                        None,
+                        "mul_en",
+                        "",
+                        "sunseeker_multizone",
+                    ),
+                    SunseekerBinarySensor(
+                        coordinator,
+                        None,
+                        "Multizone auto",
+                        None,
+                        "mul_auto",
+                        "",
+                        "sunseeker_multizoneauto",
+                    ),
                 ]
             )
 
@@ -44,38 +62,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
             for coordinator in robot_coordinators(hass, entry)
         ]
     )
-
-    for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_OLD:
-            async_add_devices(
-                [
-                    SunseekerBinarySensor(
-                        coordinator,
-                        None,
-                        "Multizone",
-                        None,
-                        "mul_en",
-                        "",
-                        "sunseeker_multizone",
-                    )
-                ]
-            )
-
-    for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model == MODEL_OLD:
-            async_add_devices(
-                [
-                    SunseekerBinarySensor(
-                        coordinator,
-                        None,
-                        "Multizone auto",
-                        None,
-                        "mul_auto",
-                        "",
-                        "sunseeker_multizoneauto",
-                    )
-                ]
-            )
 
     async_add_devices(
         [
