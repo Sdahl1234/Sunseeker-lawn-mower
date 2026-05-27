@@ -11,8 +11,6 @@ from .const import (
     MODEL_V,
     MODEL_V1,
     MODEL_X,
-    SUB_MODEL_GEN2,
-    SUB_MODEL_GEN3,
     S4,
     S5,
     X3,
@@ -826,7 +824,7 @@ class SunseekerPlanModeSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+        if coordinator.device.support_multi_angle:
             self._attr_options = ["standard", "change_pattern", "zigzag", "effective"]
         else:
             self._attr_options = ["standard", "change_pattern", "user_defined"]
@@ -855,7 +853,7 @@ class SunseekerPlanModeSelect(SunseekerEntity, SelectEntity):
         }
         plan_mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
-        if self.device.submodel == SUB_MODEL_GEN2:
+        if self.device.support_multi_angle:
             await self.hass.async_add_executor_job(
                 self.device.set_plan_mode_gen2,
                 plan_mode,
@@ -1012,7 +1010,7 @@ class SunseekerCustomPlanModeSelect(SunseekerEntity, SelectEntity):
         self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
         self._sn = self.data_coordinator.devicesn
         self.device = self._data_handler.get_device(self._sn)
-        if coordinator.submodel == SUB_MODEL_GEN2:
+        if coordinator.device.support_multi_angle:
             self._attr_options = ["standard", "change_pattern", "zigzag", "effective"]
         else:
             self._attr_options = ["standard", "change_pattern", "user_defined"]

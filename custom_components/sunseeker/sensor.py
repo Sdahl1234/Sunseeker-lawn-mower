@@ -19,10 +19,7 @@ from .const import (
     MODEL_V1,
     MODEL_X,
     SUB_MODEL_GEN1,
-    SUB_MODEL_GEN2,
-    SUB_MODEL_GEN3,
     SUB_MODEL_V3,
-    SUB_MODEL_V18,
     SUNSEEKER_AUTO_MAPPING,
     SUNSEEKER_BUILD_MAP_PAUSED,
     SUNSEEKER_CHARGING,
@@ -486,8 +483,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     ),
                 ]
             )
-            if coordinator.submodel in (SUB_MODEL_V18):
-                async_add_devices([])
             if coordinator.submodel in (SUB_MODEL_V3):
                 async_add_devices(
                     [
@@ -694,10 +689,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                 ]
             )
 
-            if coordinator.submodel in (
-                SUB_MODEL_GEN2,
-                SUB_MODEL_GEN3,
-            ):
+            if coordinator.device.support_edge_trim:
                 async_add_devices(
                     [
                         SunseekerSensor(

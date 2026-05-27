@@ -16,8 +16,6 @@ from .const import (
     MODEL_V,
     MODEL_V1,
     MODEL_X,
-    SUB_MODEL_GEN2,
-    SUB_MODEL_GEN3,
 )
 from .entity import SunseekerEntity
 
@@ -69,7 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                 ]
             )
-            if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+            if coordinator.device.support_4G_net:
                 async_add_entities(
                     [
                         MowerImage(

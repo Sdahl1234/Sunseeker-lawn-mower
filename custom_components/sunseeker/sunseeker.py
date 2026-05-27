@@ -42,6 +42,7 @@ from .const import (
     V3,
     X,
     S,
+    X4,
     X5,
     X7,
 )
@@ -310,6 +311,17 @@ class SunseekerRoboticmower:
                 ad.device_version = device.get("firmwareVersion", "")
                 self.robotList.append(ad)
                 ad.func_refesh_token = self.refresh_token_callback
+                if ad.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3) or ad.ModelName in (
+                    X4
+                ):
+                    ad.support_multi_angle = True
+                if ad.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3) or ad.ModelName in (
+                    X4
+                ):
+                    ad.support_4G_net = True
+                if ad.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+                    ad.support_edge_trim = True
+
                 ad.InitDevice()
                 lg = f"Added device model: {ad.model} Gen: {ad.submodel}"
                 _LOGGER.info(lg)

@@ -167,6 +167,9 @@ class SunseekerDevice:
         self.zigzag_3 = SunseekerZigZag()
         self.zigzag_4 = SunseekerZigZag()
         self.cliff_detect = False
+        self.support_multi_angle = False
+        self.support_4G_net = False
+        self.support_edge_trim = False
 
     def InitDevice(self) -> None:
         """Setup the device."""

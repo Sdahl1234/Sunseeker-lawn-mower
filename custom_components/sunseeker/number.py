@@ -10,9 +10,6 @@ from .const import (
     MODEL_OLD,
     MODEL_S,
     MODEL_X,
-    SUB_MODEL_GEN1,
-    SUB_MODEL_GEN2,
-    SUB_MODEL_GEN3,
 )
 from .entity import SunseekerEntity
 
@@ -47,7 +44,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                         zid,
                     )
                     blade_height.append(s)
-                    if coordinator.submodel == SUB_MODEL_GEN1:
+                    if not coordinator.device.support_multi_angle:
                         a = SunseekerCustomPlanangleNumber(
                             coordinator,
                             f"{zname} Cutting angle",
@@ -63,10 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
 
     zigzag_angle_custom = []
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model in (MODEL_X, MODEL_S) and coordinator.submodel in (
-            SUB_MODEL_GEN2,
-            SUB_MODEL_GEN3,
-        ):
+        if coordinator.device.support_multi_angle:
             zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
             for zid, zname in zones:
                 if zid != 0:
@@ -102,7 +96,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                 ]
             )
-            if coordinator.submodel in (SUB_MODEL_GEN1):
+            if not coordinator.device.support_multi_angle:
                 async_add_entities(
                     [
                         SunseekerPlanangleNumber(
@@ -110,7 +104,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                         )
                     ]
                 )
-            if coordinator.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+            if coordinator.device.support_multi_angle:
                 async_add_entities(
                     [
                         SunseekerZigzagAngleNumber(
