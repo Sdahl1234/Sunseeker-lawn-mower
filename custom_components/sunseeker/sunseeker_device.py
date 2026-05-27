@@ -389,7 +389,7 @@ class SunseekerDevice:
     def check_ota(self) -> None:
         """Timer to fetch firmware versions."""
         self.check_ota_version(self.devicesn, self.device_firmware, 0)
-        if self.model in (MODEL_X, MODEL_S) and self.submodel == SUB_MODEL_GEN1:
+        if self.model in (MODEL_X, MODEL_S) and not self.support_4G_net:
             self.check_ota_version(self.base_sn, self.base_firmware, 2)
         if self.ota_timer:
             self.ota_timer.cancel()
@@ -1579,7 +1579,7 @@ class SunseekerDevice:
     def set_custon_property(self, zone: SunseekerZone):
         """Set custom zones."""
         try:
-            if self.submodel == SUB_MODEL_GEN1:
+            if not self.support_multi_angle:
                 data = {
                     "appId": self.userid,
                     "deviceSn": self.devicesn,

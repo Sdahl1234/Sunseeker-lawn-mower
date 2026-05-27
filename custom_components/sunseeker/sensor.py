@@ -18,7 +18,6 @@ from .const import (
     MODEL_V,
     MODEL_V1,
     MODEL_X,
-    SUB_MODEL_GEN1,
     SUB_MODEL_V3,
     SUNSEEKER_AUTO_MAPPING,
     SUNSEEKER_BUILD_MAP_PAUSED,

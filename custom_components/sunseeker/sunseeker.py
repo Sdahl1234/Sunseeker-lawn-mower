@@ -335,7 +335,6 @@ class SunseekerRoboticmower:
                     ad.support_multi_angle = True
                 if ad.ModelName in (
                     X3GEN2,
-                    X5GEN3,
                     X4,
                     X5GEN2,
                     X5GEN3,
@@ -350,7 +349,6 @@ class SunseekerRoboticmower:
                 if ad.ModelName in (
                     X3GEN2,
                     X5GEN3,
-                    X4,
                     X5GEN2,
                     X5GEN3,
                     X9,

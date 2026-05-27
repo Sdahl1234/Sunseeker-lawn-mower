@@ -4,7 +4,7 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.16
+#### V1.2.17
 
 ## Tested models
   - Adano RM5, RM6, RM9
@@ -158,8 +158,8 @@ In addition to the shared entities above, X and S models include:
 - **End task** - End the current task *(all X and S)*
 - **Reset blade** - Reset blade health to 100% *(all X and S)*
 - **Reset bladeplade** - Reset bladeplade health to 100% *(all X and S)*
-- **Reset small blade** - Reset small blade *(Gen2 and Gen3 only)*
-- **Reset small bladeplade** - Reset small bladeplade health *(Gen2 and Gen3 only)*
+- **Reset small blade** - Reset small blade *(X3 Gen2/3, X5 Gen2/3, X9)*
+- **Reset small bladeplade** - Reset small bladeplade health *(X3 Gen2/3, X5 Gen2/3, X9)*
 
 ### Switches
 - **Custom zones** - Enable user-defined zone settings *(all X and S)*
@@ -168,7 +168,7 @@ In addition to the shared entities above, X and S models include:
 - **Pause schedule** - Pause/resume the mowing schedule *(all X and S)*
 - **Night work** - Enable/disable night work *(X4, X5, X7, X9, X5 Gen2, X5 Gen3, X7 Gen2, X7 Gen3, S4, S5, S5 Gen2)*
 - **Energy saving** - Turn on/off light *(X4, X5, X7, X9, X5 Gen2, X5 Gen3, X7 Gen2, X7 Gen3, S5)*
-- **{zone} Zigzag active 1–4** - Enable/disable each zigzag angle slot per zone *(Gen2 and Gen3 only)*
+- **{zone} Zigzag active 1–4** - Enable/disable each zigzag angle slot per zone *(X3 Gen2/3, X4, X5 Gen2/3, X7 Gen2/3, X9 only)*
 - **Auto ride edge** - Automatically map and mow outside borders *(X4, X9, X5 Gen2, X5 Gen3, X7 Gen2, X7 Gen3, S4)*
 - **Cliff detect** - Enable/disable cliff detect *(X3 Gen2, X4, X9, X5 Gen2, X5 Gen3, X7 Gen2, X7 Gen3, S4)*
 
@@ -192,10 +192,10 @@ In addition to the shared entities above, X and S models include:
 - **Blade height** - Height of the cutting blades *(all X and S)*
 - **{zone} Blade speed** - Blade speed per zone *(all X and S)*
 - **{zone} Blade height** - Blade height per zone *(all X and S)*
-- **Cutting angle** - Global cutting angle *(Gen1 only)*
-- **{zone} Cutting angle** - Per-zone cutting angle *(Gen1 only)*
-- **Zigzag angle 1–4** - Global zigzag pass angles (0–180°) *(Gen2 and Gen3 only)*
-- **{zone} Zigzag angle 1–4** - Per-zone zigzag pass angles (0–180°) *(Gen2 and Gen3 only)*
+- **Cutting angle** - Global cutting angle *(X3, X5, X7, S3, S4, S5 only)*
+- **{zone} Cutting angle** - Per-zone cutting angle *(X3, X5, X7, S3, S4, S5 only)*
+- **Zigzag angle 1–4** - Global zigzag pass angles (0–180°) *(X3 Gen2/3, X4, X5 Gen2/3, X7 Gen2/3, X9 only)*
+- **{zone} Zigzag angle 1–4** - Per-zone zigzag pass angles (0–180°) *(X3 Gen2/3, X4, X5 Gen2/3, X7 Gen2/3, X9 only)*
 
 ### Sensors
 - **4G Net strength** - 4G network signal strength (if SIM module installed) *(all X and S)*
@@ -213,13 +213,13 @@ In addition to the shared entities above, X and S models include:
 - **Work region** - Zone the mower is currently in, based on its live map position *(all X and S)*
 - **{zone} Estimated time** - Estimated mowing time per zone *(all X and S)*
 - **{zone} Area** - Area size per zone *(all X and S)*
-- **Small blade health** - Small blade health percentage *(Gen2 and Gen3 only)*
-- **Small blade time left** - Time remaining before small blade replacement *(Gen2 and Gen3 only)*
-- **Small cutterplade health** - Small cutterplade health percentage *(Gen2 and Gen3 only)*
-- **Small cutterplade time left** - Time remaining before small cutterplade cleaning *(Gen2 and Gen3 only)*
-- **Base firmware** - Installed base station firmware version *(Gen1 only)*
-- **Base new firmware** - Latest available base station firmware version *(Gen1 only)*
-- **Base serialnumber** - Base station serial number *(Gen1 only)*
+- **Small blade health** - Small blade health percentage *(X3 Gen2/3, X5 Gen2/3, X9 only)*
+- **Small blade time left** - Time remaining before small blade replacement *(X3 Gen2/3, X5 Gen2/3, X9 only)*
+- **Small cutterplade health** - Small cutterplade health percentage *(X3 Gen2/3, X5 Gen2/3, X9 only)*
+- **Small cutterplade time left** - Time remaining before small cutterplade cleaning *(X3 Gen2/3, X5 Gen2/3, X9 only)*
+- **Base firmware** - Installed base station firmware version *(X3, X5, S3, S4, S5 only)*
+- **Base new firmware** - Latest available base station firmware version *(X3, X5, S3, S4, S5 only)*
+- **Base serialnumber** - Base station serial number *(X3, X5, S3, S4, S5 only)*
 
 ### Camera
 - **Live map** - Live map with mower movement *(all X and S)*
@@ -228,7 +228,7 @@ In addition to the shared entities above, X and S models include:
 - **Map** - Map image (use with the map-edit card) *(all X and S)*
 - **Heat map** - Heat map image *(all X and S)*
 - **Wifi map** - Wifi signal map image *(all X and S)*
-- **4G net map** - 4G net map *(Gen2 and Gen3 only)*
+- **4G net map** - 4G net map *(X3 Gen2/3, X4 X5 Gen2/3, X7 Gen2/3, X9, S3, S4 only only)*
 
 ### Text
 - **Charger GPS position** - Set the GPS coordinates of the charging station for accurate mower position tracking *(all X and S)*
@@ -259,10 +259,10 @@ In addition to the shared entities above, X and S models include:
   - **{zonename} Cutting gap** - Narrow, Normal, Wide
   - **{zonename} Cutting pattern** - Standard, Change pattern, User defined
   - **{zonename} Work speed** - Slow, Normal, Fast
-  - **{zonename} Cutting angle** *(Gen1 only)* - Cutting angle when pattern is User defined
+  - **{zonename} Cutting angle** *(X3, X5, X7, S5 only)* - Cutting angle when pattern is User defined
   - **{zonename} Blade speed** - Speed of the blades
   - **{zonename} Blade height** - Height of the blades
-- **Zone settings (Gen2 and Gen3 only)**
+- **Zone settings (X3 Gen2/3, X4, X5 Gen2/3, X7 Gen2/3, X9, S3, S4 only)**
   - **{zonename} Cutting pattern** also supports **Effective** and **Zigzag**
   - **{zonename} Zigzag angle 1–4** *(Number)* - The angle for each zigzag pass in this zone (0–180°). Only active when zone Cutting pattern is Zigzag.
   - **{zonename} Zigzag active 1–4** *(Switch)* - Enable/disable each zigzag angle slot for this zone.
@@ -280,7 +280,7 @@ In addition to the shared entities above, X and S models include:
 - **Live map** - Camera entity of Live Map with mower movements
 - **Heat map** - Image of the heat map
 - **Wifi map** - Image of the wifi map
-- **4G map** - Image of the 4G map *(Gen2 and Gen3 only)*
+- **4G map** - Image of the 4G map
 
 ## Mower Map edit card
 https://github.com/Sdahl1234/sunseeker-map-edit-card
