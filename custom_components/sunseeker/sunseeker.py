@@ -42,9 +42,19 @@ from .const import (
     V3,
     X,
     S,
+    X3GEN2,
     X4,
     X5,
+    X5GEN2,
+    X5GEN3,
     X7,
+    X7GEN2,
+    X7GEN3,
+    X7PLUSGEN3,
+    X9,
+    S3,
+    S4,
+    # S5,
 )
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_mqtt import SunseekermqttController
@@ -311,15 +321,40 @@ class SunseekerRoboticmower:
                 ad.device_version = device.get("firmwareVersion", "")
                 self.robotList.append(ad)
                 ad.func_refesh_token = self.refresh_token_callback
-                if ad.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3) or ad.ModelName in (
-                    X4
+                if ad.ModelName in (
+                    X3GEN2,
+                    X5GEN3,
+                    X4,
+                    X5GEN2,
+                    X5GEN3,
+                    X7GEN2,
+                    X7GEN3,
+                    X7PLUSGEN3,
+                    X9,
                 ):
                     ad.support_multi_angle = True
-                if ad.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3) or ad.ModelName in (
-                    X4
+                if ad.ModelName in (
+                    X3GEN2,
+                    X5GEN3,
+                    X4,
+                    X5GEN2,
+                    X5GEN3,
+                    X7GEN2,
+                    X7GEN3,
+                    X7PLUSGEN3,
+                    X9,
+                    S3,
+                    S4,
                 ):
                     ad.support_4G_net = True
-                if ad.submodel in (SUB_MODEL_GEN2, SUB_MODEL_GEN3):
+                if ad.ModelName in (
+                    X3GEN2,
+                    X5GEN3,
+                    X4,
+                    X5GEN2,
+                    X5GEN3,
+                    X9,
+                ):
                     ad.support_edge_trim = True
 
                 ad.InitDevice()

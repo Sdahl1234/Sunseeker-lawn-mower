@@ -735,7 +735,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     ]
                 )
 
-            if coordinator.submodel == SUB_MODEL_GEN1:
+            if not coordinator.device.support_4G_net:
                 async_add_devices(
                     [
                         SunseekerSensor(
