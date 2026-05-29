@@ -6,11 +6,7 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import (
-    MODEL_OLD,
-    MODEL_S,
-    MODEL_X,
-)
+from .const import MODEL_OLD, MODEL_S, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)

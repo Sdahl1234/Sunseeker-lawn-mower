@@ -3,19 +3,24 @@
 import asyncio
 import logging
 
-from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
+from homeassistant.config_entries import ConfigEntryNotReady
 from homeassistant.const import (
     CONF_EMAIL,
     CONF_MODEL,
     CONF_MODEL_ID,
     CONF_PASSWORD,
+    CONF_REGION,
     Platform,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
-from .const import APPTYPE_OLD, DATAHANDLER, DH, DOMAIN, LOGLEVEL, ROBOTS
-from .coordinator import SunseekerDataCoordinator
+from .const import APPTYPE_OLD, DOMAIN, REGION_EU
+from .coordinator import (
+    SunSeekerConfigEntry,
+    SunseekerDataCoordinator,
+    SunseekerEntryData,
+)
 from .services import async_setup_services
 from .sunseeker import SunseekerRoboticmower
 from .sunseeker_mqtt import mqtt_update_values
@@ -38,30 +43,21 @@ PLATFORMS = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
-if LOGLEVEL == 10:
-    _LOGGER.level = logging.DEBUG
+# _LOGGER.level = logging.DEBUG
 
 
-def robot_coordinators(hass: HomeAssistant, entry: ConfigEntry):
+def robot_coordinators(hass: HomeAssistant, entry: SunSeekerConfigEntry):
     """Help with entity setup."""
-    coordinators: list[SunseekerDataCoordinator] = hass.data[DOMAIN][entry.entry_id][
-        ROBOTS
-    ]
-    yield from coordinators
+    yield from entry.runtime_data.coordinators
 
 
-async def async_setup(hass: HomeAssistant, config):
-    """Set up services."""
-    return await async_setup_services(hass)
-
-
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) -> bool:
     """Set up the Sunseeker mower."""
     email = entry.data.get(CONF_EMAIL)
     password = entry.data.get(CONF_PASSWORD)
     brand = entry.data.get(CONF_MODEL)
     apptype = entry.data.get(CONF_MODEL_ID, APPTYPE_OLD)
-    region = entry.data.get("region", "EU")  # Default to EU if not set
+    region = entry.data.get(CONF_REGION, REGION_EU)
 
     language = hass.config.language
 
@@ -72,9 +68,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     if not data_handler.login_ok:
         _LOGGER.error("Login error")
         raise ConfigEntryNotReady("Login failed")
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DH: data_handler}
 
-    # robot = [1, 2]
     robot = data_handler.deviceArray
     robots = [
         SunseekerDataCoordinator(
@@ -87,8 +81,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         *[coordinator.async_config_entry_first_refresh() for coordinator in robots]
     )
 
-    hass.data[DOMAIN][entry.entry_id][ROBOTS] = robots
-    hass.data[DOMAIN][entry.entry_id][DATAHANDLER] = data_handler
+    entry.runtime_data = SunseekerEntryData(
+        data_handler=data_handler,
+        coordinators=robots,
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -107,20 +103,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 "Initial map refresh failed for %s", dc.devicesn, exc_info=True
             )
 
+    await async_setup_services(hass)
     return True
 
 
-async def async_update_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_update_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) -> None:
     """Update options."""
     await hass.config_entries.async_reload(entry.entry_id)
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        dh: SunseekerRoboticmower
-        dh = hass.data[DOMAIN][entry.entry_id][DATAHANDLER]
-        dh.unload()
-        hass.data[DOMAIN].pop(entry.entry_id)
+        entry.runtime_data.data_handler.unload()
     return unload_ok
+
+
+async def async_migrate_entry(
+    hass: HomeAssistant, config_entry: SunSeekerConfigEntry
+) -> bool:
+    """Handle migration of old entries."""
+    if config_entry.version > 1:
+        _LOGGER.error(
+            "Migration from version %s.%s is not supported",
+            config_entry.version,
+            config_entry.minor_version,
+        )
+        return False
+    return True

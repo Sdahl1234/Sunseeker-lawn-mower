@@ -27,6 +27,9 @@ from .const import (
     RCX6,
     REGION_EU,
     REGION_US,
+    S3,
+    S4,
+    # S5,
     SUB_MODEL_GEN1,
     SUB_MODEL_GEN2,
     SUB_MODEL_GEN3,
@@ -38,10 +41,8 @@ from .const import (
     URL_XV_EU,
     URL_XV_US,
     V1,
-    V18,
     V3,
-    X,
-    S,
+    V18,
     X3GEN2,
     X4,
     X5,
@@ -52,9 +53,8 @@ from .const import (
     X7GEN3,
     X7PLUSGEN3,
     X9,
-    S3,
-    S4,
-    # S5,
+    S,
+    X,
 )
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_mqtt import SunseekermqttController
@@ -254,7 +254,7 @@ class SunseekerRoboticmower:
 
     def add_devices(self, devicelist, apptype: str, model: str) -> bool:
         """Adds the devices from a devicelist."""
-        Added: bool = False
+        added: bool = False
         for device in devicelist["data"]:
             device_sn = device["deviceSn"]
             if device["modelName"].startswith((V18, V3)):
@@ -267,22 +267,19 @@ class SunseekerRoboticmower:
                 model = MODEL_V1
 
             if device_sn not in self.deviceArray:
-                Added = True
+                added = True
                 self.need_sxv_mqtt = (
-                    model == MODEL_S
-                    or model == MODEL_X
-                    or model == MODEL_V
-                    or self.need_sxv_mqtt
+                    model in (MODEL_S, MODEL_X, MODEL_V) or self.need_sxv_mqtt
                 )
                 self.need_V1_mqtt = model == MODEL_V1 or self.need_V1_mqtt
-                deviceId = device["deviceId"]
+                device_id = device["deviceId"]
                 userid = device["appUserId"]
                 self.deviceArray.append(device_sn)
                 ad = SunseekerDevice(device_sn)
                 ad.access_token = self.session["access_token"]
                 ad.userid = userid  # self.session["user_id"]
                 ad.language = self.language
-                ad.deviceId = deviceId
+                ad.deviceId = device_id
                 ad.DeviceModel = device["deviceModelName"]
                 if device.get("modelName", "") == RCX4:
                     ad.ModelName = X5
@@ -358,7 +355,7 @@ class SunseekerRoboticmower:
                 ad.InitDevice()
                 lg = f"Added device model: {ad.model} Gen: {ad.submodel}"
                 _LOGGER.info(lg)
-        return Added
+        return added
 
     def get_device_list(self, apptype: str, model: str):
         """Get device."""

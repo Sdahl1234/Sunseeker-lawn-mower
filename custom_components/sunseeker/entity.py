@@ -8,7 +8,7 @@ from . import SunseekerDataCoordinator
 class SunseekerEntity(CoordinatorEntity[SunseekerDataCoordinator]):
     """Base Sunseeker entity."""
 
-    coordinator = SunseekerDataCoordinator
+    # coordinator = SunseekerDataCoordinator
 
     def __init__(
         self,

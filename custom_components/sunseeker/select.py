@@ -744,9 +744,9 @@ class SunseekerAISensSelect(SunseekerEntity, SelectEntity):
             "low": 0,
             "high": 1,
         }
-        AIfreq = reverse_mapping.get(option, 1)
+        ai_freq = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
-        await self.hass.async_add_executor_job(self.device.set_AIsensitivity, AIfreq)
+        await self.hass.async_add_executor_job(self.device.set_AIsensitivity, ai_freq)
         self._attr_current_option = option
         self.async_write_ha_state()
 

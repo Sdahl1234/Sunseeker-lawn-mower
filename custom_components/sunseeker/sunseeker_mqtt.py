@@ -755,7 +755,7 @@ class SunseekermqttController:
                 upd.start_new_path = True
                 device.map.livepathpoints.clear()
                 device.map.cached_pathpoints.clear()
-                device.map._live_type10_pending.clear()
+                device.map._live_type10_pending.clear()  # noqa: SLF001
                 device.map.realPathmapdata = None
                 device.map.realPathFileUlr = ""
                 device.map.pathurl = ""
@@ -884,7 +884,7 @@ class SunseekermqttController:
                         device.map.pathurl = ""
                         device.map.livepathpoints.clear()
                         device.map.cached_pathpoints.clear()
-                        device.map._live_type10_pending.clear()
+                        device.map._live_type10_pending.clear()  # noqa: SLF001
                         nu.need_update = True
                         upd.map_update = True
                         upd.livemap_update = True
@@ -1212,7 +1212,7 @@ class SunseekermqttController:
         devicesn = data.get("deviceSn")
         device: SunseekerDevice = self.Sunseeker.get_device(devicesn)
         if not device:
-            _LOGGER.debug(f"MQTT message error, DeviceSn: {devicesn} not found")
+            _LOGGER.debug("MQTT message error, DeviceSn: %s not found", devicesn)
             return
         _LOGGER.debug(
             device.DeviceName  # noqa: G003

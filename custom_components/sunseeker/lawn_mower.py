@@ -2,23 +2,25 @@
 
 import logging
 
-from homeassistant.components.lawn_mower import (
-    #    SERVICE_DOCK,
-    #    SERVICE_PAUSE,
-    #    SERVICE_START_MOWING,
-    #    LawnMowerActivity,
-    LawnMowerEntity,
-    LawnMowerEntityFeature,
-)
+from homeassistant.components.lawn_mower import LawnMowerEntity, LawnMowerEntityFeature
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
     MODEL_OLD,
     MODEL_V1,
+    OLD_ERROR_CODES_DA,
+    OLD_ERROR_CODES_DE,
+    OLD_ERROR_CODES_EN,
+    OLD_ERROR_CODES_FI,
+    OLD_ERROR_CODES_FR,
+    OLD_ERROR_CODES_PL,
+    SUNSEEKER_AUTO_MAPPING,
+    SUNSEEKER_BUILD_MAP_PAUSED,
     SUNSEEKER_CHARGING,
     SUNSEEKER_CHARGING_FULL,
     SUNSEEKER_CONTINUE_CUTTING,
+    SUNSEEKER_EDGE_CONFIRMING,
     SUNSEEKER_ENTERPIN,
     SUNSEEKER_ERROR,
     SUNSEEKER_FIRMWARE_UPDATE,
@@ -27,28 +29,17 @@ from .const import (
     SUNSEEKER_MOWING_BORDER,
     SUNSEEKER_OFFLINE,
     SUNSEEKER_PAUSE,
+    SUNSEEKER_REMOTE_CONTROL,
     SUNSEEKER_RETURN,
     SUNSEEKER_RETURN_PAUSE,
+    SUNSEEKER_SLEEP,
     SUNSEEKER_STANDBY,
     SUNSEEKER_STOP,
     SUNSEEKER_STUCK,
     SUNSEEKER_UNKNOWN,
     SUNSEEKER_WORKING,
-    SUNSEEKER_AUTO_MAPPING,
-    SUNSEEKER_BUILD_MAP_PAUSED,
-    SUNSEEKER_REMOTE_CONTROL,
-    SUNSEEKER_SLEEP,
-    SUNSEEKER_EDGE_CONFIRMING,
 )
 from .entity import SunseekerEntity
-from .sensor import (
-    _OLD_ERROR_CODES_DA,
-    _OLD_ERROR_CODES_DE,
-    _OLD_ERROR_CODES_EN,
-    _OLD_ERROR_CODES_FI,
-    _OLD_ERROR_CODES_FR,
-    _OLD_ERROR_CODES_PL,
-)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -106,22 +97,22 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
         return True
 
     @property
-    def state(self) -> str | None:
+    def state(self) -> str | None:  # noqa: C901
         """Return the current state."""
         if self.device.errortype != 0 and self.device.model == MODEL_OLD:
             lang = self.hass.config.language
             if lang == "da":
-                codes = _OLD_ERROR_CODES_DA
+                codes = OLD_ERROR_CODES_DA
             elif lang == "de":
-                codes = _OLD_ERROR_CODES_DE
+                codes = OLD_ERROR_CODES_DE
             elif lang == "fr":
-                codes = _OLD_ERROR_CODES_FR
+                codes = OLD_ERROR_CODES_FR
             elif lang == "fi":
-                codes = _OLD_ERROR_CODES_FI
+                codes = OLD_ERROR_CODES_FI
             elif lang == "pl":
-                codes = _OLD_ERROR_CODES_PL
+                codes = OLD_ERROR_CODES_PL
             else:
-                codes = _OLD_ERROR_CODES_EN
+                codes = OLD_ERROR_CODES_EN
             return codes.get(self.device.errortype, f"Error {self.device.errortype}")
         ival = self.device.mode
         if self.device.model in (MODEL_OLD, MODEL_V1):
@@ -142,7 +133,7 @@ class SunseekerLawnMower(SunseekerEntity, LawnMowerEntity):
             else:
                 val = SUNSEEKER_ERROR
             return val
-        elif ival == 0:
+        if ival == 0:
             val = SUNSEEKER_UNKNOWN
         elif ival == 1:
             val = SUNSEEKER_IDLE

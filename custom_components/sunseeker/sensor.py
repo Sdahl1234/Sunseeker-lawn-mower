@@ -1,9 +1,7 @@
 """Sensor."""
 
-# import logging
 import pathlib
 import time
-import xml.etree.ElementTree as ET
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import AREA, PERCENTAGE, UnitOfTime
@@ -12,12 +10,17 @@ from homeassistant.core import HomeAssistant
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import (
     DOMAIN,
-    LOGLEVEL,
     MODEL_OLD,
     MODEL_S,
     MODEL_V,
     MODEL_V1,
     MODEL_X,
+    OLD_ERROR_CODES_DA,
+    OLD_ERROR_CODES_DE,
+    OLD_ERROR_CODES_EN,
+    OLD_ERROR_CODES_FI,
+    OLD_ERROR_CODES_FR,
+    OLD_ERROR_CODES_PL,
     SUB_MODEL_V3,
     SUNSEEKER_AUTO_MAPPING,
     SUNSEEKER_BUILD_MAP_PAUSED,
@@ -68,61 +71,6 @@ def _load_event_codes(lang: str, prefix: str = "EventCodes") -> dict[int, str]:
     return codes
 
 
-Test = LOGLEVEL == 10
-
-_OLD_ERROR_INT_TO_NAME: dict[int, str] = {
-    1: "updown",
-    2: "trapped",
-    3: "work_area_exceeds_set_value",
-    4: "lift_up",
-    8: "dock_toomany_failed",
-    16: "no_border",
-    32: "outofarea",
-    64: "sensor_timeout",
-    128: "battery_too_high",
-    256: "battery_too_low",
-    512: "battery_error",
-    1024: "border_unconnect",
-    2048: "timeout_along_line",
-    4096: "nosignal_one",
-    8192: "over_dl",
-    16384: "overtime_dl",
-    32768: "battery_comm_error",
-    65536: "overlage",
-    131072: "charging_overtime",
-    262144: "charging_current_too_low",
-    524288: "wheel_block",
-    1048576: "blade_block",
-    2097152: "sloop_steep",
-    4194304: "display_error",
-    8388608: "boundary_error",
-    16777216: "battery2_too_high",
-    33554432: "battery2_too_low",
-    67108864: "ultrasonic_sensor_error",
-    134217728: "hardware_module_error",
-    1342177279: "other_error",
-}
-
-
-def _load_old_error_codes(lang: str) -> dict[int, str]:
-    """Load OLD model error codes from the bundled XML file for the given language."""
-    filepath = pathlib.Path(__file__).parent / "lang_files" / f"old_{lang}.xml"
-    name_to_text: dict[str, str] = {}
-    try:
-        tree = ET.parse(filepath)  # noqa: S314
-        for elem in tree.getroot().iter("string"):
-            name = elem.get("name")
-            if name and elem.text:
-                name_to_text[name] = elem.text
-    except (FileNotFoundError, ET.ParseError):
-        pass
-    return {
-        code: name_to_text[name]
-        for code, name in _OLD_ERROR_INT_TO_NAME.items()
-        if name in name_to_text
-    }
-
-
 _EVENT_CODES_DA: dict[int, str] = _load_event_codes("da")
 _EVENT_CODES_EN: dict[int, str] = _load_event_codes("en")
 _EVENT_CODES_DE: dict[int, str] = _load_event_codes("de")
@@ -136,13 +84,6 @@ _V1_EVENT_CODES_DE: dict[int, str] = _load_event_codes("de", "V1_EventCodes")
 _V1_EVENT_CODES_FR: dict[int, str] = _load_event_codes("fr", "V1_EventCodes")
 _V1_EVENT_CODES_FI: dict[int, str] = _load_event_codes("fi", "V1_EventCodes")
 _V1_EVENT_CODES_PL: dict[int, str] = _load_event_codes("pl", "V1_EventCodes")
-
-_OLD_ERROR_CODES_DA: dict[int, str] = _load_old_error_codes("da")
-_OLD_ERROR_CODES_EN: dict[int, str] = _load_old_error_codes("en")
-_OLD_ERROR_CODES_DE: dict[int, str] = _load_old_error_codes("de")
-_OLD_ERROR_CODES_FR: dict[int, str] = _load_old_error_codes("fr")
-_OLD_ERROR_CODES_FI: dict[int, str] = _load_old_error_codes("fi")
-_OLD_ERROR_CODES_PL: dict[int, str] = _load_old_error_codes("pl")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
@@ -770,82 +711,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     ]
                 )
 
-        if Test:
-            async_add_devices(
-                [
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Task ID",
-                        None,
-                        "task_id",
-                        "",
-                        "mdi:identifier",
-                        "sunseeker_task_id",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Schedule cancel",
-                        None,
-                        "schedule_cancel",
-                        "",
-                        "mdi:calendar-remove",
-                        "sunseeker_schedule_cancel",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Normal done",
-                        None,
-                        "normal_done",
-                        "",
-                        "mdi:check-circle",
-                        "sunseeker_normal_done",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "End reason",
-                        None,
-                        "end_reason",
-                        "",
-                        "mdi:flag-checkered",
-                        "sunseeker_end_reason",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Oneshot task type",
-                        None,
-                        "oneshot_task_type",
-                        "",
-                        "mdi:play-circle",
-                        "sunseeker_oneshot_task_type",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Start reason",
-                        None,
-                        "start_reason",
-                        "",
-                        "mdi:play",
-                        "sunseeker_start_reason",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
-                        None,
-                        "Task type",
-                        None,
-                        "task_type",
-                        "",
-                        "mdi:clipboard-text",
-                        "sunseeker_task_type",
-                    ),
-                ]
-            )
-
 
 class SunseekerSensor(SunseekerEntity, SensorEntity):
     """Sunseeker sensor."""
@@ -894,28 +759,28 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
         """Add schedule."""
 
         if len(data) > 0:
-            Start = None
-            End = None
-            Trimming = None
+            start_val = None
+            end_val = None
+            trimming_val = None
             for key, value in data.items():
                 if key == "slice":
                     for a in value[0].items():
                         if a[0] == "start":
-                            Start = a[1]
+                            start_val = a[1]
                         if a[0] == "end":
-                            End = a[1]
+                            end_val = a[1]
                 if key == "Trimming":
-                    Trimming = value
-            if Start is not None:
+                    trimming_val = value
+            if start_val is not None:
                 attributes[f"{day}_Start"] = time.strftime(
-                    "%H:%M", time.gmtime(int(Start) * 60)
+                    "%H:%M", time.gmtime(int(start_val) * 60)
                 )[0:5]
-            if End is not None:
+            if end_val is not None:
                 attributes[f"{day}_End"] = time.strftime(
-                    "%H:%M", time.gmtime(int(End) * 60)
+                    "%H:%M", time.gmtime(int(end_val) * 60)
                 )[0:5]
-            if Trimming is not None:
-                attributes[f"{day}_Border"] = Trimming
+            if trimming_val is not None:
+                attributes[f"{day}_Border"] = trimming_val
 
     # This property is important to let HA know if this entity is online or not.
     # If an entity is offline (return False), the UI will reflect this.
@@ -938,17 +803,17 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             ):
                 lang = self.hass.config.language
                 if lang == "da":
-                    codes = _OLD_ERROR_CODES_DA
+                    codes = OLD_ERROR_CODES_DA
                 elif lang == "de":
-                    codes = _OLD_ERROR_CODES_DE
+                    codes = OLD_ERROR_CODES_DE
                 elif lang == "fr":
-                    codes = _OLD_ERROR_CODES_FR
+                    codes = OLD_ERROR_CODES_FR
                 elif lang == "fi":
-                    codes = _OLD_ERROR_CODES_FI
+                    codes = OLD_ERROR_CODES_FI
                 elif lang == "pl":
-                    codes = _OLD_ERROR_CODES_PL
+                    codes = OLD_ERROR_CODES_PL
                 else:
-                    codes = _OLD_ERROR_CODES_EN
+                    codes = OLD_ERROR_CODES_EN
                 val = codes.get(self.device.errortype, f"Error {self.device.errortype}")
             elif self.device.model in (MODEL_OLD, MODEL_V1):
                 if ival == 0:
@@ -1059,7 +924,7 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             a = self.device.taskCoverArea
             b = self.device.taskTotalArea
             if not a or not b or self.device.taskTotalArea == 0:
-                val = round(0)
+                val = 0
             else:
                 # Calculate the progress as a percentage
                 # V1 does not provide this
@@ -1150,17 +1015,17 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                 elif self.device.model == MODEL_OLD:
                     lang = self.hass.config.language
                     if lang == "da":
-                        codes = _OLD_ERROR_CODES_DA
+                        codes = OLD_ERROR_CODES_DA
                     elif lang == "de":
-                        codes = _OLD_ERROR_CODES_DE
+                        codes = OLD_ERROR_CODES_DE
                     elif lang == "fr":
-                        codes = _OLD_ERROR_CODES_FR
+                        codes = OLD_ERROR_CODES_FR
                     elif lang == "fi":
-                        codes = _OLD_ERROR_CODES_FI
+                        codes = OLD_ERROR_CODES_FI
                     elif lang == "pl":
-                        codes = _OLD_ERROR_CODES_PL
+                        codes = OLD_ERROR_CODES_PL
                     else:
-                        codes = _OLD_ERROR_CODES_EN
+                        codes = OLD_ERROR_CODES_EN
                     val = codes.get(val, f"Error {val}")
                 elif val == 2:
                     val = "Trapped"

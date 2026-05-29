@@ -3,13 +3,13 @@
 from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
 from . import SunseekerDataCoordinator
-from .const import DATAHANDLER, DOMAIN, ROBOTS
+from .const import DOMAIN
+from .coordinator import SunSeekerConfigEntry
 
 TO_REDACT = {
     CONF_EMAIL,
@@ -98,29 +98,25 @@ def _build_device_payload(coordinator: SunseekerDataCoordinator) -> dict[str, An
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, config_entry: ConfigEntry
+    hass: HomeAssistant, config_entry: SunSeekerConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    entry_data = hass.data[DOMAIN][config_entry.entry_id]
-    data_handler = entry_data.get(DATAHANDLER)
-    coordinators: list[SunseekerDataCoordinator] = entry_data.get(ROBOTS, [])
+    entry_data = config_entry.runtime_data
+    data_handler = entry_data.data_handler
+    coordinators: list[SunseekerDataCoordinator] = entry_data.coordinators
 
     payload: dict[str, Any] = {
         "config_entry": config_entry.as_dict(),
         "data_handler": {
-            "brand": data_handler.brand if data_handler else None,
-            "apptype": data_handler.apptype if data_handler else None,
-            "region": data_handler.region if data_handler else None,
-            "url": data_handler.url if data_handler else None,
-            "host": data_handler.host if data_handler else None,
-            "deviceArray": data_handler.deviceArray if data_handler else [],
-            "session": data_handler.session if data_handler else {},
-            "devicelist_OLD_models": (
-                data_handler.devicelist_OLD_models if data_handler else {}
-            ),
-            "devicelist_V1_models": data_handler.devicelist_NEW_models
-            if data_handler
-            else {},
+            "brand": data_handler.brand,
+            "apptype": data_handler.apptype,
+            "region": data_handler.region,
+            "url": data_handler.url,
+            "host": data_handler.host,
+            "deviceArray": data_handler.deviceArray,
+            "session": data_handler.session,
+            "devicelist_OLD_models": data_handler.devicelist_OLD_models,
+            "devicelist_V1_models": data_handler.devicelist_NEW_models,
         },
         "devices": [_build_device_payload(coordinator) for coordinator in coordinators],
     }
@@ -129,11 +125,12 @@ async def async_get_config_entry_diagnostics(
 
 
 async def async_get_device_diagnostics(
-    hass: HomeAssistant, config_entry: ConfigEntry, device: DeviceEntry
+    hass: HomeAssistant, config_entry: SunSeekerConfigEntry, device: DeviceEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a device."""
-    entry_data = hass.data[DOMAIN][config_entry.entry_id]
-    coordinators: list[SunseekerDataCoordinator] = entry_data.get(ROBOTS, [])
+    coordinators: list[SunseekerDataCoordinator] = (
+        config_entry.runtime_data.coordinators
+    )
     coordinator = _coordinator_from_device(coordinators, device)
 
     if coordinator is None:

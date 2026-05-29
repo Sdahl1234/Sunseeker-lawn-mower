@@ -4,19 +4,14 @@ import io
 import json
 import logging
 
+import requests
+
 from homeassistant.components.image import ImageEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
-import requests
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import (
-    MODEL_OLD,
-    MODEL_S,
-    MODEL_V,
-    MODEL_V1,
-    MODEL_X,
-)
+from .const import MODEL_OLD, MODEL_S, MODEL_V, MODEL_V1, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)

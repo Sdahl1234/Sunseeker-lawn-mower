@@ -1,7 +1,8 @@
 """Constants for sunseeker integration."""
 
-LOGLEVEL_DEBUG = 0
-LOGLEVEL = LOGLEVEL_DEBUG
+import pathlib
+import xml.etree.ElementTree as ET
+
 SERIAL_NO = "serial_no"
 DOMAIN = "sunseeker"
 ROBOTS = "robots"
@@ -147,3 +148,65 @@ CMDURL_S = "/iot_mower/wireless/device/"
 CMDURL_X = "/iot_mower/wireless/device/"
 CMDURL_V = "/iot_mower/wireless/device/"
 CMDURL_V1 = "/app_wirelessv1_mower/wirelessv1/device/"
+
+# --- Old-model error codes (loaded from bundled XML lang files) ---
+
+_OLD_ERROR_INT_TO_NAME: dict[int, str] = {
+    1: "updown",
+    2: "trapped",
+    3: "work_area_exceeds_set_value",
+    4: "lift_up",
+    8: "dock_toomany_failed",
+    16: "no_border",
+    32: "outofarea",
+    64: "sensor_timeout",
+    128: "battery_too_high",
+    256: "battery_too_low",
+    512: "battery_error",
+    1024: "border_unconnect",
+    2048: "timeout_along_line",
+    4096: "nosignal_one",
+    8192: "over_dl",
+    16384: "overtime_dl",
+    32768: "battery_comm_error",
+    65536: "overlage",
+    131072: "charging_overtime",
+    262144: "charging_current_too_low",
+    524288: "wheel_block",
+    1048576: "blade_block",
+    2097152: "sloop_steep",
+    4194304: "display_error",
+    8388608: "boundary_error",
+    16777216: "battery2_too_high",
+    33554432: "battery2_too_low",
+    67108864: "ultrasonic_sensor_error",
+    134217728: "hardware_module_error",
+    1342177279: "other_error",
+}
+
+
+def _load_old_error_codes(lang: str) -> dict[int, str]:
+    """Load OLD model error codes from the bundled XML file for the given language."""
+    filepath = pathlib.Path(__file__).parent / "lang_files" / f"old_{lang}.xml"
+    name_to_text: dict[str, str] = {}
+    try:
+        tree = ET.parse(filepath)  # noqa: S314
+        for elem in tree.getroot().iter("string"):
+            name = elem.get("name")
+            if name and elem.text:
+                name_to_text[name] = elem.text
+    except (FileNotFoundError, ET.ParseError):
+        pass
+    return {
+        code: name_to_text[name]
+        for code, name in _OLD_ERROR_INT_TO_NAME.items()
+        if name in name_to_text
+    }
+
+
+OLD_ERROR_CODES_DA: dict[int, str] = _load_old_error_codes("da")
+OLD_ERROR_CODES_EN: dict[int, str] = _load_old_error_codes("en")
+OLD_ERROR_CODES_DE: dict[int, str] = _load_old_error_codes("de")
+OLD_ERROR_CODES_FR: dict[int, str] = _load_old_error_codes("fr")
+OLD_ERROR_CODES_FI: dict[int, str] = _load_old_error_codes("fi")
+OLD_ERROR_CODES_PL: dict[int, str] = _load_old_error_codes("pl")

@@ -597,24 +597,28 @@ class SunseekerSchedule:
         self.GetDay(daynumber).mqtt_day = data
         asc: SunseekerScheduleDay = self.GetDay(daynumber)
         if len(data) > 0:
-            Start = None
-            End = None
-            Trimming = None
+            start_val = None
+            end_val = None
+            trimming_val = None
             for key, value in data.items():
                 if key == "slice":
                     for a in value[0].items():
                         if a[0] == "start":
-                            Start = a[1]
+                            start_val = a[1]
                         if a[0] == "end":
-                            End = a[1]
+                            end_val = a[1]
                 if key == "Trimming":
-                    Trimming = value
-            if Start is not None:
-                asc.start = time.strftime("%H:%M", time.gmtime(int(Start) * 60))[0:5]
-            if End is not None:
-                if int(End) == 1440:
+                    trimming_val = value
+            if start_val is not None:
+                asc.start = time.strftime("%H:%M", time.gmtime(int(start_val) * 60))[
+                    0:5
+                ]
+            if end_val is not None:
+                if int(end_val) == 1440:
                     asc.end = "24:00"
                 else:
-                    asc.end = time.strftime("%H:%M", time.gmtime(int(End) * 60))[0:5]
-            if Trimming is not None:
-                asc.trim = Trimming
+                    asc.end = time.strftime("%H:%M", time.gmtime(int(end_val) * 60))[
+                        0:5
+                    ]
+            if trimming_val is not None:
+                asc.trim = trimming_val

@@ -12,8 +12,8 @@ from PIL import Image, ImageDraw
 import requests
 
 from .const import (
-    MAP_DRAW_MODE_ALL,
     MAP_DRAW_MODE_ADVANCED_BORDER,
+    MAP_DRAW_MODE_ALL,
     MAP_DRAW_MODE_SIMPLE,
     MAP_DRAW_MODE_SIMPLE_BORDER,
     MODEL_S,
@@ -697,8 +697,8 @@ class SunseekerMap:
                 self.mappathdata = response_data["data"].get("realPathData", None)
 
                 # Get map path data
-                realPathFileUlr = response_data["data"].get("realPathFileUlr", None)
-                self.get_path_data(realPathFileUlr)
+                real_path_file_url = response_data["data"].get("realPathFileUlr", None)
+                self.get_path_data(real_path_file_url)
 
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001

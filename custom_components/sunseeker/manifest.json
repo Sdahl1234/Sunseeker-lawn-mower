@@ -4,7 +4,7 @@
   "codeowners": ["@Sdahl1234"],
   "config_flow": true,
   "documentation": "https://github.com/Sdahl1234/Sunseeker-lawn-mower",
-  "integration_type": "device",
+  "integration_type": "hub",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/Sdahl1234/Sunseeker-lawn-mower/issues",
   "requirements": ["requests", "paho-mqtt"],

@@ -4,16 +4,25 @@ import logging
 
 import voluptuous as vol
 
+from homeassistant.const import CONF_ENTITY_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 
-from .const import DOMAIN, LOGLEVEL, ROBOTS
+from .const import DOMAIN
 from .coordinator import SunseekerDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-if LOGLEVEL == 10:
-    _LOGGER.level = logging.DEBUG
+
+
+def _find_coordinator(hass: HomeAssistant, dsn: str) -> SunseekerDataCoordinator | None:
+    """Find the coordinator for a device serial number across all loaded entries."""
+    for config_entry in hass.config_entries.async_loaded_entries(DOMAIN):
+        for coordinator in config_entry.runtime_data.coordinators:
+            if coordinator.devicesn == dsn:
+                return coordinator
+    return None
+
 
 SERVICE_SET_SCHEDULE = "set_schedule"
 SERVICE_START_MOWING = "start_mowing"
@@ -30,27 +39,27 @@ SERVICE_GET_WORK_RECORDS = "get_work_records"
 
 SET_DELETE_BACKUP = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
         vol.Required("mapid"): cv.string,
     }
 )
 SET_RESTORE_MAP = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
         vol.Required("mapid"): cv.string,
     }
 )
 
 SET_BACKUP_MAP = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
         vol.Required("mapid"): cv.string,
     }
 )
 
 SET_PIN_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
         vol.Required("old_pin"): cv.string,
         vol.Required("new_pin"): cv.string,
     }
@@ -58,34 +67,34 @@ SET_PIN_SCHEMA = vol.Schema(
 
 SET_MAP_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
         vol.Required("map"): dict,
     }
 )
 
 SET_SCHEDULE_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): vol.All(str),
+        vol.Required(CONF_ENTITY_ID): vol.All(str),
         vol.Required("schedule"): dict,
     }
 )
 
 STOP_MOWING_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
     }
 )
 
 START_MOWING_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
         vol.Required("zones"): vol.All(cv.ensure_list, [cv.string]),
     }
 )
 
 START_MOWING_SELECTED_AREA_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
         vol.Required("points"): vol.All(
             cv.ensure_list,
             [
@@ -101,20 +110,20 @@ START_MOWING_SELECTED_AREA_SCHEMA = vol.Schema(
 
 STOP_TASK_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
     }
 )
 
 LOAD_WORK_RECORD_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
         vol.Required("url"): cv.string,
     }
 )
 
 GET_WORK_RECORDS_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_id,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
         vol.Optional("pos", default=1): vol.All(vol.Coerce(int), vol.Range(min=1)),
         vol.Optional("count", default=10): vol.All(
             vol.Coerce(int), vol.Range(min=1, max=50)
@@ -126,6 +135,8 @@ GET_WORK_RECORDS_SCHEMA = vol.Schema(
 
 async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
     """Register all Sunseeker service calls."""
+    if hass.services.has_service(DOMAIN, SERVICE_SET_SCHEDULE):
+        return True
 
     async def async_handle_delete_bckup(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -137,18 +148,13 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             raise HomeAssistantError(f"Entity {entity_id} not found")
 
         dsn = entry.unique_id.split("_")[1]  # Example: "mower_CE1234563534545"
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.delete_backup,
-                        int(mapid),
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.delete_backup,
+            int(mapid),
+        )
 
     async def async_handle_restore_map(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -160,18 +166,13 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             raise HomeAssistantError(f"Entity {entity_id} not found")
 
         dsn = entry.unique_id.split("_")[1]  # Example: "mower_CE1234563534545"
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.restore_map,
-                        int(mapid),
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.restore_map,
+            int(mapid),
+        )
 
     async def async_handle_backup_map(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -183,18 +184,13 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             raise HomeAssistantError(f"Entity {entity_id} not found")
 
         dsn = entry.unique_id.split("_")[1]  # Example: "mower_CE1234563534545"
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.backup_map,
-                        int(mapid),
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.backup_map,
+            int(mapid),
+        )
 
     async def async_handle_set_schedule(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -206,18 +202,13 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             raise HomeAssistantError(f"Entity {entity_id} not found")
 
         dsn = entry.unique_id.split("_")[1]  # Example: "mower_CE1234563534545"
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.set_schedule_new,
-                        schedule,
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.set_schedule_new,
+            schedule,
+        )
 
     async def async_handle_set_map(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -229,18 +220,13 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             raise HomeAssistantError(f"Entity {entity_id} not found")
 
         dsn = entry.unique_id.split("_")[1]  # Example: "mower_CE1234563534545"
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.set_map,
-                        map_data,
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.set_map,
+            map_data,
+        )
 
     async def async_handle_set_pin(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -255,17 +241,12 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         dsn = entry.unique_id.split(".")[
             2
         ]  # Example: "Sunseeker_lawnmower.name.CE1234563534545"
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.change_pincode, oldpin, newpin
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.change_pincode, oldpin, newpin
+        )
 
     async def async_handle_mower_start(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -279,19 +260,14 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         dsn = entry.unique_id.split(".")[
             2
         ]  # Example: "Sunseeker_lawnmower.name.CE1234563534545"
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    zoneids = device.Schedule_new.get_id_by_name(zones)
-                    await hass.async_add_executor_job(
-                        device.start_mowing,
-                        zoneids,
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        zoneids = coordinator.device.Schedule_new.get_id_by_name(zones)
+        await hass.async_add_executor_job(
+            coordinator.device.start_mowing,
+            zoneids,
+        )
 
     async def async_handle_mower_stop(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -304,17 +280,12 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         dsn = entry.unique_id.split(".")[
             2
         ]  # Example: "Sunseeker_lawnmower.name.CE1234563534545"
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.stop,
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.stop,
+        )
 
     async def async_handle_mower_start_selected_area(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -328,18 +299,13 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         dsn = entry.unique_id.split(".")[
             2
         ]  # Example: "Sunseeker_lawnmower.name.CE1234563534545"
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.start_mowing_selected_area,
-                        points,
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.start_mowing_selected_area,
+            points,
+        )
 
     async def async_handle_mower_stop_task(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -352,17 +318,12 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         dsn = entry.unique_id.split(".")[
             2
         ]  # Example: "Sunseeker_lawnmower.name.CE1234563534545"
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.stop_task,
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.stop_task,
+        )
 
     async def async_handle_load_work_record(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -374,18 +335,13 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             raise HomeAssistantError(f"Entity {entity_id} not found")
 
         dsn = entry.unique_id.split("_")[1]
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.load_work_record_detail,
-                        url,
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.load_work_record_detail,
+            url,
+        )
 
     async def async_handle_get_work_records(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -399,20 +355,15 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             raise HomeAssistantError(f"Entity {entity_id} not found")
 
         dsn = entry.unique_id.split("_")[1]
-        for entry_id, data in hass.data.get(DOMAIN, {}).items():  # noqa: B007, PERF102
-            robots = data.get(ROBOTS, [])
-            for coordinator_ in robots:
-                coordinator: SunseekerDataCoordinator = coordinator_
-                if coordinator.devicesn == dsn:
-                    device = coordinator.device
-                    await hass.async_add_executor_job(
-                        device.get_work_records,
-                        pos,
-                        count,
-                        append,
-                    )
-                    return
-        raise HomeAssistantError(f"Device for {entity_id} not found")
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        await hass.async_add_executor_job(
+            coordinator.device.get_work_records,
+            pos,
+            count,
+            append,
+        )
 
     hass.services.async_register(
         DOMAIN,
