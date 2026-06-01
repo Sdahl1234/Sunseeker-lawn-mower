@@ -43,12 +43,12 @@ This integration requires **Python 3.14 or newer**. Home Assistant 2025.1 and la
 ## Translation
 English, Danish, German, Finnish, French and Polish
 
-# Lovelace cards (Only working with wireless models)
-- Schedule card: https://github.com/Sdahl1234/sunseeker-schedule-card
-- Mower control card: https://github.com/Sdahl1234/sunseeker-mower-control-card
-- Mower zones card: https://github.com/Sdahl1234/sunseeker-zone-card
-- Mower map-edit card: https://github.com/Sdahl1234/sunseeker-map-edit-card
-- Mower work-record card: https://github.com/Sdahl1234/sunseeker-work-record-card
+# Lovelace cards
+- **Schedule card** *(wireless models and old models)* - https://github.com/Sdahl1234/sunseeker-schedule-card
+- **Mower control card** *(wireless models only)* - https://github.com/Sdahl1234/sunseeker-mower-control-card
+- **Mower zones card** *(wireless models only)* - https://github.com/Sdahl1234/sunseeker-zone-card
+- **Mower map-edit card** *(wireless models only)* - https://github.com/Sdahl1234/sunseeker-map-edit-card
+- **Mower work-record card** *(wireless models only)* - https://github.com/Sdahl1234/sunseeker-work-record-card
 
 # Entities
 
@@ -272,7 +272,11 @@ In addition to the shared entities above, X and S models include:
 ## Schedule
 - **Pause schedule** *(V1, X, S)* - Turns on/off the schedule
 - **Repeat time work** *(V, X, S)* - If enabled the mower continues mowing after end cycle
-- **Schedule** - Sensor with attributes containing the schedule. This is the one you must use in the schedule card https://github.com/Sdahl1234/sunseeker-schedule-card
+- **Schedule** - Sensor with attributes containing the full schedule object. This sensor is used as the `entity` in the schedule card and as the target for the `set_schedule` action.
+
+The schedule card works with both wireless models (V, V1, X, S) and old wired models. Point the card at the **Schedule** sensor entity.
+
+https://github.com/Sdahl1234/sunseeker-schedule-card
 <img width="905" height="854" alt="image" src="https://github.com/user-attachments/assets/f8674bcc-1afd-4ef4-9890-8c9e57b1ca72" />
 
 ## Map *(X and S models only)*
@@ -321,7 +325,7 @@ For the **Mower position** tracker to be accurate, the integration needs to know
 | **Stop mowing** | Stop the mower | `entity_id` (lawn_mower) |
 | **Start mowing selected area** | Start mowing a manually drawn polygon area | `entity_id` (lawn_mower), `points` – list of `[x, y]` coordinates |
 | **Stop task** | Stop the current mower task | `entity_id` (lawn_mower) |
-| **Set schedule** | Apply a complete schedule object to the mower | `entity_id` (schedule sensor), `schedule` – schedule dict |
+| **Set schedule** | Apply a complete schedule to the mower. Works for both wireless and old wired models. The schedule card calls this action automatically when you press Submit. | `entity_id` (schedule sensor), `schedule` – schedule dict |
 | **Set map** | Upload updated map data to the mower | `entity_id` (image entity), `schedule` – map dict |
 | **Backup map** | Save the current map under a backup ID | `entity_id` (lawn_mower), `mapid` – backup ID string |
 | **Restore map** | Restore a previously backed-up map | `entity_id` (lawn_mower), `mapid` – backup ID string |
@@ -396,7 +400,8 @@ For the **Mower position** tracker to be accurate, the integration needs to know
 - **Zone1,2,3,4** - Same as the number entity
 - **Error** - error text returned for the mower
 - **Errorcode** - The errorcode returned for the mower
-- **Schedule** - The state is always schedule, and contains the schedule settings as attributes.
+- **Schedule** - The state is always "schedule", and contains the full schedule as a `schedule` attribute. Use this entity in the **schedule card** (https://github.com/Sdahl1234/sunseeker-schedule-card) to view and edit the mowing schedule. The card calls the `set_schedule` action automatically when you press Submit.
+  Each day entry contains: `enabled`, `starttime` (HH:MM), `endtime` (HH:MM), `trim` (border trimming on/off).
 - **Event** - Eventscodes maped to text from app
 
 ## Device tracker
