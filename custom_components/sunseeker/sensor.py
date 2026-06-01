@@ -1110,6 +1110,25 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
             self.AddAttributes("Saturday", data, attributes)
             data = self.device.Schedule.GetDay(7).mqtt_day
             self.AddAttributes("Sunday", data, attributes)
+            day_map = [
+                (1, "monday"),
+                (2, "tuesday"),
+                (3, "wednesday"),
+                (4, "thursday"),
+                (5, "friday"),
+                (6, "saturday"),
+                (7, "sunday"),
+            ]
+            sched: dict = {"model_type": "old"}
+            for day_num, day_name in day_map:
+                d = self.device.Schedule.GetDay(day_num)
+                sched[day_name] = {
+                    "enabled": not (d.start == "00:00" and d.end == "00:00"),
+                    "starttime": d.start,
+                    "endtime": d.end,
+                    "trim": d.trim,
+                }
+            attributes["schedule"] = sched
         return attributes
 
     @property

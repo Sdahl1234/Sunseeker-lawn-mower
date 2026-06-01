@@ -1086,6 +1086,34 @@ class SunseekerDevice:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set_schedule: failed {error}")  # noqa: G004
 
+    def set_schedule_old(self, timedata: dict) -> None:
+        """Set schedule from service call for old model mowers."""
+        day_map = [
+            (1, "monday"),
+            (2, "tuesday"),
+            (3, "wednesday"),
+            (4, "thursday"),
+            (5, "friday"),
+            (6, "saturday"),
+            (7, "sunday"),
+        ]
+        for day_num, day_name in day_map:
+            entry = timedata.get(day_name, {})
+            if not isinstance(entry, dict):
+                continue
+            day = self.Schedule.GetDay(day_num)
+            if day is None:
+                continue
+            if entry.get("enabled", False):
+                day.start = entry.get("starttime", "00:00")
+                day.end = entry.get("endtime", "00:00")
+                day.trim = entry.get("trim", False)
+            else:
+                day.start = "00:00"
+                day.end = "00:00"
+                day.trim = False
+        self.set_schedule(self.Schedule.days)
+
     def set_zone_status(
         self,
         zoneauto: bool,

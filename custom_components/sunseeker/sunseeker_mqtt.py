@@ -1144,27 +1144,42 @@ class SunseekermqttController:
         device.mulpro_zon3 = self.setvalue(nu, data, [], "mul_pro3", device.mulpro_zon3)
         device.mulpro_zon4 = self.setvalue(nu, data, [], "mul_pro4", device.mulpro_zon4)
         if self.apptype == APPTYPE_OLD:
+            day_keys = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+            is_full_schedule = data.get("cmd") == 503 or bool(day_keys & data.keys())
+            if is_full_schedule and any(k in data for k in day_keys):
+                for day in device.Schedule.days:
+                    day.start = "00:00"
+                    day.end = "00:00"
+                    day.trim = False
+                    day.mqtt_day = {}
             if "Mon" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Mon"), 1)
                 upd.schedule = True
+                nu.need_update = True
             if "Tue" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Tue"), 2)
                 upd.schedule = True
+                nu.need_update = True
             if "Wed" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Wed"), 3)
                 upd.schedule = True
+                nu.need_update = True
             if "Thu" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Thu"), 4)
                 upd.schedule = True
+                nu.need_update = True
             if "Fri" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Fri"), 5)
                 upd.schedule = True
+                nu.need_update = True
             if "Sat" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Sat"), 6)
                 upd.schedule = True
+                nu.need_update = True
             if "Sun" in data:
                 device.Schedule.UpdateFromMqtt(data.get("Sun"), 7)
                 upd.schedule = True
+                nu.need_update = True
         if device.model in (MODEL_V, MODEL_V1):
             # V models
             device.screen_lock = self.setvalue(

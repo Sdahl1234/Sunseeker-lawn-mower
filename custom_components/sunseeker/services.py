@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 
-from .const import DOMAIN
+from .const import DOMAIN, MODEL_OLD
 from .coordinator import SunseekerDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -205,10 +205,16 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         coordinator = _find_coordinator(hass, dsn)
         if coordinator is None:
             raise HomeAssistantError(f"Device for {entity_id} not found")
-        await hass.async_add_executor_job(
-            coordinator.device.set_schedule_new,
-            schedule,
-        )
+        if coordinator.device.model == MODEL_OLD:
+            await hass.async_add_executor_job(
+                coordinator.device.set_schedule_old,
+                schedule,
+            )
+        else:
+            await hass.async_add_executor_job(
+                coordinator.device.set_schedule_new,
+                schedule,
+            )
 
     async def async_handle_set_map(call: ServiceCall):
         entity_id = call.data["entity_id"]

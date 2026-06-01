@@ -94,11 +94,12 @@ set_pin:
 set_schedule:
   name: Set schedule
   description: >
-    Set the mowing schedule for your Sunseeker mower. You must provide the mower entity and a complete schedule object.
+    Set the mowing schedule for your Sunseeker mower. You must provide the Schedule sensor entity and a complete schedule object.
+    The format differs depending on model type — see the examples below.
   fields:
     entity_id:
-      name: Sensor entity with schedule add to attributes
-      description: The mowers sensor entity to set the schedule for.
+      name: Schedule sensor entity
+      description: The mower's Schedule sensor entity (the one that has the schedule attribute).
       required: true
       selector:
         entity:
@@ -106,32 +107,39 @@ set_schedule:
     schedule:
       name: Schedule
       description: >
-        The schedule data to apply. This must be a dictionary matching the expected schedule format, including all days and options.
+        The schedule data to apply. The format depends on the model type.
+        For old wired models include "model_type": "old" and provide one entry per day with enabled, starttime, endtime, and trim fields.
+        For wireless models (V/V1/X/S) omit model_type and provide up to two time-slot entries per day plus the top-level mode flags.
       required: true
       example: |
+        # Old wired model example:
+        {
+          "model_type": "old",
+          "monday":    { "enabled": true,  "starttime": "08:00", "endtime": "11:00", "trim": false },
+          "tuesday":   { "enabled": true,  "starttime": "08:00", "endtime": "11:00", "trim": false },
+          "wednesday": { "enabled": false, "starttime": "00:00", "endtime": "00:00", "trim": false },
+          "thursday":  { "enabled": true,  "starttime": "08:00", "endtime": "11:00", "trim": false },
+          "friday":    { "enabled": true,  "starttime": "08:00", "endtime": "11:00", "trim": false },
+          "saturday":  { "enabled": false, "starttime": "00:00", "endtime": "00:00", "trim": false },
+          "sunday":    { "enabled": false, "starttime": "00:00", "endtime": "00:00", "trim": false }
+        }
+
+        # Wireless model example (V/V1/X/S):
         {
           "recommended_time_work": false,
           "user_defined": true,
           "pause": false,
           "locations": ["Front", "Back"],
           "monday": [
-            {
-              "enabled": true,
-              "starttime": "08:00",
-              "endtime": "10:00",
-              "locations": ["Front"]
-            },
-            {
-              "enabled": false,
-              "starttime": "00:00",
-              "endtime": "00:00",
-              "locations": []
-            }
+            { "enabled": true,  "starttime": "08:00", "endtime": "10:00", "locations": ["Front"] },
+            { "enabled": false, "starttime": "00:00", "endtime": "00:00", "locations": [] }
           ],
-          "tuesday": [],
+          "tuesday":   [],
           "wednesday": [],
-          "thursday": [],
-          "friday": [],
+          "thursday":  [],
+          "friday":    [],
+          "saturday":  [],
+          "sunday":    []
         }
 
 set_map:
