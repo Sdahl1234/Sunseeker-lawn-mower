@@ -387,9 +387,7 @@ class SunseekerRechargeModeSelect(SunseekerEntity, SelectEntity):
         reverse_mapping = {"smart": 1, "border": 2, "direct": 0}
         value = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode
-        await self.hass.async_add_executor_job(
-            self.device.set_return_path_X3Gen2, value
-        )
+        await self.hass.async_add_executor_job(self.device.set_return_path, value)
         self._attr_current_option = option
         self.async_write_ha_state()
 

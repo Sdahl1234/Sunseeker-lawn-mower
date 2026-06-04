@@ -1050,7 +1050,7 @@ class SunseekerDevice:
             ],
             "deviceSn": self.devicesn,
         }
-
+        # note: some old models has "pause": False/True
         try:
             url = self.url + "/app_mower/device-schedule/setScheduling"
             headers = {
@@ -2320,8 +2320,8 @@ class SunseekerDevice:
         }
         self.set_property(data)
 
-    def set_return_path_X3Gen2(self, value: int):
-        """Set return path V1."""
+    def set_return_path(self, value: int):
+        """Set return path."""
         data = {
             "appId": self.userid,
             "deviceSn": self.devicesn,
