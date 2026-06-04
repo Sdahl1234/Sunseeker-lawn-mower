@@ -1,0 +1,29 @@
+name: Build and publish HACS release zip
+
+on:
+  push:
+    tags:
+      - "v*"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-zip:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build release zip
+        run: zip -r sunseeker.zip custom_components/sunseeker
+
+      - name: Publish release and upload zip
+        uses: softprops/action-gh-release@v2
+        with:
+          files: sunseeker.zip
+          overwrite_files: true
