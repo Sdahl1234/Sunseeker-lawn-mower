@@ -15,16 +15,13 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        
+
       - name: Build release zip
         run: |
           cd custom_components/sunseeker
           zip -r ../../sunseeker.zip .
 
-      - name: Build release zip
-        run: zip -r sunseeker.zip custom_components/sunseeker
-
-      - name: Upload zip to release
+      - name: Publish release and upload zip
         uses: softprops/action-gh-release@v2
         with:
           files: sunseeker.zip
