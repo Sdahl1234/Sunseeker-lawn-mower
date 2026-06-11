@@ -60,9 +60,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
     region = entry.data.get(CONF_REGION, REGION_EU)
 
     language = hass.config.language
+    country = hass.config.country
+    locale = (f"{language}-{country}" if country else language).lower()
 
     data_handler = SunseekerRoboticmower(
-        brand, apptype, region, email, password, language
+        brand, apptype, region, email, password, locale
     )
     await hass.async_add_executor_job(data_handler.on_load)
     if not data_handler.login_ok:
