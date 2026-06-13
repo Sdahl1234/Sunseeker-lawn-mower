@@ -793,6 +793,8 @@ class SunseekermqttController:
                 zoneid = z["region_id"]
                 zone = device.get_zone(zoneid)
                 if zone:
+                    zone.start = self.setvalue(nu, z, [], "start", zone.start)
+                    zone.finish = self.setvalue(nu, z, [], "finish", zone.finish)
                     zone.gap = self.setvalue(nu, z, [], "work_gap", zone.gap)
                     zone.region_size = self.setvalue(
                         nu, z, [], "region_size", zone.region_size

@@ -354,6 +354,12 @@
         }
       },
       "binary_sensor": {
+        "sunseeker_zone_finish_custom": {
+          "name": "{post_name} Gotowe"
+        },
+        "sunseeker_zone_start_custom": {
+          "name": "{post_name} Rozpoczęte"
+        },
         "sunseeker_dock": {
           "name": "W stacji ładowania",
           "state": {

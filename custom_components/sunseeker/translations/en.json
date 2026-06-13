@@ -354,6 +354,13 @@
         }
       },
       "binary_sensor": {
+		"sunseeker_zone_finish_custom": {
+				"name": "{post_name} Finish"
+			},
+		"sunseeker_zone_start_custom": {
+				"name": "{post_name} Start"
+			},
+
         "sunseeker_dock": {
           "name": "Dock",
           "state": {

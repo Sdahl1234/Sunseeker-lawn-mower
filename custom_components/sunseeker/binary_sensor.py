@@ -78,6 +78,114 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
         ]
     )
 
+    zone_start = []
+    zone_finish = []
+
+    for coordinator in robot_coordinators(hass, entry):
+        if coordinator.model in (MODEL_S, MODEL_X):
+            zones = coordinator.data_handler.get_device(coordinator.devicesn).zones
+            for zone in zones:
+                zid, zname = zone
+                if zid != 0:  # skipping global
+                    f = SunseekerZoneFinishBinarySensor(
+                        coordinator,
+                        f"{zname} Zone finish",
+                        "mdi:checkbox-marked-circle-outline",
+                        "sunseeker_zone_finish_custom",
+                        zname,
+                        zid,
+                    )
+                    zone_start.append(f)
+                    s = SunseekerZoneStartBinarySensor(
+                        coordinator,
+                        f"{zname} Zone start",
+                        "mdi:checkbox-marked-circle-outline",
+                        "sunseeker_zone_start_custom",
+                        zname,
+                        zid,
+                    )
+                    zone_finish.append(s)
+    async_add_devices(zone_start)
+    async_add_devices(zone_finish)
+
+
+class SunseekerZoneFinishBinarySensor(SunseekerEntity, BinarySensorEntity):
+    """Zone finish."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        icon: str,
+        translationkey: str,
+        zonename: str,
+        zoneid: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self._data_coordinator = coordinator
+        self._data_handler = self._data_coordinator.data_handler
+        self._name = name
+        self._zonename = zonename
+        self._zoneid = zoneid
+        self._icon = icon
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_translation_placeholders = {"post_name": zonename}
+        self._attr_unique_id = f"{self._name}_{self._data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self.zone = self.device.get_zone(zoneid)
+
+    @property
+    def available(self) -> bool:
+        """Always available."""
+        return True
+
+    @property
+    def is_on(self):
+        """Return zone finish."""
+        return self.zone is not None and self.zone.finish == 1
+
+
+class SunseekerZoneStartBinarySensor(SunseekerEntity, BinarySensorEntity):
+    """Zone started."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        icon: str,
+        translationkey: str,
+        zonename: str,
+        zoneid: int,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self._data_coordinator = coordinator
+        self._data_handler = self._data_coordinator.data_handler
+        self._name = name
+        self._zonename = zonename
+        self._zoneid = zoneid
+        self._icon = icon
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_translation_placeholders = {"post_name": zonename}
+        self._attr_unique_id = f"{self._name}_{self._data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+        self.zone = self.device.get_zone(zoneid)
+
+    @property
+    def available(self) -> bool:
+        """Always available."""
+        return True
+
+    @property
+    def is_on(self):
+        """Return zone started."""
+        return self.zone is not None and self.zone.start == 1
+
 
 class SunseekerBinarySensor(SunseekerEntity, BinarySensorEntity):
     """Sunseeker sensor."""

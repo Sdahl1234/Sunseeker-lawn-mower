@@ -296,6 +296,8 @@ class SunseekerDevice:
                     regionid = z["region_id"]
                     zone = self.get_zone(regionid)
                     if zone:
+                        zone.start = z.get("start", zone.start)
+                        zone.finish = z.get("finish", zone.finish)
                         zone.id = regionid
                         zone.gap = z.get("work_gap", zone.gap)
                         zone.region_size = z.get("region_size", zone.region_size)

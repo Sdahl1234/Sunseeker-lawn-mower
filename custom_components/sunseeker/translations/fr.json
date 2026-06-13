@@ -345,6 +345,12 @@
             }
         },
         "binary_sensor": {
+            "sunseeker_zone_finish_custom": {
+                "name": "{post_name} Terminé"
+            },
+            "sunseeker_zone_start_custom": {
+                "name": "{post_name} Démarré"
+            },
             "sunseeker_dock": {
                 "name": "Station de recharge",
                 "state": {

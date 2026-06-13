@@ -33,3 +33,5 @@ class SunseekerZone:
         self.region_size = 0
         self.estimate_time = 0
         self.setting = False
+        self.start = 0
+        self.finish = 0
