@@ -355,10 +355,10 @@
       },
       "binary_sensor": {
 		"sunseeker_zone_finish_custom": {
-				"name": "{post_name} Finish"
+				"name": "{post_name} Finished"
 			},
 		"sunseeker_zone_start_custom": {
-				"name": "{post_name} Start"
+				"name": "{post_name} Started"
 			},
 
         "sunseeker_dock": {
