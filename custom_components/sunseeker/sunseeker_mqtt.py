@@ -1145,6 +1145,8 @@ class SunseekermqttController:
         device.mulpro_zon2 = self.setvalue(nu, data, [], "mul_pro2", device.mulpro_zon2)
         device.mulpro_zon3 = self.setvalue(nu, data, [], "mul_pro3", device.mulpro_zon3)
         device.mulpro_zon4 = self.setvalue(nu, data, [], "mul_pro4", device.mulpro_zon4)
+        device.ultra_flag = self.setvalue(nu, data, [], "ultra_en", device.ultra_flag)
+        device.ultra_lv = self.setvalue(nu, data, [], "ultra", device.ultra_lv)
         if self.apptype == APPTYPE_OLD:
             day_keys = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
             is_full_schedule = data.get("cmd") == 503 or bool(day_keys & data.keys())

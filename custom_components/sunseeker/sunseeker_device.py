@@ -68,6 +68,8 @@ class SunseekerDevice:
         self.mulpro_zon2 = 0
         self.mulpro_zon3 = 0
         self.mulpro_zon4 = 0
+        self.ultra_flag = False
+        self.ultra_lv = 0
         self.error_text = ""  # Error message from latest post
 
         # callback function to datacoordinaton
@@ -251,6 +253,8 @@ class SunseekerDevice:
             self.mulpro_zon2 = self.settings["data"].get("proSecond")
             self.mulpro_zon3 = self.settings["data"].get("proThird")
             self.mulpro_zon4 = self.settings["data"].get("proFour")
+            self.ultra_flag = self.settings["data"].get("ultraFlag")
+            self.ultra_lv = self.settings["data"].get("ultraLv")
             self.updateschedule()
         elif self.apptype == APPTYPE_NEW:
             self.DeviceTypeId = self.devicedata["data"].get("deviceTypeId", "")
@@ -1185,6 +1189,55 @@ class SunseekerDevice:
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set zone status: failed {error}")  # noqa: G004
+
+    def set_ultrasonic(
+        self,
+        ultra_en: bool,
+        ultra_lv: int,
+    ):
+        """Set ultrasonic."""
+        try:
+            url = self.url + "/app_mower/device/setUltra"
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "ultraFlag": ultra_en,
+                "ultraLv": ultra_lv,
+            }
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json; charset=UTF-8",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+                "Accept-Encoding": "gzip",
+            }
+            _LOGGER.debug(
+                f"Set ultrasonic url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
+            _LOGGER.error(f"Set ultrasonic failed: {error}")  # noqa: G004
 
     def set_border_freq(self, freq: int):
         """Border freq."""

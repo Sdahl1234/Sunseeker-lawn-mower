@@ -124,6 +124,11 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     SunseekerMulNumber(coordinator, "MulZone2", 2, "sunseeker_mulpro2"),
                     SunseekerMulNumber(coordinator, "MulZone3", 3, "sunseeker_mulpro3"),
                     SunseekerMulNumber(coordinator, "MulZone4", 4, "sunseeker_mulpro4"),
+                    SunseekerUltrasonicLevelNumber(
+                        coordinator,
+                        "Ultrasonic level",
+                        "sunseeker_ultrasonic_level",
+                    ),
                 ]
             )
 
@@ -365,6 +370,45 @@ class SunseekerMulNumber(SunseekerEntity, NumberEntity):
         if self.mulnumber == 4:
             return self.device.mulpro_zon4
         return 0
+
+
+class SunseekerUltrasonicLevelNumber(SunseekerEntity, NumberEntity):
+    """Ultrasonic level for old models."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self.native_max_value = 2
+        self.native_min_value = 0
+        self.native_step = 1
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self._attr_mode = "box"
+        self.icon = "mdi:signal-distance-variant"
+        self.device = self._data_handler.get_device(self._sn)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+        await self.hass.async_add_executor_job(
+            self.device.set_ultrasonic,
+            bool(self.device.ultra_flag),
+            int(value),
+        )
+
+    @property
+    def native_value(self):
+        """Return value."""
+        return self.device.ultra_lv
 
 
 class SunseekerBladespeedNumber(SunseekerEntity, NumberEntity):

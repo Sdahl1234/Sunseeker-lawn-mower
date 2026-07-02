@@ -502,6 +502,9 @@
         "sunseeker_multi_zone_auto": {
           "name": "Multi-strefa auto"
         },
+				"sunseeker_ultrasonic": {
+					"name": "Czujnik ultradźwiękowy"
+				},
         "schedule_active": {
           "name": "Harmonogram"
         },
@@ -541,6 +544,9 @@
         "sunseeker_rain_delay": {
           "name": "Oczekiwanie po deszczu"
         },
+				"sunseeker_ultrasonic_level": {
+					"name": "Poziom ultradźwięków"
+				},
         "sunseeker_zone1": {
           "name": "Strefa 1 start"
         },

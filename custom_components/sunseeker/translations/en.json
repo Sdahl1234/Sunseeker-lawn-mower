@@ -505,6 +505,9 @@
         "sunseeker_multi_zone_auto": {
           "name": "Multizone auto"
         },
+				"sunseeker_ultrasonic": {
+					"name": "Ultrasonic sensor"
+				},
         "schedule_active": {
           "name": "Schedule"
         },
@@ -544,6 +547,9 @@
         "sunseeker_rain_delay": {
           "name": "Rain delay"
         },
+				"sunseeker_ultrasonic_level": {
+					"name": "Ultrasonic level"
+				},
         "sunseeker_zone1": {
           "name": "Zone 1 start"
         },

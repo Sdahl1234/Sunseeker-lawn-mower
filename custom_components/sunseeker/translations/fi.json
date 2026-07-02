@@ -482,6 +482,9 @@
             "sunseeker_multi_zone_auto": {
                 "name": "Monialueleikkaus autom."
             },
+            "sunseeker_ultrasonic": {
+                "name": "Ultraäänitunnistin"
+            },
             "schedule_active": {
                 "name": "Ajastus"
             },
@@ -520,6 +523,9 @@
             },
             "sunseeker_rain_delay": {
                 "name": "Sadetunnistimen viive"
+            },
+            "sunseeker_ultrasonic_level": {
+                "name": "Ultraäänitaso"
             },
             "sunseeker_zone1": {
                 "name": "Alue 1 aloitus"

@@ -4,7 +4,7 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.20
+#### V1.2.21
 
 ## Tested models
   - Adano RM5, RM6, RM9
@@ -362,9 +362,11 @@ For the **Mower position** tracker to be accurate, the integration needs to know
 - **Rain sensor** - Turn on/off the rain sensor
 - **Multizone** - Turn on/off using zones
 - **Multizone auto** - Turn on/off auto multizone
+- **Ultrasonic sensor** - Turn on/off ultrasonic obstacle detection
 
 ## Numbers
 - **Rain delay** - Minutes from when the rain sensor is dry to start mowing again
+- **Ultrasonic level** - Set ultrasonic sensitivity level (0-2)
 - **Zone 1** - percentage of the start of zone 1
 - **Zone 2** - percentage of the start of zone 2
 - **Zone 3** - percentage of the start of zone 3

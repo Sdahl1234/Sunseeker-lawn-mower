@@ -51,6 +51,9 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     SunseekerScheduleSwitch(
                         coordinator, "Schedule active", "schedule_active"
                     ),
+                    SunseekerUltrasonicSwitch(
+                        coordinator, "Ultrasonic", "sunseeker_ultrasonic"
+                    ),
                 ]
             )
 
@@ -395,6 +398,57 @@ class SunseekerMultiZoneAutoSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return self.device.mul_auto
+
+
+class SunseekerUltrasonicSwitch(SunseekerEntity, SwitchEntity):
+    """Ultrasonic switch for old models."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:radar"
+        self.device = self._data_handler.get_device(self._sn)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(
+            self.device.set_ultrasonic,
+            True,
+            int(self.device.ultra_lv or 0),
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(
+            self.device.set_ultrasonic,
+            False,
+            int(self.device.ultra_lv or 0),
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(
+            self.device.set_ultrasonic,
+            not self.is_on,
+            int(self.device.ultra_lv or 0),
+        )
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return bool(self.device.ultra_flag)
 
 
 class SunseekerScheduleSwitch(SunseekerEntity, SwitchEntity):

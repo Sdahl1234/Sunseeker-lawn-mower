@@ -504,6 +504,9 @@
 			"sunseeker_multi_zone_auto": {
 				"name": "Multizone auto"
 			},
+			"sunseeker_ultrasonic": {
+				"name": "Ultralydssensor"
+			},
 			"schedule_active": {
 				"name": "Tidsstyrring"
 			},
@@ -542,6 +545,9 @@
 			},
 			"sunseeker_rain_delay": {
 				"name": "Regn forsinkelse"
+			},
+			"sunseeker_ultrasonic_level": {
+				"name": "Ultralydsniveau"
 			},
 			"sunseeker_zone1": {
 				"name": "Zone 1 start"
