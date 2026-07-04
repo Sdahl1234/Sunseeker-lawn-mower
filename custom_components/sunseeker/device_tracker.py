@@ -4,8 +4,7 @@ import logging
 import math
 from typing import Literal
 
-from homeassistant.components.device_tracker import ATTR_GPS
-from homeassistant.components.device_tracker.config_entry import TrackerEntity
+from homeassistant.components.device_tracker import ATTR_GPS, TrackerEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
