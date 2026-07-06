@@ -363,6 +363,9 @@ For the **Mower position** tracker to be accurate, the integration needs to know
 - **Multizone** - Turn on/off using zones
 - **Multizone auto** - Turn on/off auto multizone
 - **Ultrasonic sensor** - Turn on/off ultrasonic obstacle detection
+- **Headlight** - Turn the headlight on or off
+- **White light** - Enable or disable the white light mode
+- **Headlight night only** - Use the headlight only at night
 
 ## Numbers
 - **Rain delay** - Minutes from when the rain sensor is dry to start mowing again
@@ -382,6 +385,9 @@ For the **Mower position** tracker to be accurate, the integration needs to know
 - **Schedule Friday** - Text field to update the moday schedule.
 - **Schedule Saturday** - Text field to update the moday schedule.
 - **Schedule Sunday** - Text field to update the moday schedule.
+- **Headlight color code** - Hex color code for the headlight, for example `ffffff`.
+- **Headlight start time** - Time to enable the light, for example `00:00` or `24:00`.
+- **Headlight end time** - Time to disable the light, for example `00:00` or `24:00`.
 
 ## Binary sensors
 - **Dock** - states: home or away
@@ -407,4 +413,4 @@ For the **Mower position** tracker to be accurate, the integration needs to know
 - **Event** - Eventscodes maped to text from app
 
 ## Device tracker
-- **Robot location** - Some kind of anti theft thing. Returns the latitude and longitude coordinates of the device.
+- **Robot location** - Anti theft. Returns the latitude and longitude coordinates of the device.
