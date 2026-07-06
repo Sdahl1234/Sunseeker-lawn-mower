@@ -519,8 +519,11 @@
         "sunseeker_night_work": { "name": "Praca nocna" },
         "sunseeker_energy_saving": { "name": "Oszczędzanie energii" },
         "sunseeker_auto_ride_edge": { "name": "Automatyczny przejazd krawędzi" },
-        "sunseeker_cliff_detect": { "name": "Wykrywanie urwisk" },
-        "sunseeker_above_edge": { "name": "Jazda po krawędziach" }
+				"sunseeker_cliff_detect": { "name": "Wykrywanie urwisk" },
+				"sunseeker_above_edge": { "name": "Jazda po krawędziach" },
+				"sunseeker_led_flag": { "name": "Reflektor" },
+				"sunseeker_led_mode": { "name": "Białe światło" },
+				"sunseeker_led_night_flag": { "name": "Reflektor tylko nocą" }
       },
       "number": {
 			"sunseeker_angle": {
@@ -580,31 +583,40 @@
 			  "sunseeker_zigzag_angle_custom_3": { "name": "{post_name} Kąt zygzaka 3" },
 			  "sunseeker_zigzag_angle_custom_4": { "name": "{post_name} Kąt zygzaka 4" }
       },
-      "text": {
-        "sunseeker_schedule_text_1": {
-          "name": "Harmonogram poniedziałek"
-        },
-        "sunseeker_schedule_text_2": {
-          "name": "Harmonogram wtorek"
-        },
-        "sunseeker_schedule_text_3": {
-          "name": "Harmonogram środa"
-        },
-        "sunseeker_schedule_text_4": {
-          "name": "Harmonogram czwartek"
-        },
-        "sunseeker_schedule_text_5": {
-          "name": "Harmonogram piątkek"
-        },
-        "sunseeker_schedule_text_6": {
-          "name": "Harmonogram sobota"
-        },
-        "sunseeker_schedule_text_7": {
-          "name": "Harmonogram niedziela"
-        },
-        "sunseeker_charger_gps": {
-          "name": "Pozycja GPS stacji ładowania"
-        }
-      }
+			"text": {
+				"sunseeker_schedule_text_1": {
+					"name": "Harmonogram poniedziałek"
+				},
+				"sunseeker_schedule_text_2": {
+					"name": "Harmonogram wtorek"
+				},
+				"sunseeker_schedule_text_3": {
+					"name": "Harmonogram środa"
+				},
+				"sunseeker_schedule_text_4": {
+					"name": "Harmonogram czwartek"
+				},
+				"sunseeker_schedule_text_5": {
+					"name": "Harmonogram piątkek"
+				},
+				"sunseeker_schedule_text_6": {
+					"name": "Harmonogram sobota"
+				},
+				"sunseeker_schedule_text_7": {
+					"name": "Harmonogram niedziela"
+				},
+				"sunseeker_charger_gps": {
+					"name": "Pozycja GPS stacji ładowania"
+				},
+				"sunseeker_led_color_code": {
+					"name": "Kod koloru reflektora"
+				},
+				"sunseeker_led_start": {
+					"name": "Godzina włączenia reflektora"
+				},
+				"sunseeker_led_end": {
+					"name": "Godzina wyłączenia reflektora"
+				}
+			}
     }
   }

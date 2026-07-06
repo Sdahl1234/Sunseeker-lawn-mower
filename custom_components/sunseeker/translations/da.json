@@ -522,7 +522,10 @@
 			"sunseeker_energy_saving": { "name": "Energibesparelse" },
 			"sunseeker_auto_ride_edge": { "name": "Auto kantkørsel" },
 			"sunseeker_cliff_detect": { "name": "Klippedetektion" },
-			"sunseeker_above_edge": { "name": "Kantklip på kanten" }
+			"sunseeker_above_edge": { "name": "Kantklip på kanten" },
+			"sunseeker_led_flag": { "name": "Forlygte" },
+			"sunseeker_led_mode": { "name": "Hvidt lys" },
+			"sunseeker_led_night_flag": { "name": "Forlygte kun om natten" }
 		},
 		"number": {
 			"sunseeker_angle": {
@@ -606,6 +609,15 @@
 			},
 			"sunseeker_charger_gps": {
 				"name": "Ladestationens GPS-position"
+			},
+			"sunseeker_led_color_code": {
+				"name": "Forlygte farvekode"
+			},
+			"sunseeker_led_start": {
+				"name": "Forlygte starttid"
+			},
+			"sunseeker_led_end": {
+				"name": "Forlygte sluttid"
 			}
 		}
 	}

@@ -500,7 +500,10 @@
             "sunseeker_energy_saving": { "name": "Energiansäästö" },
             "sunseeker_auto_ride_edge": { "name": "Automaattinen reunaajo" },
             "sunseeker_cliff_detect": { "name": "Putoamistunnistus" },
-            "sunseeker_above_edge": { "name": "Reunalla ajo" }
+            "sunseeker_above_edge": { "name": "Reunalla ajo" },
+            "sunseeker_led_flag": { "name": "Ajovalo" },
+            "sunseeker_led_mode": { "name": "Valkoinen valo" },
+            "sunseeker_led_night_flag": { "name": "Ajovalo vain yöllä" }
         },
         "number": {
 			"sunseeker_angle": {
@@ -584,6 +587,15 @@
             },
             "sunseeker_charger_gps": {
                 "name": "Latausaseman GPS-sijainti"
+            },
+            "sunseeker_led_color_code": {
+                "name": "Ajovalon värikoodi"
+            },
+            "sunseeker_led_start": {
+                "name": "Ajovalon aloitusaika"
+            },
+            "sunseeker_led_end": {
+                "name": "Ajovalon lopetusaika"
             }
         }
     }

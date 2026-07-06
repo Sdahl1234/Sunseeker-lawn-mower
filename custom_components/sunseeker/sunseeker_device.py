@@ -70,6 +70,12 @@ class SunseekerDevice:
         self.mulpro_zon4 = 0
         self.ultra_flag = False
         self.ultra_lv = 0
+        self.ledFlag = 0
+        self.ledColorCode = ""  # "ffffff"
+        self.ledEnd = "2400"
+        self.ledModeCode = "0"
+        self.ledStart = "0000"
+        self.ledNightFlag = False
         self.error_text = ""  # Error message from latest post
 
         # callback function to datacoordinaton
@@ -255,6 +261,14 @@ class SunseekerDevice:
             self.mulpro_zon4 = self.settings["data"].get("proFour")
             self.ultra_flag = self.settings["data"].get("ultraFlag")
             self.ultra_lv = self.settings["data"].get("ultraLv")
+            # Headlight
+            self.ledFlag = self.settings["data"].get("ledFlag") or False
+            self.ledColorCode = self.settings["data"].get("ledColorCode") or "ffffff"
+            self.ledModeCode = self.settings["data"].get("ledModeCode") or "0"
+            self.ledStart = self.settings["data"].get("ledStart") or "0000"
+            self.ledEnd = self.settings["data"].get("ledEnd") or "2400"
+            self.ledNightFlag = self.settings["data"].get("ledNightFlag") or False
+
             self.updateschedule()
         elif self.apptype == APPTYPE_NEW:
             self.DeviceTypeId = self.devicedata["data"].get("deviceTypeId", "")
@@ -1238,6 +1252,63 @@ class SunseekerDevice:
             if self.dataupdated:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set ultrasonic failed: {error}")  # noqa: G004
+
+    def set_led(
+        self,
+        ledFlag: bool,  # True: on False: off
+        ledColorCode: str,  # "ffffff": color
+        ledEnd: str,  # "2400" 24:00
+        ledModeCode: str,  # "0": white off "1": white on
+        ledStart: str,  # "0000" 00:00
+        ledNightFlag: bool,
+    ):
+        """Set Headlight."""
+        try:
+            url = self.url + "/app_mower/device/setLed"
+            data = {
+                "appId": self.userid,
+                "deviceSn": self.devicesn,
+                "ledFlag": ledFlag,
+                "ledColorCode": ledColorCode,
+                "ledEnd": ledEnd,
+                "ledModeCode": ledModeCode,
+                "ledStart": ledStart,
+                "ledNightFlag": ledNightFlag,
+            }
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json; charset=UTF-8",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+                "Accept-Encoding": "gzip",
+            }
+            _LOGGER.debug(
+                f"Set led url: {url} header: {headers} data: {data}"  # noqa: G004
+            )
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
+            _LOGGER.error(f"Set led failed: {error}")  # noqa: G004
 
     def set_border_freq(self, freq: int):
         """Border freq."""

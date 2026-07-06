@@ -54,6 +54,15 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     SunseekerUltrasonicSwitch(
                         coordinator, "Ultrasonic", "sunseeker_ultrasonic"
                     ),
+                    SunseekerLedFlagSwitch(
+                        coordinator, "Headlight", "sunseeker_led_flag"
+                    ),
+                    SunseekerLedModeSwitch(
+                        coordinator, "White light", "sunseeker_led_mode"
+                    ),
+                    SunseekerLedNightFlagSwitch(
+                        coordinator, "Headlight night only", "sunseeker_led_night_flag"
+                    ),
                 ]
             )
 
@@ -449,6 +458,143 @@ class SunseekerUltrasonicSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return bool(self.device.ultra_flag)
+
+
+class _SunseekerLedBaseSwitch(SunseekerEntity, SwitchEntity):
+    """Shared helpers for old-model headlight switches."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+        icon: str,
+    ) -> None:
+        """Initialize the shared headlight switch state."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = icon
+        self.device = self._data_handler.get_device(self._sn)
+
+    def _led_args(
+        self,
+        ledFlag: bool | None = None,
+        ledColorCode: str | None = None,
+        ledModeCode: str | None = None,
+        ledStart: str | None = None,
+        ledEnd: str | None = None,
+        ledNightFlag: bool | None = None,
+    ) -> tuple[bool, str, str, str, str, bool]:
+        return (
+            self.device.ledFlag if ledFlag is None else ledFlag,
+            self.device.ledColorCode if ledColorCode is None else ledColorCode,
+            self.device.ledModeCode if ledModeCode is None else ledModeCode,
+            self.device.ledStart if ledStart is None else ledStart,
+            self.device.ledEnd if ledEnd is None else ledEnd,
+            self.device.ledNightFlag if ledNightFlag is None else ledNightFlag,
+        )
+
+    async def _set_led(self, **kwargs) -> None:
+        await self.hass.async_add_executor_job(
+            self.device.set_led,
+            *self._led_args(**kwargs),
+        )
+
+
+class SunseekerLedFlagSwitch(_SunseekerLedBaseSwitch):
+    """Master headlight switch for old models."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Initialize the master headlight switch."""
+        super().__init__(coordinator, name, translationkey, "mdi:lightbulb")
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the headlight on."""
+        await self._set_led(ledFlag=True)
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the headlight off."""
+        await self._set_led(ledFlag=False)
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the headlight."""
+        await self._set_led(ledFlag=not self.is_on)
+
+    @property
+    def is_on(self):
+        """Return whether the headlight is enabled."""
+        return bool(self.device.ledFlag)
+
+
+class SunseekerLedModeSwitch(_SunseekerLedBaseSwitch):
+    """White light mode switch for old models."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Initialize the white-light mode switch."""
+        super().__init__(coordinator, name, translationkey, "mdi:lightbulb-outline")
+
+    async def async_turn_on(self, **kwargs):
+        """Enable the white-light mode."""
+        await self._set_led(ledModeCode="1")
+
+    async def async_turn_off(self, **kwargs):
+        """Disable the white-light mode."""
+        await self._set_led(ledModeCode="0")
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the white-light mode."""
+        await self._set_led(ledModeCode="0" if self.is_on else "1")
+
+    @property
+    def is_on(self):
+        """Return whether white light mode is enabled."""
+        return self.device.ledModeCode == "1"
+
+
+class SunseekerLedNightFlagSwitch(_SunseekerLedBaseSwitch):
+    """Night-only headlight switch for old models."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Initialize the night-only headlight switch."""
+        super().__init__(coordinator, name, translationkey, "mdi:weather-night")
+
+    async def async_turn_on(self, **kwargs):
+        """Enable night-only headlight mode."""
+        await self._set_led(ledNightFlag=True)
+
+    async def async_turn_off(self, **kwargs):
+        """Disable night-only headlight mode."""
+        await self._set_led(ledNightFlag=False)
+
+    async def async_toggle(self, **kwargs):
+        """Toggle night-only headlight mode."""
+        await self._set_led(ledNightFlag=not self.is_on)
+
+    @property
+    def is_on(self):
+        """Return whether night-only mode is enabled."""
+        return bool(self.device.ledNightFlag)
 
 
 class SunseekerScheduleSwitch(SunseekerEntity, SwitchEntity):

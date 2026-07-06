@@ -1135,19 +1135,44 @@ class SunseekermqttController:
         device.zoneOpenFlag = self.setvalue(
             nu, data, [], "zoneOpenFlag", device.zoneOpenFlag
         )
-        device.mul_en = self.setvalue(nu, data, [], "mul_en", device.mul_en)
-        device.mul_auto = self.setvalue(nu, data, [], "mul_auto", device.mul_auto)
-        device.mul_zon1 = self.setvalue(nu, data, [], "mul_zon1", device.mul_zon1)
-        device.mul_zon2 = self.setvalue(nu, data, [], "mul_zon2", device.mul_zon2)
-        device.mul_zon3 = self.setvalue(nu, data, [], "mul_zon3", device.mul_zon3)
-        device.mul_zon4 = self.setvalue(nu, data, [], "mul_zon4", device.mul_zon4)
-        device.mulpro_zon1 = self.setvalue(nu, data, [], "mul_pro1", device.mulpro_zon1)
-        device.mulpro_zon2 = self.setvalue(nu, data, [], "mul_pro2", device.mulpro_zon2)
-        device.mulpro_zon3 = self.setvalue(nu, data, [], "mul_pro3", device.mulpro_zon3)
-        device.mulpro_zon4 = self.setvalue(nu, data, [], "mul_pro4", device.mulpro_zon4)
-        device.ultra_flag = self.setvalue(nu, data, [], "ultra_en", device.ultra_flag)
-        device.ultra_lv = self.setvalue(nu, data, [], "ultra", device.ultra_lv)
         if self.apptype == APPTYPE_OLD:
+            device.mul_en = self.setvalue(nu, data, [], "mul_en", device.mul_en)
+            device.mul_auto = self.setvalue(nu, data, [], "mul_auto", device.mul_auto)
+            device.mul_zon1 = self.setvalue(nu, data, [], "mul_zon1", device.mul_zon1)
+            device.mul_zon2 = self.setvalue(nu, data, [], "mul_zon2", device.mul_zon2)
+            device.mul_zon3 = self.setvalue(nu, data, [], "mul_zon3", device.mul_zon3)
+            device.mul_zon4 = self.setvalue(nu, data, [], "mul_zon4", device.mul_zon4)
+            device.mulpro_zon1 = self.setvalue(
+                nu, data, [], "mul_pro1", device.mulpro_zon1
+            )
+            device.mulpro_zon2 = self.setvalue(
+                nu, data, [], "mul_pro2", device.mulpro_zon2
+            )
+            device.mulpro_zon3 = self.setvalue(
+                nu, data, [], "mul_pro3", device.mulpro_zon3
+            )
+            device.mulpro_zon4 = self.setvalue(
+                nu, data, [], "mul_pro4", device.mulpro_zon4
+            )
+            # ultrasonic
+            device.ultra_flag = self.setvalue(
+                nu, data, [], "ultra_en", device.ultra_flag
+            )
+            device.ultra_lv = self.setvalue(nu, data, [], "ultra", device.ultra_lv)
+            # led
+            device.ledFlag = self.setvalue(nu, data, [], "led_en", device.ledFlag)
+            device.ledModeCode = self.setvalue(
+                nu, data, [], "led_mode", device.ledModeCode
+            )
+            device.ledColorCode = self.setvalue(
+                nu, data, [], "led_color", device.ledColorCode
+            )
+            device.ledStart = self.setvalue(nu, data, [], "led_start", device.ledStart)
+            device.ledEnd = self.setvalue(nu, data, [], "led_end", device.ledEnd)
+            device.ledNightFlag = self.setvalue(
+                nu, data, [], "led_night", device.ledNightFlag
+            )
+
             day_keys = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
             is_full_schedule = data.get("cmd") == 503 or bool(day_keys & data.keys())
             if is_full_schedule and any(k in data for k in day_keys):

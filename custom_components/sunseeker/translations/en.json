@@ -523,7 +523,10 @@
         "sunseeker_energy_saving": { "name": "Energy saving" },
         "sunseeker_auto_ride_edge": { "name": "Auto ride edge" },
         "sunseeker_cliff_detect": { "name": "Cliff detect" },
-        "sunseeker_above_edge": { "name": "Ride on edge" }
+				"sunseeker_above_edge": { "name": "Ride on edge" },
+				"sunseeker_led_flag": { "name": "Headlight" },
+				"sunseeker_led_mode": { "name": "White light" },
+				"sunseeker_led_night_flag": { "name": "Headlight night only" }
       },
       "number": {
 			"sunseeker_angle": {
@@ -607,6 +610,15 @@
         },
         "sunseeker_charger_gps": {
           "name": "Charger GPS position"
+				},
+				"sunseeker_led_color_code": {
+					"name": "Headlight color code"
+				},
+				"sunseeker_led_start": {
+					"name": "Headlight start time"
+				},
+				"sunseeker_led_end": {
+					"name": "Headlight end time"
         }
       }
     }

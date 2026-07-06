@@ -512,7 +512,10 @@
       "sunseeker_energy_saving": { "name": "Energiesparmodus" },
       "sunseeker_auto_ride_edge": { "name": "Automatische Randfahrt" },
       "sunseeker_cliff_detect": { "name": "Absturzerkennung" },
-      "sunseeker_above_edge": { "name": "Kantenfahrt" }
+      "sunseeker_above_edge": { "name": "Kantenfahrt" },
+      "sunseeker_led_flag": { "name": "Frontlicht" },
+      "sunseeker_led_mode": { "name": "Weißlicht" },
+      "sunseeker_led_night_flag": { "name": "Frontlicht nur nachts" }
     },
     "number": {
 			"sunseeker_angle": {
@@ -596,6 +599,15 @@
       },
       "sunseeker_charger_gps": {
         "name": "GPS-Position der Ladestation"
+      },
+      "sunseeker_led_color_code": {
+        "name": "Frontlicht-Farbcode"
+      },
+      "sunseeker_led_start": {
+        "name": "Frontlicht-Startzeit"
+      },
+      "sunseeker_led_end": {
+        "name": "Frontlicht-Endzeit"
       }
     }
   }
