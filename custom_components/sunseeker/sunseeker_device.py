@@ -2514,6 +2514,6 @@ class SunseekerDevice:
             "appId": self.userid,
             "deviceSn": self.devicesn,
             "method": "setPause",
-            "Pause": value,
+            "pause": value,
         }
         self.set_property(data)
