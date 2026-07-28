@@ -181,6 +181,7 @@ class SunseekerDevice:
         self.need_request_map_path = False
         self.appIdCode = "0123456789abcdef"
         self.next_path_index = 0
+        self._unloaded = False
 
     def InitDevice(self) -> None:
         """Setup the device."""
@@ -228,6 +229,7 @@ class SunseekerDevice:
         elif self.model == MODEL_V1:
             self.device_firmware = self.devicedata["data"].get("firmwareVersion", "")
 
+        self.need_request_map_path = self.settings["data"].get("softModel") == "XI"
         self.cliff_detect = self.settings["data"].get("cliffDetectEnable", False)
         self.dis_along_border = self.settings["data"].get("disAlongBorder", 1)
         self.above_edge = self.settings["data"].get("aboveEdge", False)
@@ -397,6 +399,10 @@ class SunseekerDevice:
 
     def after_mqtt_connect(self) -> None:
         """Calls required after MQTT is setup."""
+        self._unloaded = False
+        if self.update_timer:
+            self.update_timer.cancel()
+            self.update_timer = None
         if self.model in (MODEL_S, MODEL_X):
             self.get_schedule_data()
         if self.model in (MODEL_S, MODEL_X, MODEL_V):
@@ -405,9 +411,47 @@ class SunseekerDevice:
             self.getSelectRegionID()
         if self.model in (MODEL_X, MODEL_S):
             self.getAllPath()
+            self._schedule_path_data_update()
         if self.model in (MODEL_V):
             self.getConsumableItems()
             self.get_fc_state()
+
+    def _is_mowing(self) -> bool:
+        """Check whether the mower is currently mowing."""
+        return self.mode in (2, 7, 14, 15)
+
+    def _schedule_path_data_update(self) -> None:
+        """Run recurring path data requests every 3 seconds."""
+
+        if self._unloaded:
+            return
+
+        def _request_path_data() -> None:
+            if self._unloaded:
+                return
+            if self.need_request_map_path and self._is_mowing():
+                self.getPathData()
+            self._schedule_path_data_update()
+
+        self.update_timer = Timer(3, _request_path_data)
+        self.update_timer.daemon = True
+        try:
+            self.update_timer.start()
+        except RuntimeError:
+            _LOGGER.warning("Path data timer could not start. Will retry in 60 seconds")
+            self.update_timer = Timer(60, self._schedule_path_data_update)
+            self.update_timer.daemon = True
+            self.update_timer.start()
+
+    def stop_background_timers(self) -> None:
+        """Stop device timers when integration unloads."""
+        self._unloaded = True
+        if self.ota_timer:
+            self.ota_timer.cancel()
+            self.ota_timer = None
+        if self.update_timer:
+            self.update_timer.cancel()
+            self.update_timer = None
 
     def check_ota(self) -> None:
         """Timer to fetch firmware versions."""

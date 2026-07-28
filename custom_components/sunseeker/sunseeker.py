@@ -312,7 +312,6 @@ class SunseekerRoboticmower:
                 ad.url = self.getURL(apptype)
                 ad.host = self.getHOST(apptype)
                 ad.cmdurl = self.getCMDURL(model)
-                ad.need_request_map_path = device.get("softModel") == "XI"
                 ad.DeviceWifiAddress = device.get("ipAddr", "")
                 ad.DeviceBluetooth = device.get("bluetoothMac", "")
                 ad.base_sn = device.get("stationSn", "")
@@ -544,7 +543,4 @@ class SunseekerRoboticmower:
         for device_sn in self.deviceArray:
             ad = self.get_device(device_sn)
             if ad:
-                if ad.ota_timer:
-                    ad.ota_timer.cancel()
-                if ad.update_timer:
-                    ad.update_timer.cancel()
+                ad.stop_background_timers()

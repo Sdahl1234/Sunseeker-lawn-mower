@@ -780,12 +780,13 @@ class SunseekermqttController:
             sid = datanode.get("sid")
             # we are only processing path data requested from the integration
             if sid == self.appId:
-                path_size = self.setvalue(nu, datanode, [], "size", 0)
+                path_size = datanode.get("size")
                 device.map.path_total = self.setvalue(
                     nu, datanode, [], "total", device.map.path_total
                 )
-                start = self.setvalue(nu, datanode, [], "start", 0)
-                device.next_path_index = start + path_size
+                device.next_path_index = device.map.path_total + 1
+                # start = datanode.get("start")
+                # device.next_path_index = start + path_size
                 if (
                     path_size == device.map.path_total
                 ):  # First points in the new path_id series
