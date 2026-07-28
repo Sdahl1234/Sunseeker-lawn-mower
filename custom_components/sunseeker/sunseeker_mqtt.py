@@ -745,6 +745,7 @@ class SunseekermqttController:
 
         # id = report_path_change or report_path
         if "path_info" in datanode:
+            device.need_request_map_path = False
             path_size = self.setvalue(nu, datanode, ["path_info"], "size", 0)
             device.map.path_total = self.setvalue(
                 nu, datanode, ["path_info"], "total", device.map.path_total
@@ -772,6 +773,42 @@ class SunseekermqttController:
                 device.map.cached_pathpoints.extend(new_points)
                 device.map.livepathpoints.extend(new_points)
                 if len(device.map.livepathpoints) > 100 or upd.start_new_path:
+                    upd.live_move_update = True
+
+        # Path data requested for devices that does not report path_info
+        if "path" in datanode:
+            sid = datanode.get("sid")
+            # we are only processing path data requested from the integration
+            if sid == self.appId:
+                path_size = self.setvalue(nu, datanode, [], "size", 0)
+                device.map.path_total = self.setvalue(
+                    nu, datanode, [], "total", device.map.path_total
+                )
+                start = self.setvalue(nu, datanode, [], "start", 0)
+                device.next_path_index = start + path_size
+                if (
+                    path_size == device.map.path_total
+                ):  # First points in the new path_id series
+                    upd.start_new_path = True
+                    device.next_path_index = 0
+                    device.map.livepathpoints.clear()
+                    device.map.cached_pathpoints.clear()
+                    device.map._live_type10_pending.clear()  # noqa: SLF001
+                    device.map.realPathmapdata = None
+                    device.map.realPathFileUlr = ""
+                    device.map.pathurl = ""
+                    # This is not testet so skipping this for now
+                    # device.map.skip_server_path = True
+
+                device.map.path_id = self.setvalue(
+                    nu, datanode, [], "path_id", device.map.path_id
+                )
+
+                path = datanode.get("path")
+                new_points = json.loads(path)
+                device.map.cached_pathpoints.extend(new_points)
+                device.map.livepathpoints.extend(new_points)
+                if len(device.map.livepathpoints) > 90 or upd.start_new_path:
                     upd.live_move_update = True
 
     def handle_mqtt_zone_data(

@@ -178,6 +178,9 @@ class SunseekerDevice:
         self.support_multi_angle = False
         self.support_4G_net = False
         self.support_edge_trim = False
+        self.need_request_map_path = False
+        self.appIdCode = "0123456789abcdef"
+        self.next_path_index = 0
 
     def InitDevice(self) -> None:
         """Setup the device."""
@@ -722,6 +725,19 @@ class SunseekerDevice:
                     if self.func_refesh_token:
                         self.func_refesh_token()
                     return
+
+    def getPathData(self):
+        """Request Path data."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "getPathData",
+            "key": "path_data",
+            "method": "get_property",
+            "sid": self.appIdCode,
+            "start": self.next_path_index,
+        }
+        self.get_property(data)
 
     def getConsumableItems(self):
         """Consumable items."""
