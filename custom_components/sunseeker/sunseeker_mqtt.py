@@ -381,7 +381,8 @@ class SunseekermqttController:
                 _LOGGER.debug(
                     f"dict node: {s} - Old_value: {old_value} New_value: {new_value}"  # noqa: G004
                 )
-                nu.need_update = True
+                if nu:
+                    nu.need_update = True
                 return new_value.copy()
             return old_value
         if isinstance(old_value, list) and isinstance(new_value, list):
@@ -389,20 +390,22 @@ class SunseekermqttController:
                 _LOGGER.debug(
                     f"list node: {s} - Old_value: {old_value} New_value: {new_value}"  # noqa: G004
                 )
-                nu.need_update = True
+                if nu:
+                    nu.need_update = True
                 return new_value.copy()
             return old_value
         if old_value != new_value:
             _LOGGER.debug(
                 f"simple node: {s}  - Old_value: {old_value} New_value: {new_value}"  # noqa: G004
             )
-            nu.need_update = True
+            if nu:
+                nu.need_update = True
             return new_value
         return old_value
 
     def setvalue(
         self,
-        nu: mqtt_needupdate,
+        nu: mqtt_needupdate | None,
         basenode,
         key_path: list[str],
         nodename: str,
@@ -746,7 +749,7 @@ class SunseekermqttController:
         # id = report_path_change or report_path
         if "path_info" in datanode:
             device.need_request_map_path = False
-            path_size = self.setvalue(nu, datanode, ["path_info"], "size", 0)
+            path_size = self.setvalue(None, datanode, ["path_info"], "size", 0)
             device.map.path_total = self.setvalue(
                 nu, datanode, ["path_info"], "total", device.map.path_total
             )
@@ -780,12 +783,12 @@ class SunseekermqttController:
             sid = datanode.get("sid")
             # we are only processing path data requested from the integration
             if sid == self.appId:
-                path_size = datanode.get("size")
+                path_size = self.setvalue(None, datanode, [], "size", 0)
                 device.map.path_total = self.setvalue(
                     nu, datanode, [], "total", device.map.path_total
                 )
                 device.next_path_index = device.map.path_total + 1
-                # start = datanode.get("start")
+                # start = self.setvalue(None, datanode, [], "start", 0)
                 # device.next_path_index = start + path_size
                 if (
                     path_size == device.map.path_total
