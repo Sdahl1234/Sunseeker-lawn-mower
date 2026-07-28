@@ -6,15 +6,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant
 
 from . import SunseekerDataCoordinator, robot_coordinators
-from .const import (
-    MODEL_OLD,
-    MODEL_S,
-    MODEL_V,
-    MODEL_V1,
-    MODEL_X,
-    SUB_MODEL_GEN2,
-    SUB_MODEL_GEN3,
-)
+from .const import MODEL_OLD, MODEL_S, MODEL_V, MODEL_V1, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -79,10 +71,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 ]
             )
     for coordinator in robot_coordinators(hass, entry):
-        if coordinator.model in (MODEL_X, MODEL_S) and coordinator.submodel in (
-            SUB_MODEL_GEN2,
-            SUB_MODEL_GEN3,
-        ):
+        if coordinator.device.support_edge_trim:
             async_add_entities(
                 [
                     SunseekerButton(
