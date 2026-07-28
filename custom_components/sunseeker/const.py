@@ -91,6 +91,7 @@ X5GEN3 = "X5 Gen 3"
 X7 = "X7"
 X7GEN2 = "X7 Gen 2"
 X7GEN3 = "X7 Gen 3"
+X7PLUSGEN2 = "X7 Plus Gen 2"
 X7PLUSGEN3 = "X7 Plus Gen 3"
 X9 = "X9"
 
@@ -195,7 +196,7 @@ def _load_old_error_codes(lang: str) -> dict[int, str]:
             name = elem.get("name")
             if name and elem.text:
                 name_to_text[name] = elem.text
-    except (FileNotFoundError, ET.ParseError):
+    except FileNotFoundError, ET.ParseError:
         pass
     return {
         code: name_to_text[name]

@@ -51,6 +51,7 @@ from .const import (
     X7,
     X7GEN2,
     X7GEN3,
+    X7PLUSGEN2,
     X7PLUSGEN3,
     X9,
     S,
@@ -326,6 +327,7 @@ class SunseekerRoboticmower:
                     X5GEN3,
                     X7GEN2,
                     X7GEN3,
+                    X7PLUSGEN2,
                     X7PLUSGEN3,
                     X9,
                 ):
@@ -337,6 +339,7 @@ class SunseekerRoboticmower:
                     X5GEN3,
                     X7GEN2,
                     X7GEN3,
+                    X7PLUSGEN2,
                     X7PLUSGEN3,
                     X9,
                     S3,
