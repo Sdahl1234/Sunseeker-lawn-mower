@@ -770,6 +770,7 @@ class SunseekermqttController:
                 device.map.realPathmapdata = None
                 device.map.realPathFileUlr = ""
                 device.map.pathurl = ""
+                device.next_path_index = 1
                 # This is not testet so skipping this for now
                 # device.map.skip_server_path = True
 
@@ -795,22 +796,6 @@ class SunseekermqttController:
                     nu, datanode, [], "total", device.map.path_total
                 )
                 device.next_path_index = device.map.path_total + 1
-                # start = self.setvalue(None, datanode, [], "start", 0)
-                # device.next_path_index = start + path_size
-                # if (
-                #    path_size == device.map.path_total
-                # ):  # First points in the new path_id series
-                #    upd.start_new_path = True
-                #    device.next_path_index = 1
-                #    device.map.livepathpoints.clear()
-                #    device.map.cached_pathpoints.clear()
-                #    device.map._live_type10_pending.clear()
-                #    device.map.realPathmapdata = None
-                #    device.map.realPathFileUlr = ""
-                #    device.map.pathurl = ""
-                # This is not testet so skipping this for now
-                # device.map.skip_server_path = True
-
                 device.map.path_id = self.setvalue(
                     nu, datanode, [], "path_id", device.map.path_id
                 )
