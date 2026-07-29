@@ -350,7 +350,7 @@ class SunseekerMap:
             image = self.image.copy()
         else:
             return
-        draw = ImageDraw.Draw(image)
+        # draw = ImageDraw.Draw(image)
 
         if self.map_max_x == self.map_min_x or self.map_max_y == self.map_min_y:
             return
@@ -413,7 +413,7 @@ class SunseekerMap:
         image.paste(robot_img, (xx_centered, yy_centered), robot_img)
 
         # draw.bitmap((xx, yy), self.robot_image, fill=None)
-        draw.circle((xx, yy), 50, fill=None, outline="red")
+        # draw.circle((xx, yy), 50, fill=None, outline="red")
         self.livemap = image
         self.live_image_state = "Loaded"
 
