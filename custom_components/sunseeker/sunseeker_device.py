@@ -177,6 +177,7 @@ class SunseekerDevice:
         self.cliff_detect = False
         self.support_multi_angle = False
         self.support_4G_net = False
+        self.support_rtk_software = False
         self.support_edge_trim = False
         self.need_request_map_path = False
         self.appIdCode = "0123456789abcdef"
@@ -228,7 +229,7 @@ class SunseekerDevice:
             )
         elif self.model == MODEL_V1:
             self.device_firmware = self.devicedata["data"].get("firmwareVersion", "")
-
+        self.support_rtk_software = self.base_firmware != ""
         self.need_request_map_path = self.settings["data"].get("softModel") == "XI"
         self.cliff_detect = self.settings["data"].get("cliffDetectEnable", False)
         self.dis_along_border = self.settings["data"].get("disAlongBorder", 1)
@@ -456,7 +457,9 @@ class SunseekerDevice:
     def check_ota(self) -> None:
         """Timer to fetch firmware versions."""
         self.check_ota_version(self.devicesn, self.device_firmware, 0)
-        if self.model in (MODEL_X, MODEL_S) and not self.support_4G_net:
+        if self.model in (MODEL_X, MODEL_S) and (
+            not self.support_4G_net or self.support_rtk_software
+        ):
             self.check_ota_version(self.base_sn, self.base_firmware, 2)
         if self.ota_timer:
             self.ota_timer.cancel()

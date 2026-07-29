@@ -33,7 +33,10 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 can_install=False,  # coordinator.model in (MODEL_X, MODEL_S),
             )
         )
-        if not coordinator.device.support_4G_net:
+        if (
+            not coordinator.device.support_4G_net
+            or coordinator.device.support_rtk_software
+        ):
             entities.append(
                 SunseekerFirmwareUpdate(
                     coordinator,

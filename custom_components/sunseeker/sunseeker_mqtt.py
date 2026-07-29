@@ -974,7 +974,7 @@ class SunseekermqttController:
 
         if "status" in datanode:
             if device.mode != datanode.get("status"):
-                if datanode.get("status") == 2:
+                if datanode.get("status") == 2 and not device.need_request_map_path:
                     upd.map_update = True
                     upd.livemap_update = True
                     upd.fetch_new_map_data = True
