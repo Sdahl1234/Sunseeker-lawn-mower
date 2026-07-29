@@ -8,6 +8,7 @@ DOMAIN = "sunseeker"
 ROBOTS = "robots"
 DATAHANDLER = "DATAHANDLER"
 DH = "dh"
+CONF_APP_ID = "app_id"
 
 SUNSEEKER_STANDBY = "standby"
 SUNSEEKER_MOWING = "mowing"

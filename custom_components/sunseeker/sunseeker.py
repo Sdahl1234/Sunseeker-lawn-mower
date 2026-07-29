@@ -66,7 +66,16 @@ _LOGGER = logging.getLogger(__name__)
 class SunseekerRoboticmower:
     """SunseekerRobot class."""
 
-    def __init__(self, brand, apptype, region, email, password, language) -> None:
+    def __init__(
+        self,
+        brand,
+        apptype,
+        region,
+        email,
+        password,
+        language,
+        app_id: str,
+    ) -> None:
         """Init function."""
 
         self.debug = False
@@ -91,6 +100,7 @@ class SunseekerRoboticmower:
         self._unloaded = False
         self.robotList = []  # list of devices
         self.region = region
+        self.appId = app_id
 
         self.login_ok: bool = False
         self.login_url = ""
@@ -160,6 +170,7 @@ class SunseekerRoboticmower:
                         self.apptype,
                         MODEL_OLD,
                         self.url,
+                        self.appId,
                     )
                     self.mqtt_controllers.append(mqtt_controller)
         else:
@@ -178,6 +189,7 @@ class SunseekerRoboticmower:
                             self.apptype,
                             MODEL_V1,
                             self.url,
+                            self.appId,
                         )
                         self.mqtt_controllers.append(mqtt_controller)
                     if self.need_sxv_mqtt:
@@ -190,6 +202,7 @@ class SunseekerRoboticmower:
                             self.apptype,
                             MODEL_SXV,
                             self.url,
+                            self.appId,
                         )
                         self.mqtt_controllers.append(mqtt_controller)
 
@@ -276,7 +289,7 @@ class SunseekerRoboticmower:
                 device_id = device["deviceId"]
                 userid = device["appUserId"]
                 self.deviceArray.append(device_sn)
-                ad = SunseekerDevice(device_sn)
+                ad = SunseekerDevice(device_sn, self.appId)
                 ad.access_token = self.session["access_token"]
                 ad.userid = userid  # self.session["user_id"]
                 ad.language = self.language

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import uuid
 
 from homeassistant.config_entries import ConfigEntryNotReady
 from homeassistant.const import (
@@ -15,7 +16,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
-from .const import APPTYPE_OLD, DOMAIN, REGION_EU
+from .const import APPTYPE_OLD, CONF_APP_ID, DOMAIN, REGION_EU
 from .coordinator import (
     SunSeekerConfigEntry,
     SunseekerDataCoordinator,
@@ -53,6 +54,17 @@ def robot_coordinators(hass: HomeAssistant, entry: SunSeekerConfigEntry):
 
 async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) -> bool:
     """Set up the Sunseeker mower."""
+    app_id = entry.data.get(CONF_APP_ID)
+    if app_id is None:
+        app_id = uuid.uuid4().hex[:16]
+        hass.config_entries.async_update_entry(
+            entry,
+            data={
+                **entry.data,
+                CONF_APP_ID: app_id,
+            },
+        )
+
     email = entry.data.get(CONF_EMAIL)
     password = entry.data.get(CONF_PASSWORD)
     brand = entry.data.get(CONF_MODEL)
@@ -64,7 +76,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
     locale = (f"{language}-{country}" if country else language).lower()
 
     data_handler = SunseekerRoboticmower(
-        brand, apptype, region, email, password, locale
+        brand,
+        apptype,
+        region,
+        email,
+        password,
+        locale,
+        app_id,
     )
     await hass.async_add_executor_job(data_handler.on_load)
     if not data_handler.login_ok:

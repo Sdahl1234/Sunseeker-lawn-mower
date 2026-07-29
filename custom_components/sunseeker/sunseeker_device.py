@@ -29,7 +29,7 @@ _LOGGER = logging.getLogger(__name__)
 class SunseekerDevice:
     """Class for a single Sunseeker robot."""
 
-    def __init__(self, Devicesn) -> None:
+    def __init__(self, Devicesn, app_id: str) -> None:
         """Init."""
 
         self.language = ""
@@ -180,7 +180,7 @@ class SunseekerDevice:
         self.support_rtk_software = False
         self.support_edge_trim = False
         self.need_request_map_path = False
-        self.appIdCode = "0123456789abcdef"
+        self.appIdCode = app_id
         self.next_path_index = 0
         self._unloaded = False
 

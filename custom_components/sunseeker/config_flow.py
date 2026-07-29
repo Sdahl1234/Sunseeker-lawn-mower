@@ -1,5 +1,7 @@
 """Adds config flow for Sunseeker mower integration."""
 
+import uuid
+
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -13,7 +15,13 @@ from homeassistant.const import (
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import selector
 
-from .const import APPTYPE_NEW, APPTYPE_OLD, DOMAIN, REGION_EU, REGION_US
+from .const import APPTYPE_NEW, APPTYPE_OLD, CONF_APP_ID, DOMAIN, REGION_EU, REGION_US
+
+
+def _generate_app_id() -> str:
+    """Generate a unique app ID for a config entry."""
+    return uuid.uuid4().hex[:16]
+
 
 brands = [
     "Adano",
@@ -72,6 +80,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             email = user_input[CONF_EMAIL]
             password = user_input[CONF_PASSWORD].replace(" ", "")
             apptype = user_input[CONF_MODEL_ID]
+            app_id = _generate_app_id()
             await self.async_set_unique_id(f"{email}_{apptype}")
             self._abort_if_unique_id_configured()
             return self.async_create_entry(
@@ -82,6 +91,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_REGION: user_input[CONF_REGION],
                     CONF_EMAIL: email,
                     CONF_PASSWORD: password,
+                    CONF_APP_ID: app_id,
                 },
             )
 

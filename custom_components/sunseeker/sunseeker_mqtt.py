@@ -70,6 +70,7 @@ class SunseekermqttController:
         apptype,
         model,
         url,
+        app_id: str,
     ) -> None:
         """Init."""
         self.Sunseeker: SunseekerRoboticmower = mower
@@ -86,7 +87,7 @@ class SunseekermqttController:
         self.url = url
         self.debug_user_id = 0
         self.user_id = user_id
-        self.appId = "0123456789abcdef"
+        self.appId = app_id
         self.mqtt_passwd = str(uuid.uuid4()).replace("-", "")[:24]
         self.public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u\n7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg\n2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeu\nCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrC\nftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWB\nSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4\nXwIDAQAB\n-----END PUBLIC KEY-----"
         self._device_queues: dict[str, queue.Queue] = {}
