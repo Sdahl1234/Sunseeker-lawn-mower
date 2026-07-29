@@ -22,6 +22,7 @@ from .const import (
     X7,
     X7GEN2,
     X7GEN3,
+    X7PLUSGEN2,
     X9,
 )
 from .entity import SunseekerEntity
@@ -119,6 +120,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                 X5GEN3,
                 X7,
                 X7GEN2,
+                X7PLUSGEN2,
                 X7GEN3,
                 X9,
             ):
@@ -152,6 +154,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                 X5GEN2,
                 X5GEN3,
                 X7GEN2,
+                X7PLUSGEN2,
                 X7GEN3,
                 X9,
             ):
@@ -172,6 +175,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                 X5GEN2,
                 X5GEN3,
                 X7GEN2,
+                X7PLUSGEN2,
                 X7GEN3,
                 X9,
             ):

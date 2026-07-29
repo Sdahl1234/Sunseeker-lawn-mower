@@ -24,6 +24,7 @@ from .const import (
     X7,
     X7GEN2,
     X7GEN3,
+    X7PLUSGEN2,
     X9,
 )
 from .entity import SunseekerEntity
@@ -116,6 +117,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 X5GEN3,
                 X7,
                 X7GEN2,
+                X7PLUSGEN2,
                 X7GEN3,
                 X9,
             ):
@@ -136,6 +138,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 X5GEN3,
                 X7,
                 X7GEN2,
+                X7PLUSGEN2,
                 X7GEN3,
                 X9,
             ):
@@ -179,7 +182,16 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                             for i in range(1, 5)
                         )
                 async_add_entities(zigzag_active_custom)
-            if coordinator.modelname in (S4, X4, X5GEN2, X5GEN3, X7GEN2, X7GEN3, X9):
+            if coordinator.modelname in (
+                S4,
+                X4,
+                X5GEN2,
+                X5GEN3,
+                X7GEN2,
+                X7PLUSGEN2,
+                X7GEN3,
+                X9,
+            ):
                 async_add_entities(
                     [
                         SunseekerAutoRideEdgeSwitch(
@@ -196,6 +208,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 X5GEN2,
                 X5GEN3,
                 X7GEN2,
+                X7PLUSGEN2,
                 X7GEN3,
                 X9,
             ):
