@@ -748,13 +748,20 @@ class SunseekermqttController:
 
         # id = report_path_change or report_path
         if "path_info" in datanode:
-            device.need_request_map_path = False
+            new_path = False
+            msgid = self.setvalue(None, datanode, [], "id", "")
+            if msgid == "report_path_change":
+                new_path = True
+                device.next_path_index = 1
+            else:
+                device.need_request_map_path = False
+
             path_size = self.setvalue(None, datanode, ["path_info"], "size", 0)
             device.map.path_total = self.setvalue(
                 nu, datanode, ["path_info"], "total", device.map.path_total
             )
             if (
-                path_size == device.map.path_total
+                new_path or path_size == device.map.path_total
             ):  # First points in the new path_id series
                 upd.start_new_path = True
                 device.map.livepathpoints.clear()
@@ -790,19 +797,19 @@ class SunseekermqttController:
                 device.next_path_index = device.map.path_total + 1
                 # start = self.setvalue(None, datanode, [], "start", 0)
                 # device.next_path_index = start + path_size
-                if (
-                    path_size == device.map.path_total
-                ):  # First points in the new path_id series
-                    upd.start_new_path = True
-                    device.next_path_index = 0
-                    device.map.livepathpoints.clear()
-                    device.map.cached_pathpoints.clear()
-                    device.map._live_type10_pending.clear()  # noqa: SLF001
-                    device.map.realPathmapdata = None
-                    device.map.realPathFileUlr = ""
-                    device.map.pathurl = ""
-                    # This is not testet so skipping this for now
-                    # device.map.skip_server_path = True
+                # if (
+                #    path_size == device.map.path_total
+                # ):  # First points in the new path_id series
+                #    upd.start_new_path = True
+                #    device.next_path_index = 1
+                #    device.map.livepathpoints.clear()
+                #    device.map.cached_pathpoints.clear()
+                #    device.map._live_type10_pending.clear()
+                #    device.map.realPathmapdata = None
+                #    device.map.realPathFileUlr = ""
+                #    device.map.pathurl = ""
+                # This is not testet so skipping this for now
+                # device.map.skip_server_path = True
 
                 device.map.path_id = self.setvalue(
                     nu, datanode, [], "path_id", device.map.path_id
