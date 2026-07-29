@@ -4,13 +4,13 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.23
+#### V1.2.24
 
 ## Tested models
   - Adano RM5, RM6, RM9
   - Brücke RM501
   - Sunseeker X3, X4, X5, X7
-  - Sunseeker X3, X5, X7 Gen2
+  - Sunseeker X3 Gen2, X5 Gen2, X7 Gen2, X7 Plus Gen2
   - Sunseeker V1, V18, V3
 
 ## Install
@@ -150,7 +150,7 @@ In addition to the shared entities above, X and S models include:
 
 **Generation overview:**
 - **Gen1:** X3, X4, X5, X7, X9 / S3, S4, S5
-- **Gen2:** X3 Gen2, X5 Gen2, X7 Gen2 / S5 Gen2
+- **Gen2:** X3 Gen2, X5 Gen2, X7 Gen2, X7 Plus Gen2, S5 Gen2
 - **Gen3:** X5 Gen3, X7 Gen3, X7 Plus Gen3
 
 ### Buttons
@@ -222,7 +222,7 @@ In addition to the shared entities above, X and S models include:
 - **Base serialnumber** - Base station serial number *(X3, X5, S3, S4, S5 only)*
 
 ### Camera
-- **Live map** - Live map with mower movement *(all X and S)*
+- **Live map** - Live map with mower movement and path *(all X and S)*
 
 ### Images
 - **Map** - Map image (use with the map-edit card) *(all X and S)*
