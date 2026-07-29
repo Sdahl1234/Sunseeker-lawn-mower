@@ -23,6 +23,7 @@ from .coordinator import (
     SunseekerDataCoordinator,
     SunseekerEntryData,
 )
+from .devdebug import SUNSEEKER_LOG_LEVEL
 from .services import async_setup_services
 from .sunseeker import SunseekerRoboticmower
 from .sunseeker_mqtt import mqtt_update_values
@@ -45,7 +46,7 @@ PLATFORMS = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
-# _LOGGER.level = logging.DEBUG
+_LOGGER.level = SUNSEEKER_LOG_LEVEL
 
 
 def robot_coordinators(hass: HomeAssistant, entry: SunSeekerConfigEntry):
