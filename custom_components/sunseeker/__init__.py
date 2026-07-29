@@ -15,6 +15,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.device_registry import DeviceEntry
 
 from .const import APPTYPE_OLD, CONF_APP_ID, DOMAIN, REGION_EU
 from .coordinator import (
@@ -138,6 +139,22 @@ async def async_unload_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) -
     if unload_ok:
         entry.runtime_data.data_handler.unload()
     return unload_ok
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant,
+    entry: SunSeekerConfigEntry,
+    device_entry: DeviceEntry,
+) -> bool:
+    """Allow removing devices that no longer exist in the account."""
+    del hass
+
+    active_identifiers = {
+        (DOMAIN, coordinator.unique_id)
+        for coordinator in entry.runtime_data.coordinators
+    }
+
+    return not device_entry.identifiers.intersection(active_identifiers)
 
 
 async def async_migrate_entry(
