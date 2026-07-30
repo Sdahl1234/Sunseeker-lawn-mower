@@ -220,8 +220,8 @@ class SunseekerDevice:
     def InitValues(self) -> None:  # noqa: C901
         """Init values at upstart."""
         self.deviceSpecies = self.devicedata["data"].get("deviceSpecies") or 0
-        self.base_firmware = self.settings["data"].get(
-            "wirelessStationFirmwareVersion", ""
+        self.base_firmware = (
+            self.settings["data"].get("wirelessStationFirmwareVersion") or ""
         )
         if self.model in (MODEL_S, MODEL_X, MODEL_V):
             self.device_firmware = self.settings["data"].get(
@@ -229,7 +229,7 @@ class SunseekerDevice:
             )
         elif self.model == MODEL_V1:
             self.device_firmware = self.devicedata["data"].get("firmwareVersion", "")
-        self.support_rtk_software = self.base_firmware != ""
+        self.support_rtk_software = bool(self.base_firmware)
         self.need_request_map_path = self.settings["data"].get("softModel") == "XI"
         self.cliff_detect = self.settings["data"].get("cliffDetectEnable", False)
         self.dis_along_border = self.settings["data"].get("disAlongBorder", 1)
