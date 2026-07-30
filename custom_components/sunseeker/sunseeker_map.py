@@ -244,6 +244,13 @@ class SunseekerMap:
         change_image = False
         data = pdata
         if not pdata:
+            _LOGGER.debug(
+                "Resetting image_path before generate_path for %s (skip_server_path=%s, has_realPathmapdata=%s, has_mappathdata=%s)",
+                self.mower.devicesn,
+                self.skip_server_path,
+                bool(self.realPathmapdata),
+                bool(self.mappathdata),
+            )
             self.image_path = None
             if self.skip_server_path:
                 await self.generate_path(self.cached_pathpoints)
@@ -256,11 +263,32 @@ class SunseekerMap:
             if self.mappathdata:
                 data = self.mappathdata
         if data is None:
+            if change_image and self.image_path is not None:
+                _LOGGER.debug(
+                    "generate_path for %s has no mappathdata; keeping rendered image_path from fallback source",
+                    self.mower.devicesn,
+                )
+                return
+            if self.image is not None:
+                self.image_path = self.image.copy()
+                _LOGGER.debug(
+                    "generate_path received no data for %s; initialized empty path layer from base map",
+                    self.mower.devicesn,
+                )
+            else:
+                _LOGGER.debug(
+                    "generate_path received no data for %s and base map is not available",
+                    self.mower.devicesn,
+                )
             return
         if change_image and self.image_path:
             image = self.image_path.copy()
         else:
             if self.image is None:
+                _LOGGER.debug(
+                    "generate_path aborted for %s because base map image is None",
+                    self.mower.devicesn,
+                )
                 return
             image = self.image.copy()
         draw = ImageDraw.Draw(image)
@@ -286,6 +314,11 @@ class SunseekerMap:
         if size < 2:
             return
         if not image:
+            _LOGGER.debug(
+                "add_live_points skipped for %s because image_path is None (points=%s)",
+                self.mower.devicesn,
+                size,
+            )
             return
 
         draw = ImageDraw.Draw(image)
@@ -342,6 +375,19 @@ class SunseekerMap:
 
     async def generate_livemap(self) -> None:
         """Generate livemap."""
+        if self.image_path is None:
+            if self.image is None:
+                _LOGGER.debug(
+                    "generate_livemap for %s has no image_path and no base map image",
+                    self.mower.devicesn,
+                )
+                return
+            self.image_path = self.image.copy()
+            _LOGGER.debug(
+                "generate_livemap initialized missing image_path from base map for %s",
+                self.mower.devicesn,
+            )
+
         await self.add_live_points(self.image_path)
 
         if self.image_path:
