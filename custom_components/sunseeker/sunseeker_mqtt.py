@@ -750,11 +750,13 @@ class SunseekermqttController:
         # id = report_path_change or report_path
         if "path_info" in datanode:
             new_path = False
-            msgid = self.setvalue(None, datanode, [], "id", "")
+            msgid = self.setvalue(None, data, [], "id", "")
             if msgid == "report_path_change":
                 new_path = True
                 device.next_path_index = 1
             else:
+                if device.need_request_map_path:
+                    _LOGGER.debug("Turning of map_data")
                 device.need_request_map_path = False
 
             path_size = self.setvalue(None, datanode, ["path_info"], "size", 0)

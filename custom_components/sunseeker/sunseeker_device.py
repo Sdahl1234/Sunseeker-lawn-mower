@@ -430,7 +430,10 @@ class SunseekerDevice:
         def _request_path_data() -> None:
             if self._unloaded:
                 return
+            if not self.need_request_map_path:
+                _LOGGER.debug(f"Requesting path data for {self.DeviceName} disabled")  # noqa: G004
             if self.need_request_map_path and self._is_mowing():
+                _LOGGER.debug(f"Requesting path data for {self.DeviceName}")  # noqa: G004
                 self.getPathData()
             self._schedule_path_data_update()
 
