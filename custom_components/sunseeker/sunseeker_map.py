@@ -818,6 +818,92 @@ class SunseekerMap:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Get backup map for {self.mower.devicesn}: failed {error}")  # noqa: G004
 
+    def upload_map(self, map_data: dict) -> bool:
+        """Upload a modified map JSON to the cloud and bind it to this device.
+
+        Steps:
+        1. POST admin/sys-file/upload  (multipart) → new fileUrl + fileName
+        2. POST wireless_map/wireless_device       → bind new map to device
+
+        Returns True on success, False on any error.
+        """
+        import time as _time
+
+        update_time = int(_time.time() * 1000)
+        map_data = dict(map_data)
+        map_data["update_time"] = update_time
+
+        file_name = f"Wireless_{self.mower.devicesn}_{update_time}.json"
+        map_json = json.dumps(map_data, separators=(",", ":"), ensure_ascii=False)
+
+        headers_upload = {
+            "Accept-Language": self.mower.language,
+            "Authorization": "bearer " + self.mower.access_token,
+            "Host": self.mower.host,
+            "Connection": "Keep-Alive",
+            "User-Agent": "okhttp/4.8.1",
+        }
+        try:
+            upload_url = self.mower.url + "/admin/sys-file/upload"
+            _LOGGER.debug(f"Uploading map to {upload_url} as {file_name}")  # noqa: G004
+            resp = requests.post(
+                upload_url,
+                headers=headers_upload,
+                files={"file": (file_name, BytesIO(map_json.encode()), "application/json")},
+                timeout=30,
+            )
+            resp_data = resp.json()
+            _LOGGER.debug(f"Upload response: {resp_data}")  # noqa: G004
+            if resp.status_code != 200 or resp_data.get("code") != 0:
+                _LOGGER.error(f"Map upload failed: {resp_data}")  # noqa: G004
+                return False
+
+            file_url = (
+                resp_data["data"].get("fileUrl")
+                or resp_data["data"].get("url")
+            )
+            returned_name = resp_data["data"].get("fileName") or file_name
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.error(f"Map upload error: {err}")  # noqa: G004
+            return False
+
+        # Step 2 — bind the new file to the device
+        headers_bind = {
+            "Accept-Language": self.mower.language,
+            "Authorization": "bearer " + self.mower.access_token,
+            "Content-Type": "application/json",
+            "Host": self.mower.host,
+            "Connection": "Keep-Alive",
+            "User-Agent": "okhttp/4.4.1",
+        }
+        try:
+            bind_url = self.mower.url + "/wireless_map/wireless_device"
+            body = {
+                "deviceSn": self.mower.devicesn,
+                "mapPathFileName": returned_name,
+                "mapPathFileUrl": file_url,
+            }
+            _LOGGER.debug(f"Binding map: {body}")  # noqa: G004
+            bind_resp = requests.post(
+                bind_url,
+                headers=headers_bind,
+                json=body,
+                timeout=10,
+            )
+            bind_data = bind_resp.json()
+            _LOGGER.debug(f"Bind response: {bind_data}")  # noqa: G004
+            if bind_resp.status_code != 200 or bind_data.get("code") not in (0, None):
+                _LOGGER.error(f"Map bind failed: {bind_data}")  # noqa: G004
+                return False
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.error(f"Map bind error: {err}")  # noqa: G004
+            return False
+
+        # Invalidate local cache so next poll re-downloads the fresh map
+        self.mapurl = ""
+        _LOGGER.debug(f"Map uploaded and bound successfully as {returned_name}")  # noqa: G004
+        return True
+
     def InitValues(self, settings) -> None:
         """Init values at upstart."""
         if self.mower.model in (MODEL_X, MODEL_S):

@@ -1936,9 +1936,13 @@ class SunseekerDevice:
     def set_map(self, mapdata):
         """Set map from service call."""
         _LOGGER.debug(f"Servicecall data: {mapdata}")  # noqa: G004
-        if self.set_work_area(mapdata):
-            self.rename_workarea(mapdata, include_new=True)
+        if self.work_area_changed(mapdata):
+            self.map.upload_map(mapdata)
             return
+        # not working
+        # if self.set_work_area(mapdata):
+        #     self.rename_workarea(mapdata, include_new=True)
+        #     return
         if self.handle_merge(mapdata):
             return
         if self.handle_split(mapdata):
@@ -2201,11 +2205,13 @@ class SunseekerDevice:
         _LOGGER.debug(f"set forbidden: {area_info}")  # noqa: G004
         self.set_property(data)
 
-    def set_work_area(self, mapdata) -> bool:
-        """Setting the region_work."""
+    def _get_work_area_payloads(
+        self, mapdata
+    ) -> tuple[dict[int, dict], dict[int, dict]]:
+        """Build comparable payload dicts for current and incoming work areas."""
         current_map = self.map.image_data
         if not current_map:
-            return False
+            return {}, {}
         current_data = json.loads(current_map)
 
         def _points_like_safe(region):
@@ -2235,6 +2241,30 @@ class SunseekerDevice:
             for region in mapdata.get("region_work", [])
             if "id" in region
         }
+
+        return current_work, new_work
+
+    def work_area_changed(self, mapdata) -> bool:
+        """Return True if region_work content differs from current map data."""
+        current_work, new_work = self._get_work_area_payloads(mapdata)
+        if not current_work:
+            return False
+
+        removed_ids = set(current_work) - set(new_work)
+        if removed_ids:
+            return True
+
+        for region_id, payload in new_work.items():
+            if current_work.get(region_id) != payload:
+                return True
+
+        return False
+
+    def set_work_area(self, mapdata) -> bool:
+        """Setting the region_work."""
+        current_work, new_work = self._get_work_area_payloads(mapdata)
+        if not current_work:
+            return False
 
         removed_ids = set(current_work) - set(new_work)
         has_changes = bool(removed_ids)
