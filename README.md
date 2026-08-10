@@ -4,7 +4,7 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.26
+#### V1.2.27
 
 ## Tested models
   - Adano RM5, RM6, RM9
@@ -255,6 +255,8 @@ In addition to the shared entities above, X and S models include:
 - **Sensors**
   - **{zonename} Estimated time** - Estimated time to mow the area
   - **{zonename} Area** - Area size
+  - **{zonename} Start** - Is the Zone started
+  - **{zonename} Finish** - Is the Zone finished
 - **Settings**
   - **{zonename} Cutting gap** - Narrow, Normal, Wide
   - **{zonename} Cutting pattern** - Standard, Change pattern, User defined

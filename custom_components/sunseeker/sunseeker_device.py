@@ -182,6 +182,9 @@ class SunseekerDevice:
         self.need_request_map_path = False
         self.appIdCode = app_id
         self.next_path_index = 0
+        self._path_data_validation_done = False
+        self._path_data_validation_countdown = 0
+        self._path_data_initial_delay_applied = False
         self._unloaded = False
 
     def InitDevice(self) -> None:
@@ -230,7 +233,9 @@ class SunseekerDevice:
         elif self.model == MODEL_V1:
             self.device_firmware = self.devicedata["data"].get("firmwareVersion", "")
         self.support_rtk_software = bool(self.base_firmware)
-        self.need_request_map_path = self.settings["data"].get("softModel") == "XI"
+        if self.model in (MODEL_S, MODEL_X):
+            self.need_request_map_path = True
+        # self.need_request_map_path = self.settings["data"].get("softModel") == "XI"
         self.cliff_detect = self.settings["data"].get("cliffDetectEnable", False)
         self.dis_along_border = self.settings["data"].get("disAlongBorder", 1)
         self.above_edge = self.settings["data"].get("aboveEdge", False)
@@ -412,7 +417,10 @@ class SunseekerDevice:
             self.getSelectRegionID()
         if self.model in (MODEL_X, MODEL_S):
             self.getAllPath()
-            self._schedule_path_data_update()
+            self._path_data_validation_done = False
+            self._path_data_validation_countdown = 0
+            self._path_data_initial_delay_applied = False
+            self._schedule_path_data_update(delay_seconds=2)
         if self.model in (MODEL_V):
             self.getConsumableItems()
             self.get_fc_state()
@@ -421,8 +429,8 @@ class SunseekerDevice:
         """Check whether the mower is currently mowing."""
         return self.mode in (2, 7, 14, 15)
 
-    def _schedule_path_data_update(self) -> None:
-        """Run recurring path data requests every 3 seconds."""
+    def _schedule_path_data_update(self, delay_seconds: int | float = 2) -> None:
+        """Poll path eligibility every 2s, then request path data while valid."""
 
         if self._unloaded:
             return
@@ -430,20 +438,50 @@ class SunseekerDevice:
         def _request_path_data() -> None:
             if self._unloaded:
                 return
+
+            is_valid = self.need_request_map_path and self._is_mowing()
+
             if not self.need_request_map_path:
                 _LOGGER.debug(f"Requesting path data for {self.DeviceName} disabled")  # noqa: G004
-            if self.need_request_map_path and self._is_mowing():
+                self._path_data_validation_countdown = 0
+                self.update_timer = None
+                return
+
+            if not self._path_data_validation_done:
+                if not self._path_data_initial_delay_applied and is_valid:
+                    _LOGGER.debug(
+                        f"Path request eligible for {self.DeviceName}; waiting 8s to revalidate"  # noqa: G004
+                    )
+                    self._path_data_validation_countdown = 8
+                    self._path_data_initial_delay_applied = True
+
+                if (
+                    self._path_data_initial_delay_applied
+                    and self._path_data_validation_countdown > 0
+                ):
+                    self._path_data_validation_countdown = max(
+                        0, self._path_data_validation_countdown - 2
+                    )
+
+                if self._path_data_validation_countdown == 0 and is_valid:
+                    _LOGGER.debug(f"Validating path data request for {self.DeviceName}")  # noqa: G004
+                    self._path_data_validation_done = True
+                    self.getPathData()
+            elif is_valid:
                 _LOGGER.debug(f"Requesting path data for {self.DeviceName}")  # noqa: G004
                 self.getPathData()
-            self._schedule_path_data_update()
 
-        self.update_timer = Timer(3, _request_path_data)
+            self._schedule_path_data_update(delay_seconds=2)
+
+        self.update_timer = Timer(delay_seconds, _request_path_data)
         self.update_timer.daemon = True
         try:
             self.update_timer.start()
         except RuntimeError:
             _LOGGER.warning("Path data timer could not start. Will retry in 60 seconds")
-            self.update_timer = Timer(60, self._schedule_path_data_update)
+            self.update_timer = Timer(
+                60, lambda: self._schedule_path_data_update(delay_seconds=delay_seconds)
+            )
             self.update_timer.daemon = True
             self.update_timer.start()
 
@@ -728,6 +766,17 @@ class SunseekerDevice:
             "id": "getAllPath",
             "key": "all_path",
             "map_file": f"Wireless_{self.devicesn}_{self.map.mapid}.json",
+            "method": "get_property",
+        }
+        self.get_property(data)
+
+    def get_build_map_type(self):
+        """Get the map type via mqtt."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "getBuildMapType",
+            "key": "map_type",
             "method": "get_property",
         }
         self.get_property(data)
@@ -1887,6 +1936,9 @@ class SunseekerDevice:
     def set_map(self, mapdata):
         """Set map from service call."""
         _LOGGER.debug(f"Servicecall data: {mapdata}")  # noqa: G004
+        if self.set_work_area(mapdata):
+            self.rename_workarea(mapdata, include_new=True)
+            return
         if self.handle_merge(mapdata):
             return
         if self.handle_split(mapdata):
@@ -1914,7 +1966,7 @@ class SunseekerDevice:
             return True
         return False
 
-    def rename_workarea(self, mapdata) -> bool:
+    def rename_workarea(self, mapdata, include_new: bool = False) -> bool:
         """Rename changed workareas by comparing incoming and current map data."""
         current_map = self.map.image_data
         if not current_map:
@@ -1941,6 +1993,13 @@ class SunseekerDevice:
             if region_id in current_workareas
             and new_name != current_workareas[region_id]
         ]
+
+        if include_new:
+            changed_ids.extend(
+                region_id
+                for region_id, new_name in new_workareas.items()
+                if region_id not in current_workareas and new_name
+            )
 
         if not changed_ids:
             return False
@@ -2141,6 +2200,64 @@ class SunseekerDevice:
         }
         _LOGGER.debug(f"set forbidden: {area_info}")  # noqa: G004
         self.set_property(data)
+
+    def set_work_area(self, mapdata) -> bool:
+        """Setting the region_work."""
+        current_map = self.map.image_data
+        if not current_map:
+            return False
+        current_data = json.loads(current_map)
+
+        def _points_like_safe(region):
+            pts = region.get("points", [])
+            if isinstance(pts, str):
+                try:
+                    pts = json.loads(pts)
+                except Exception:  # noqa: BLE001
+                    pts = []
+            return pts
+
+        def _build_payload(region):
+            return {
+                "key": "set_parea",
+                "type": 0,
+                "map_id": region["id"],
+                "vertexs": _points_like_safe(region),
+            }
+
+        current_work = {
+            int(region["id"]): _build_payload(region)
+            for region in current_data.get("region_work", [])
+            if "id" in region
+        }
+        new_work = {
+            int(region["id"]): _build_payload(region)
+            for region in mapdata.get("region_work", [])
+            if "id" in region
+        }
+
+        removed_ids = set(current_work) - set(new_work)
+        has_changes = bool(removed_ids)
+        for region_id in removed_ids:
+            self.delete_region(region=region_id, type=0)
+
+        for region_id, payload in new_work.items():
+            if current_work.get(region_id) == payload:
+                continue
+
+            has_changes = True
+
+            data = {
+                "appId": self.userid,
+                "params": payload,
+                "deviceSn": self.devicesn,
+                "id": "setParea",
+                "method": "set_property",
+            }
+            _LOGGER.debug(f"set work area: {data}")  # noqa: G004
+            self.set_property(data)
+
+        return has_changes
 
     def set_safe_areas(self, mapdata):
         """Setting the region_placed_blank."""
