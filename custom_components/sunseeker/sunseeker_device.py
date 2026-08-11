@@ -1,12 +1,16 @@
 """SunseekerPy."""
 
+import contextlib
 import gzip
 import json
 import logging
 import re
 from threading import Timer
 
+# import time as _time
 import requests
+
+from homeassistant.core import HomeAssistant
 
 from .const import (
     APPTYPE_NEW,
@@ -18,6 +22,7 @@ from .const import (
     MODEL_X,
     SUB_MODEL_GEN1,
 )
+from .sunseeker_ble import MapBorder, SunseekerBleSession
 from .sunseeker_consumable_items import SunseekerConsumableItems
 from .sunseeker_map import SunseekerMap
 from .sunseeker_schedule import Sunseeker_new_schedule, SunseekerSchedule
@@ -429,7 +434,7 @@ class SunseekerDevice:
         """Check whether the mower is currently mowing."""
         return self.mode in (2, 7, 14, 15)
 
-    def _schedule_path_data_update(self, delay_seconds: int | float = 2) -> None:
+    def _schedule_path_data_update(self, delay_seconds: float = 2) -> None:
         """Poll path eligibility every 2s, then request path data while valid."""
 
         if self._unloaded:
@@ -1933,25 +1938,239 @@ class SunseekerDevice:
                         self.func_refesh_token()
                     return
 
-    def set_map(self, mapdata):
-        """Set map from service call."""
+    def set_map(self, mapdata) -> bool:
+        """Set map from service call.
+
+        Returns ``True`` if BLE boundary recording is needed — in that case the
+        caller must ``await device.add_work_area_ble(mapdata, hass)`` directly
+        on HA's event loop.
+        """
         _LOGGER.debug(f"Servicecall data: {mapdata}")  # noqa: G004
         if self.work_area_changed(mapdata):
-            self.map.upload_map(mapdata)
-            return
+            return True
+        # works but the mower restores the old map again
+        # if self.work_area_changed(mapdata):
+        #     map_id = int(_time.time() * 1000)
+        #     if self.map.upload_map(mapdata, map_id):
+        #         self.restore_map(map_id) # mower does not know the new mapid
+        #    return
         # not working
         # if self.set_work_area(mapdata):
         #     self.rename_workarea(mapdata, include_new=True)
         #     return
         if self.handle_merge(mapdata):
-            return
+            return False
         if self.handle_split(mapdata):
-            return
+            return False
         self.rename_workarea(mapdata)
         self.set_obstacle_areas(mapdata)
         self.set_forbidden_areas(mapdata)
         self.set_safe_areas(mapdata)
         self.set_passage_areas(mapdata)
+        return False
+
+    async def add_work_area_ble(self, mapdata, hass: HomeAssistant | None = None):
+        """Connect to the mower via BLE and drive the new work area boundary.
+
+        Called by :meth:`set_map` when a new work region is detected in
+        *mapdata* that is not present on the mower.
+
+        1. Pre-flight: verify mower is docked, BLE MAC, BLE libs, RTK signal quality.
+        2. Detect newly added area IDs (set-difference against current map).
+        3. map_border is selected from whats changed.
+        4. Run the async BLE session directly on HA's event loop.
+
+        .. important::
+            The mower **must be on the charging station** when this is called.
+            ``startBuildMap`` causes the mower to leave the dock — if it is not
+            docked, the firmware will reject the command and recording will fail.
+
+        .. note::
+            This is an async method that runs in HA's event loop.  It uses
+            HA's Bluetooth proxy infrastructure (ESPHome BT proxies) for
+            extended range and reconnects automatically if the mower moves
+            between proxy zones during boundary recording.
+        """
+        # Use cloud-provided MAC if available; fall back to BLE scan using serial number
+        _mac: str | None = self.DeviceBluetooth or None
+        if not _mac:
+            _LOGGER.warning(
+                "Add_work_area_ble: DeviceBluetooth not set — will scan for mower "
+                "using serial number %s (last 6 chars)",
+                self.devicesn[-6:] if self.devicesn else "unknown",
+            )
+
+        # mode 9 = charging, 10 = charging_full — both confirm mower is on dock
+        _DOCKED_MODES = {9, 10}  # noqa: N806
+        if self.mode not in _DOCKED_MODES:
+            _LOGGER.warning(
+                "Add_work_area_ble: mower not docked (mode=%d) — "
+                "mower must be on the charging station to start boundary recording",
+                self.mode,
+            )
+            return
+
+        # if self.RTKSignal < 3:
+        #    _LOGGER.warning(
+        #        "Add_work_area_ble: RTK signal too weak (%d) — "
+        #        "aborting BLE session (need >= 3)",
+        #        self.RTKSignal,
+        #    )
+        #    return
+
+        current_work, new_work = self._get_work_area_payloads(mapdata)
+        new_ids = set(new_work) - set(current_work)
+        changed_ids = {
+            region_id
+            for region_id in set(new_work) & set(current_work)
+            if new_work[region_id] != current_work[region_id]
+        }
+        record_ids = new_ids | changed_ids
+        if not record_ids:
+            _LOGGER.debug(
+                "add_work_area_ble: no new or changed work area IDs found — nothing to record"
+            )
+            return
+
+        if len(record_ids) > 1:
+            _LOGGER.warning(
+                "Add_work_area_ble: %d work areas need BLE recording — only recording the first "
+                "in this session. Re-save map to record remaining areas",
+                len(record_ids),
+            )
+            record_ids = {
+                next(iter(sorted(record_ids)))
+            }  # deterministic: smallest ID first
+
+        _LOGGER.debug(
+            "add_work_area_ble: new area IDs=%s  changed area IDs=%s  existing IDs=%s",
+            new_ids,
+            changed_ids,
+            set(current_work),
+        )
+
+        for area_id in record_ids:
+            payload = new_work[area_id]
+            waypoints = payload.get("vertexs", [])
+
+            _LOGGER.debug(
+                "add_work_area_ble: area %d — %d waypoints: %s",
+                area_id,
+                len(waypoints),
+                waypoints,
+            )
+
+            if len(waypoints) < 3:
+                _LOGGER.warning(
+                    "Add_work_area_ble: area %d has too few points (%d) — skipping",
+                    area_id,
+                    len(waypoints),
+                )
+                continue
+
+            if area_id in new_ids:
+                map_border = MapBorder.NEW_AREA
+            elif area_id in changed_ids:
+                map_border = MapBorder.EDIT_EXISTING_AREA
+            else:
+                map_border = MapBorder.NEW_AREA
+
+            if map_border == MapBorder.EDIT_EXISTING_AREA:
+                _LOGGER.debug(
+                    "add_work_area_ble: area %d using mower-provided getRegion IDs "
+                    "for merge; no local region-id guessing",
+                    area_id,
+                )
+            _LOGGER.debug(
+                "add_work_area_ble: area %d map_border=%d (%s)",
+                area_id,
+                map_border,
+                "EDIT_EXISTING_AREA"
+                if map_border == MapBorder.EDIT_EXISTING_AREA
+                else "NEW_AREA",
+            )
+
+            def get_position(_device=self) -> list[float] | None:
+                # robot_pos is the live stream used during undock/RC; RTK can lag or freeze.
+                if _device.map.last_pos_timestamp:
+                    _LOGGER.debug(
+                        "add_work_area_ble: robot_pos=%.3f,%.3f (ts=%d)",
+                        _device.map.mower_pos_x,
+                        _device.map.mower_pos_y,
+                        _device.map.last_pos_timestamp,
+                    )
+                    return [
+                        float(_device.map.mower_pos_x),
+                        float(_device.map.mower_pos_y),
+                    ]
+
+                _LOGGER.debug("add_work_area_ble: robot_pos not available yet")
+                return None
+
+            def get_status(_device=self) -> int | None:
+                with contextlib.suppress(TypeError, ValueError):
+                    return int(_device.mode)
+                return None
+
+            def get_heading(_device=self) -> float | None:
+                heading = _device.map.mower_orientation
+                if heading is None:
+                    _LOGGER.debug("add_work_area_ble: mower heading not available")
+                    return None
+                _LOGGER.debug("add_work_area_ble: robot_pos angle=%.3f", heading)
+                return float(heading)
+
+            _LOGGER.debug(
+                "add_work_area_ble: connecting BLE to %s  area=%d",
+                _mac or "(scan)",
+                area_id,
+            )
+            prewaypointcount: int = 4
+            _wpts = [
+                *list(waypoints),
+                [4, 8],
+                [2.7, -14.6],
+                [-12.8, -16.5],
+                [-30.5, -16.5],
+            ]
+            _mb = map_border
+            _sn = self.devicesn
+
+            try:
+                async with SunseekerBleSession(_mac, device_sn=_sn, hass=hass) as ble:
+                    result = await ble.navigate_and_record_boundary(
+                        waypoints=_wpts,
+                        get_position=get_position,
+                        get_heading=get_heading,
+                        get_status=get_status,
+                        map_border=_mb,
+                        arrival_threshold=0.10,
+                        waypoint_timeout=300.0,
+                        drive_speed=350,
+                        command_interval=0.15,
+                        prewaypointcount=prewaypointcount,
+                    )
+                result = result or {}
+                _LOGGER.info(
+                    "Add_work_area_ble: area %d recorded successfully "
+                    "path_id=%s name=%r boundary_pts=%d",
+                    area_id,
+                    result.get("path_id"),
+                    result.get("name"),
+                    len(result.get("boundary", [])),
+                )
+            except TimeoutError as exc:
+                _LOGGER.error(
+                    "Add_work_area_ble: area %d timed out — mower sent home: %s",
+                    area_id,
+                    exc,
+                )
+            except Exception as exc:  # noqa: BLE001
+                _LOGGER.error(
+                    "Add_work_area_ble: area %d BLE session failed: %s",
+                    area_id,
+                    exc,
+                )
 
     def handle_split(self, mapdata) -> bool:
         """Handles map split."""
@@ -2227,6 +2446,9 @@ class SunseekerDevice:
             return {
                 "key": "set_parea",
                 "type": 0,
+                "tag": region.get(
+                    "tag"
+                ),  # Integer, can be null (MQTT non-chunked mode)
                 "map_id": region["id"],
                 "vertexs": _points_like_safe(region),
             }

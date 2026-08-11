@@ -89,6 +89,8 @@ class SunseekermqttController:
         self.user_id = user_id
         self.appId = app_id
         self.mqtt_passwd = str(uuid.uuid4()).replace("-", "")[:24]
+        # self.public_key = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeuCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrCftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWBSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4XwIDAQAB-----END PUBLIC KEY-----"
+        # self.public_key = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwv35Rkkj9b5aj7dyIXrDY8YyVb4R2HZqA+8Fdamnk04JCOkS3GjQ8dVvZ/S9C90ngUr7dJ4rxKsCMekFP1iglQtJJrWIFmgKZ5wRHYJD2EQol7AvtjgNbpP0ZKem2dlQd5p3M+6Az67pk8j/w672YXRzXZ/4NLhZz5inHxyrY9prjO4gAOOeJ3EPsGm/cDaE22WLV//mr52ZhGxkgGOlkkEZydo1OQA8jmYrCv4RS+nVau7hVPUNE2RuISJg1v9UbdZ+4qQdL7Ve3z56RkdvPPn5E1NpHwhYm6ZrWajXBlcG5px99EMlcgblJ5oZXKZmP2GZXANOpMXksFh2vpcPSQIDAQAB-----END PUBLIC KEY-----"
         self.public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u\n7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg\n2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeu\nCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrC\nftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWB\nSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4\nXwIDAQAB\n-----END PUBLIC KEY-----"
         self._device_queues: dict[str, queue.Queue] = {}
         self._queues_lock: Lock = Lock()
@@ -130,7 +132,7 @@ class SunseekermqttController:
         try:
             data_ = {
                 "appIdCode": self.appId,
-                "appType": 2,
+                "appType": 3,
                 "mqttsPassword": password,
                 "operatingSystemCode": "android",
             }

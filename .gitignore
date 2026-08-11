@@ -2,3 +2,4 @@
 custom_components/sunseeker/README.md
 custom_components/sunseeker/GetDeviceList.json
 custom_components/sunseeker/Path.json
+/custom_components/sunseeker/tools

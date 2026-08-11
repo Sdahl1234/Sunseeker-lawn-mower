@@ -818,22 +818,22 @@ class SunseekerMap:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Get backup map for {self.mower.devicesn}: failed {error}")  # noqa: G004
 
-    def upload_map(self, map_data: dict) -> bool:
+    def upload_map(self, map_data: dict, map_id: int) -> bool:
         """Upload a modified map JSON to the cloud and bind it to this device.
 
         Steps:
         1. POST admin/sys-file/upload  (multipart) → new fileUrl + fileName
-        2. POST wireless_map/wireless_device       → bind new map to device
+        2. PUT  wireless_map/wireless_device       → bind new map to device
 
         Returns True on success, False on any error.
         """
-        import time as _time
+        # import time as _time
 
-        update_time = int(_time.time() * 1000)
+        # update_time = int(_time.time() * 1000)
         map_data = dict(map_data)
-        map_data["update_time"] = update_time
+        map_data["update_time"] = map_id
 
-        file_name = f"Wireless_{self.mower.devicesn}_{update_time}.json"
+        file_name = f"Wireless_{self.mower.devicesn}_{map_id}.json"
         map_json = json.dumps(map_data, separators=(",", ":"), ensure_ascii=False)
 
         headers_upload = {
@@ -849,7 +849,9 @@ class SunseekerMap:
             resp = requests.post(
                 upload_url,
                 headers=headers_upload,
-                files={"file": (file_name, BytesIO(map_json.encode()), "application/json")},
+                files={
+                    "file": (file_name, BytesIO(map_json.encode()), "application/json")
+                },
                 timeout=30,
             )
             resp_data = resp.json()
@@ -858,11 +860,10 @@ class SunseekerMap:
                 _LOGGER.error(f"Map upload failed: {resp_data}")  # noqa: G004
                 return False
 
-            file_url = (
-                resp_data["data"].get("fileUrl")
-                or resp_data["data"].get("url")
-            )
-            returned_name = resp_data["data"].get("fileName") or file_name
+            file_url = resp_data["data"].get("fileUrl") or resp_data["data"].get("url")
+            # Server returns hash filename (e.g., "abc123.json"), but we should use our original name format
+            # The mower/app expects: Wireless_SN_timestamp.json format for proper indexing
+            returned_name = file_name
         except Exception as err:  # noqa: BLE001
             _LOGGER.error(f"Map upload error: {err}")  # noqa: G004
             return False
@@ -884,7 +885,7 @@ class SunseekerMap:
                 "mapPathFileUrl": file_url,
             }
             _LOGGER.debug(f"Binding map: {body}")  # noqa: G004
-            bind_resp = requests.post(
+            bind_resp = requests.put(
                 bind_url,
                 headers=headers_bind,
                 json=body,

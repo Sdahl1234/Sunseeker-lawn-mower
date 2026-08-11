@@ -229,10 +229,18 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         coordinator = _find_coordinator(hass, dsn)
         if coordinator is None:
             raise HomeAssistantError(f"Device for {entity_id} not found")
-        await hass.async_add_executor_job(
+        needs_ble = await hass.async_add_executor_job(
             coordinator.device.set_map,
             map_data,
         )
+        if needs_ble:
+            await coordinator.device.add_work_area_ble(map_data, hass)
+        # Fetch the newly bound map from server and reload images
+        # This is handled when the mower sendt mapupdate using mqtt
+        # await hass.async_add_executor_job(coordinator.device.map.get_map_info)
+        # await coordinator.device.map.reload_maps()
+        # if coordinator.map_entity:
+        #     await coordinator.map_entity.trigger_update()
 
     async def async_handle_set_pin(call: ServiceCall):
         entity_id = call.data["entity_id"]
