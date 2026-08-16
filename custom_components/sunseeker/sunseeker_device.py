@@ -2033,157 +2033,165 @@ class SunseekerDevice:
 
         current_work, new_work = self._get_work_area_payloads(mapdata)
         new_ids = set(new_work) - set(current_work)
-        changed_ids = {
-            region_id
-            for region_id in set(new_work) & set(current_work)
-            if new_work[region_id] != current_work[region_id]
-        }
-        record_ids = new_ids | changed_ids
-        if not record_ids:
+        if not new_ids:
             _LOGGER.debug(
-                "add_work_area_ble: no new or changed work area IDs found — nothing to record"
+                "add_work_area_ble: no new work area IDs found — nothing to record"
             )
             return
 
-        if len(record_ids) > 1:
+        if len(new_ids) > 1:
             _LOGGER.warning(
-                "Add_work_area_ble: %d work areas need BLE recording — only recording the first "
-                "in this session. Re-save map to record remaining areas",
-                len(record_ids),
+                "Add_work_area_ble: %d new work areas found — only one can be recorded "
+                "per session, aborting",
+                len(new_ids),
             )
-            record_ids = {
-                next(iter(sorted(record_ids)))
-            }  # deterministic: smallest ID first
+            return
+
+        area_id = next(iter(new_ids))
+        route_points = self._get_new_region_route(mapdata, area_id)
+        if not route_points:
+            _LOGGER.warning(
+                "Add_work_area_ble: area %d has no access route — the mower needs "
+                "route points to reach the new area",
+                area_id,
+            )
+            return
 
         _LOGGER.debug(
-            "add_work_area_ble: new area IDs=%s  changed area IDs=%s  existing IDs=%s",
-            new_ids,
-            changed_ids,
+            "add_work_area_ble: new area ID=%d  route points=%d  existing IDs=%s",
+            area_id,
+            len(route_points),
             set(current_work),
         )
 
-        for area_id in record_ids:
-            payload = new_work[area_id]
-            waypoints = payload.get("vertexs", [])
+        payload = new_work[area_id]
+        waypoints = payload.get("vertexs", [])
 
-            _LOGGER.debug(
-                "add_work_area_ble: area %d — %d waypoints: %s",
+        _LOGGER.debug(
+            "add_work_area_ble: area %d — %d waypoints: %s",
+            area_id,
+            len(waypoints),
+            waypoints,
+        )
+
+        if len(waypoints) < 3:
+            _LOGGER.warning(
+                "Add_work_area_ble: area %d has too few points (%d) — skipping",
                 area_id,
                 len(waypoints),
-                waypoints,
             )
+            return
 
-            if len(waypoints) < 3:
-                _LOGGER.warning(
-                    "Add_work_area_ble: area %d has too few points (%d) — skipping",
-                    area_id,
-                    len(waypoints),
-                )
-                continue
+        map_border = MapBorder.NEW_AREA
 
-            if area_id in new_ids:
-                map_border = MapBorder.NEW_AREA
-            elif area_id in changed_ids:
-                map_border = MapBorder.EDIT_EXISTING_AREA
-            else:
-                map_border = MapBorder.NEW_AREA
-
-            if map_border == MapBorder.EDIT_EXISTING_AREA:
+        def get_position(_device=self) -> list[float] | None:
+            # robot_pos is the live stream used during undock/RC; RTK can lag or freeze.
+            if _device.map.last_pos_timestamp:
                 _LOGGER.debug(
-                    "add_work_area_ble: area %d using mower-provided getRegion IDs "
-                    "for merge; no local region-id guessing",
-                    area_id,
+                    "add_work_area_ble: robot_pos=%.3f,%.3f (ts=%d)",
+                    _device.map.mower_pos_x,
+                    _device.map.mower_pos_y,
+                    _device.map.last_pos_timestamp,
                 )
-            _LOGGER.debug(
-                "add_work_area_ble: area %d map_border=%d (%s)",
+                return [
+                    float(_device.map.mower_pos_x),
+                    float(_device.map.mower_pos_y),
+                ]
+
+            _LOGGER.debug("add_work_area_ble: robot_pos not available yet")
+            return None
+
+        def get_status(_device=self) -> int | None:
+            with contextlib.suppress(TypeError, ValueError):
+                return int(_device.mode)
+            return None
+
+        def get_heading(_device=self) -> float | None:
+            heading = _device.map.mower_orientation
+            if heading is None:
+                _LOGGER.debug("add_work_area_ble: mower heading not available")
+                return None
+            _LOGGER.debug("add_work_area_ble: robot_pos angle=%.3f", heading)
+            return float(heading)
+
+        _LOGGER.debug(
+            "add_work_area_ble: connecting BLE to %s  area=%d",
+            _mac or "(scan)",
+            area_id,
+        )
+        prewaypointcount: int = len(route_points)
+        _wpts = [*route_points, *list(waypoints)]
+        _mb = map_border
+        _sn = self.devicesn
+
+        return
+        try:
+            async with SunseekerBleSession(_mac, device_sn=_sn, hass=hass) as ble:
+                result = await ble.navigate_and_record_boundary(
+                    waypoints=_wpts,
+                    get_position=get_position,
+                    get_heading=get_heading,
+                    get_status=get_status,
+                    map_border=_mb,
+                    arrival_threshold=0.10,
+                    waypoint_timeout=300.0,
+                    drive_speed=350,
+                    command_interval=0.15,
+                    prewaypointcount=prewaypointcount,
+                )
+            result = result or {}
+            _LOGGER.info(
+                "Add_work_area_ble: area %d recorded successfully "
+                "path_id=%s name=%r boundary_pts=%d",
                 area_id,
-                map_border,
-                "EDIT_EXISTING_AREA"
-                if map_border == MapBorder.EDIT_EXISTING_AREA
-                else "NEW_AREA",
+                result.get("path_id"),
+                result.get("name"),
+                len(result.get("boundary", [])),
+            )
+        except TimeoutError as exc:
+            _LOGGER.error(
+                "Add_work_area_ble: area %d timed out — mower sent home: %s",
+                area_id,
+                exc,
+            )
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.error(
+                "Add_work_area_ble: area %d BLE session failed: %s",
+                area_id,
+                exc,
             )
 
-            def get_position(_device=self) -> list[float] | None:
-                # robot_pos is the live stream used during undock/RC; RTK can lag or freeze.
-                if _device.map.last_pos_timestamp:
-                    _LOGGER.debug(
-                        "add_work_area_ble: robot_pos=%.3f,%.3f (ts=%d)",
-                        _device.map.mower_pos_x,
-                        _device.map.mower_pos_y,
-                        _device.map.last_pos_timestamp,
-                    )
-                    return [
-                        float(_device.map.mower_pos_x),
-                        float(_device.map.mower_pos_y),
-                    ]
+    def _get_new_region_route(self, mapdata, area_id: int) -> list[list[float]]:
+        """Return the route the mower drives to reach the new work area.
 
-                _LOGGER.debug("add_work_area_ble: robot_pos not available yet")
-                return None
+        The editor sends a single top-level ``new_region_route`` node because
+        only one work area can be added per submit.
+        """
+        route = mapdata.get("new_region_route")
+        if not route:
+            return []
+        if isinstance(route, list):
+            points = route
+            route_id = None
+        else:
+            points = route.get("points", [])
+            route_id = route.get("region_id")
 
-            def get_status(_device=self) -> int | None:
-                with contextlib.suppress(TypeError, ValueError):
-                    return int(_device.mode)
-                return None
-
-            def get_heading(_device=self) -> float | None:
-                heading = _device.map.mower_orientation
-                if heading is None:
-                    _LOGGER.debug("add_work_area_ble: mower heading not available")
-                    return None
-                _LOGGER.debug("add_work_area_ble: robot_pos angle=%.3f", heading)
-                return float(heading)
-
-            _LOGGER.debug(
-                "add_work_area_ble: connecting BLE to %s  area=%d",
-                _mac or "(scan)",
+        if route_id is not None and int(route_id) != int(area_id):
+            _LOGGER.warning(
+                "New_region_route targets area %s but area %s is being added \u2014 ignoring route",
+                route_id,
                 area_id,
             )
-            prewaypointcount: int = 4
-            _wpts = [
-                *list(waypoints),
-                [4, 8],
-                [2.7, -14.6],
-                [-12.8, -16.5],
-                [-30.5, -16.5],
-            ]
-            _mb = map_border
-            _sn = self.devicesn
+            return []
 
-            try:
-                async with SunseekerBleSession(_mac, device_sn=_sn, hass=hass) as ble:
-                    result = await ble.navigate_and_record_boundary(
-                        waypoints=_wpts,
-                        get_position=get_position,
-                        get_heading=get_heading,
-                        get_status=get_status,
-                        map_border=_mb,
-                        arrival_threshold=0.10,
-                        waypoint_timeout=300.0,
-                        drive_speed=350,
-                        command_interval=0.15,
-                        prewaypointcount=prewaypointcount,
-                    )
-                result = result or {}
-                _LOGGER.info(
-                    "Add_work_area_ble: area %d recorded successfully "
-                    "path_id=%s name=%r boundary_pts=%d",
-                    area_id,
-                    result.get("path_id"),
-                    result.get("name"),
-                    len(result.get("boundary", [])),
-                )
-            except TimeoutError as exc:
-                _LOGGER.error(
-                    "Add_work_area_ble: area %d timed out — mower sent home: %s",
-                    area_id,
-                    exc,
-                )
-            except Exception as exc:  # noqa: BLE001
-                _LOGGER.error(
-                    "Add_work_area_ble: area %d BLE session failed: %s",
-                    area_id,
-                    exc,
-                )
+        cleaned: list[list[float]] = []
+        for point in points:
+            if not isinstance(point, (list, tuple)) or len(point) < 2:
+                continue
+            with contextlib.suppress(TypeError, ValueError):
+                cleaned.append([float(point[0]), float(point[1])])
+        return cleaned
 
     def handle_split(self, mapdata) -> bool:
         """Handles map split."""
@@ -2480,20 +2488,16 @@ class SunseekerDevice:
         return current_work, new_work
 
     def work_area_changed(self, mapdata) -> bool:
-        """Return True if region_work content differs from current map data."""
+        """Return True if a new work area was added.
+
+        Existing work areas cannot be edited, so only additions trigger the BLE
+        boundary recording flow.
+        """
         current_work, new_work = self._get_work_area_payloads(mapdata)
         if not current_work:
             return False
 
-        removed_ids = set(current_work) - set(new_work)
-        if removed_ids:
-            return True
-
-        for region_id, payload in new_work.items():
-            if current_work.get(region_id) != payload:
-                return True
-
-        return False
+        return bool(set(new_work) - set(current_work))
 
     def set_work_area(self, mapdata) -> bool:
         """Setting the region_work."""
