@@ -1,5 +1,6 @@
 """SunseekerPy."""
 
+from collections.abc import Callable
 import json
 import logging
 from pathlib import Path
@@ -75,6 +76,8 @@ class SunseekerRoboticmower:
         password,
         language,
         app_id: str,
+        mqtt_password: str | None = None,
+        store_mqtt_password: Callable[[str], None] | None = None,
     ) -> None:
         """Init function."""
 
@@ -101,6 +104,8 @@ class SunseekerRoboticmower:
         self.robotList = []  # list of devices
         self.region = region
         self.appId = app_id
+        self.mqtt_password = mqtt_password
+        self.store_mqtt_password = store_mqtt_password
 
         self.login_ok: bool = False
         self.login_url = ""
@@ -171,6 +176,8 @@ class SunseekerRoboticmower:
                         MODEL_OLD,
                         self.url,
                         self.appId,
+                        self.mqtt_password,
+                        self.store_mqtt_password,
                     )
                     self.mqtt_controllers.append(mqtt_controller)
         else:
@@ -190,6 +197,8 @@ class SunseekerRoboticmower:
                             MODEL_V1,
                             self.url,
                             self.appId,
+                            self.mqtt_password,
+                            self.store_mqtt_password,
                         )
                         self.mqtt_controllers.append(mqtt_controller)
                     if self.need_sxv_mqtt:
@@ -203,6 +212,8 @@ class SunseekerRoboticmower:
                             MODEL_SXV,
                             self.url,
                             self.appId,
+                            self.mqtt_password,
+                            self.store_mqtt_password,
                         )
                         self.mqtt_controllers.append(mqtt_controller)
 

@@ -1,10 +1,14 @@
 """SunseekerPy."""
 
 import base64
+from collections.abc import Callable
 import contextlib
 import json
 import logging
 import queue
+import secrets
+import ssl
+import string
 from threading import Lock, Thread, Timer
 from typing import TYPE_CHECKING, Any
 import uuid
@@ -30,6 +34,10 @@ from .sunseeker_schedule import Sunseeker_new_schedule_day
 if TYPE_CHECKING:
     from .sunseeker import SunseekerRoboticmower
 _LOGGER = logging.getLogger(__name__)
+
+PASSWORD_RETRY_DELAY = 30
+MAX_PASSWORD_RETRIES = 3
+PASSWORD_RETRY_COOLDOWN = 600
 
 
 class mqtt_needupdate:
@@ -71,6 +79,8 @@ class SunseekermqttController:
         model,
         url,
         app_id: str,
+        mqtt_password: str | None = None,
+        store_mqtt_password: Callable[[str], None] | None = None,
     ) -> None:
         """Init."""
         self.Sunseeker: SunseekerRoboticmower = mower
@@ -88,7 +98,12 @@ class SunseekermqttController:
         self.debug_user_id = 0
         self.user_id = user_id
         self.appId = app_id
-        self.mqtt_passwd = str(uuid.uuid4()).replace("-", "")[:24]
+        self.store_mqtt_password = store_mqtt_password
+        self.mqtt_passwd = mqtt_password or self.generate_password()
+        # A password read from storage was already accepted by the API before.
+        self.password_uploaded = mqtt_password is not None
+        self._password_retry_timer: Timer | None = None
+        self._password_retries = 0
         # self.public_key = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeuCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrCftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWBSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4XwIDAQAB-----END PUBLIC KEY-----"
         # self.public_key = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwv35Rkkj9b5aj7dyIXrDY8YyVb4R2HZqA+8Fdamnk04JCOkS3GjQ8dVvZ/S9C90ngUr7dJ4rxKsCMekFP1iglQtJJrWIFmgKZ5wRHYJD2EQol7AvtjgNbpP0ZKem2dlQd5p3M+6Az67pk8j/w672YXRzXZ/4NLhZz5inHxyrY9prjO4gAOOeJ3EPsGm/cDaE22WLV//mr52ZhGxkgGOlkkEZydo1OQA8jmYrCv4RS+nVau7hVPUNE2RuISJg1v9UbdZ+4qQdL7Ve3z56RkdvPPn5E1NpHwhYm6ZrWajXBlcG5px99EMlcgblJ5oZXKZmP2GZXANOpMXksFh2vpcPSQIDAQAB-----END PUBLIC KEY-----"
         self.public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u\n7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg\n2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeu\nCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrC\nftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWB\nSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4\nXwIDAQAB\n-----END PUBLIC KEY-----"
@@ -98,10 +113,8 @@ class SunseekermqttController:
     def Start_mqtt(self):
         """Create and connect."""
         if self.apptype == APPTYPE_NEW:
-            encrypted_pass = self.encrypt_rsa_base64(self.mqtt_passwd, self.public_key)
-            _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
-            _LOGGER.debug("MQTT encrypted password: " + encrypted_pass)  # noqa: G003
-            self.edit_password_mqtt(encrypted_pass)
+            if not self.password_uploaded:
+                self.upload_password()
             self.connect_mqtt_new()
         else:
             self.connect_mqtt()
@@ -109,6 +122,9 @@ class SunseekermqttController:
     def unload(self):
         """Unload."""
         self._unloading = True
+        if self._password_retry_timer is not None:
+            self._password_retry_timer.cancel()
+            self._password_retry_timer = None
         with self._queues_lock:
             for q in self._device_queues.values():
                 q.put(None)
@@ -159,13 +175,27 @@ class SunseekermqttController:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Set MQTT password failed {error}")  # noqa: G004
 
-    def _reconnect_with_new_password(self):
-        """Generate a new MQTT password, upload it, and reconnect."""
-        self.mqtt_passwd = str(uuid.uuid4()).replace("-", "")[:24]
+    def generate_password(self) -> str:
+        """Generate a new MQTT password."""
+        alphabet = string.ascii_letters + string.digits
+        return "".join(secrets.choice(alphabet) for _ in range(24))
+        # return str(uuid.uuid4()).replace("-", "")[:24]
+
+    def upload_password(self):
+        """Upload the current MQTT password to the API."""
         encrypted_pass = self.encrypt_rsa_base64(self.mqtt_passwd, self.public_key)
-        _LOGGER.debug("MQTT new password: " + self.mqtt_passwd)  # noqa: G003
+        _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
         _LOGGER.debug("MQTT encrypted password: " + encrypted_pass)  # noqa: G003
         self.edit_password_mqtt(encrypted_pass)
+        self.password_uploaded = True
+
+    def _reconnect_with_new_password(self):
+        """Generate a new MQTT password, upload it, and reconnect."""
+        self._password_retry_timer = None
+        if self._unloading:
+            return
+        self.mqtt_passwd = self.generate_password()
+        self.upload_password()
         self.connect_mqtt_new()
 
     def connect_mqtt_new(self):
@@ -182,10 +212,11 @@ class SunseekermqttController:
         self.mqtt_client_new.on_disconnect = self.on_mqtt_disconnect
         self.mqtt_client_new.on_error = self.on_mqtt_error
         self.mqtt_client_new.on_close = self.on_mqtt_close
-        self.mqtt_client_new.username_pw_set(
-            self.username + self.appId, self.mqtt_passwd
-        )
-        self.mqtt_client_new.tls_set()
+        # self.mqtt_client_new.username_pw_set(
+        #    self.username + self.appId, self.mqtt_passwd
+        # )
+        self.mqtt_client_new.username_pw_set("app", "h4ijwkTnyrA")
+        self.mqtt_client_new.tls_set(cert_reqs=ssl.CERT_REQUIRED)
         if self.region == REGION_EU:
             if self.model == MODEL_V1:
                 host = "app.mqttv1-eu.sk-robot.com"
@@ -227,17 +258,42 @@ class SunseekermqttController:
             }
             reason = _MQTT_CONNECT_RC.get(rc, f"unknown rc={rc}")
             if rc in (4, 5):
+                # Stop paho from retrying the rejected credentials on its own.
+                client.disconnect()
+                if self._unloading or self._password_retry_timer is not None:
+                    return
+                if self._password_retries >= MAX_PASSWORD_RETRIES:
+                    _LOGGER.error(
+                        "MQTT connect keeps being rejected (%s), pausing password renewals for %s seconds",
+                        reason,
+                        PASSWORD_RETRY_COOLDOWN,
+                    )
+                    self._password_retries = 0
+                    self._password_retry_timer = Timer(
+                        PASSWORD_RETRY_COOLDOWN, self._reconnect_with_new_password
+                    )
+                    self._password_retry_timer.start()
+                    return
+                self._password_retries += 1
                 _LOGGER.debug(
-                    f"MQTT new connect rejected ({reason}), generating new password and retrying"  # noqa: G004
+                    "MQTT new connect rejected (%s), generating new password and retrying (%s/%s)",
+                    reason,
+                    self._password_retries,
+                    MAX_PASSWORD_RETRIES,
                 )
-                if not self._unloading:
-                    Timer(30, self._reconnect_with_new_password).start()
+                self._password_retry_timer = Timer(
+                    PASSWORD_RETRY_DELAY, self._reconnect_with_new_password
+                )
+                self._password_retry_timer.start()
             else:
                 _LOGGER.debug(
                     f"MQTT new connect failed ({reason}), not retrying"  # noqa: G004
                 )
             return
         _LOGGER.debug("MQTT new connected event")
+        self._password_retries = 0
+        if self.store_mqtt_password is not None:
+            self.store_mqtt_password(self.mqtt_passwd)
         if self.model in (MODEL_V1):
             ep = "wirelessmower"
         else:

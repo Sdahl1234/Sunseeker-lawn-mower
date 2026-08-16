@@ -8,12 +8,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
 from . import SunseekerDataCoordinator
-from .const import DOMAIN
+from .const import CONF_MQTT_PASSWORD, DOMAIN
 from .coordinator import SunSeekerConfigEntry
 
 TO_REDACT = {
     CONF_EMAIL,
     CONF_PASSWORD,
+    CONF_MQTT_PASSWORD,
     "username",
     "user_id",
     "userid",
