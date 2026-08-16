@@ -472,9 +472,11 @@ class SunseekerDevice:
                     _LOGGER.debug(f"Validating path data request for {self.DeviceName}")  # noqa: G004
                     self._path_data_validation_done = True
                     self.getPathData()
+                    self.getRobotPosData()
             elif is_valid:
                 _LOGGER.debug(f"Requesting path data for {self.DeviceName}")  # noqa: G004
                 self.getPathData()
+                self.getRobotPosData()
 
             self._schedule_path_data_update(delay_seconds=2)
 
@@ -840,6 +842,17 @@ class SunseekerDevice:
             "method": "get_property",
             "sid": self.appIdCode,
             "start": self.next_path_index,
+        }
+        self.get_property(data)
+
+    def getRobotPosData(self):
+        """Request Robot pos data."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "getRobotPos",
+            "key": "robot_pos",
+            "method": "get_property",
         }
         self.get_property(data)
 
