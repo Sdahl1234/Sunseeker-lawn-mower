@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from .const import APPTYPE_OLD, CONF_APP_ID, DOMAIN, REGION_EU
+from .const import APPTYPE_OLD, CONF_APP_ID, CONF_MQTT_PASSWORD, DOMAIN, REGION_EU
 from .coordinator import (
     SunSeekerConfigEntry,
     SunseekerDataCoordinator,
@@ -77,6 +77,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
     country = hass.config.country
     locale = (f"{language}-{country}" if country else language).lower()
 
+    suppress_reload = False
+
+    def store_mqtt_password(password: str) -> None:
+        """Persist the latest valid MQTT password, called from the MQTT thread."""
+
+        def _store() -> None:
+            nonlocal suppress_reload
+            if entry.data.get(CONF_MQTT_PASSWORD) == password:
+                return
+            suppress_reload = True
+            hass.config_entries.async_update_entry(
+                entry,
+                data={
+                    **entry.data,
+                    CONF_MQTT_PASSWORD: password,
+                },
+            )
+
+        hass.loop.call_soon_threadsafe(_store)
+
+    async def async_entry_updated(
+        hass: HomeAssistant, entry: SunSeekerConfigEntry
+    ) -> None:
+        """Reload on changes, except when only the MQTT password was stored."""
+        nonlocal suppress_reload
+        if suppress_reload:
+            suppress_reload = False
+            return
+        await hass.config_entries.async_reload(entry.entry_id)
+
     data_handler = SunseekerRoboticmower(
         brand,
         apptype,
@@ -85,6 +115,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
         password,
         locale,
         app_id,
+        entry.data.get(CONF_MQTT_PASSWORD),
+        store_mqtt_password,
     )
     await hass.async_add_executor_job(data_handler.on_load)
     if not data_handler.login_ok:
@@ -110,7 +142,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    entry.async_on_unload(entry.add_update_listener(async_update_entry))
+    entry.async_on_unload(entry.add_update_listener(async_entry_updated))
 
     # Refresh map data
     upd = mqtt_update_values()
@@ -120,18 +152,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
     for dc in robots:
         try:
             await dc.Handle_image_update(upd)
-        except Exception:  # pylint: disable=broad-except  # noqa: BLE001
+        except Exception:  # pylint: disable=broad-except
             _LOGGER.debug(
                 "Initial map refresh failed for %s", dc.devicesn, exc_info=True
             )
 
     await async_setup_services(hass)
     return True
-
-
-async def async_update_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) -> None:
-    """Update options."""
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) -> bool:
