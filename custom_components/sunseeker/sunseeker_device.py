@@ -2124,7 +2124,6 @@ class SunseekerDevice:
         _mb = map_border
         _sn = self.devicesn
 
-        return
         try:
             async with SunseekerBleSession(_mac, device_sn=_sn, hass=hass) as ble:
                 result = await ble.navigate_and_record_boundary(
