@@ -1,13 +1,13 @@
 {
   "domain": "sunseeker",
   "name": "Sunseeker robotic mower",
+  "after_dependencies": ["bluetooth"],
   "codeowners": ["@Sdahl1234"],
   "config_flow": true,
   "documentation": "https://github.com/Sdahl1234/Sunseeker-lawn-mower",
   "integration_type": "hub",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/Sdahl1234/Sunseeker-lawn-mower/issues",
-  "after_dependencies": ["bluetooth"],
   "requirements": ["requests", "paho-mqtt", "pycryptodome"],
   "version": "1.2.28"
 }
