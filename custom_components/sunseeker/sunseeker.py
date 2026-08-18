@@ -1,11 +1,14 @@
 """SunseekerPy."""
 
+import base64
 from collections.abc import Callable
 import json
 import logging
 from pathlib import Path
 from threading import Timer
+from urllib import parse, request as re
 
+from Crypto.Cipher import AES
 import requests
 
 from .const import (
@@ -60,6 +63,10 @@ from .const import (
 )
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_mqtt import SunseekermqttController
+
+KEY = b"pigxpigxpigxpigx"
+IV = b"pigxpigxpigxpigx"
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -125,24 +132,84 @@ class SunseekerRoboticmower:
         if self.login() and self.session.get("access_token"):
             self.on_after_login()
 
+    def encrypt_oauth_password(self, real_password: str) -> str:
+        """Encrypt a plain password the same way the app does before sending it to /auth/oauth/token."""
+        data = real_password.encode("utf-8")
+        pad_len = 16 - (len(data) % 16)
+        if pad_len == 0:
+            pad_len = 16
+        padded = data + bytes([pad_len]) * pad_len
+
+        cipher = AES.new(KEY, AES.MODE_CBC, IV)
+        encrypted = cipher.encrypt(padded)
+        return base64.b64encode(encrypted).decode("ascii")
+
     def login(self) -> bool:
         """Login."""
-        try:
-            headers_ = {
-                "Accept-Language": self.language,
+        if self.apptype == APPTYPE_NEW:
+            headers = {
                 "Authorization": "Basic YXBwOmFwcA==",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Connection": "Keep-Alive",
+                "Content-Type": "application/json; charset=UTF-8",
+                "Accept-Language": self.language,
                 "User-Agent": "okhttp/4.8.1",
+                "version": "1.7.0",
+                "app": "brand",
             }
-            data_ = {
-                "username": self.username,
-                "password": self.password,
-                "grant_type": "password",
-                "scope": "server",
-            }
-            url_ = self.url + "/auth/oauth/token"
 
+            payloads = [
+                {
+                    "grant_type": "password",
+                    "password": self.encrypt_oauth_password(self.password),
+                    "scope": "server",
+                    "username": self.username,
+                },
+                {
+                    "grant_type": "password",
+                    "password": self.password,
+                    "scope": "server",
+                    "username": self.username,
+                },
+            ]
+            last_error = None
+            for payload in payloads:
+                params = parse.urlencode(payload)
+                url = f"{self.url}/auth/oauth/token?{params}"
+                body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+                req = re.Request(url, data=body, headers=headers, method="POST")
+                try:
+                    with re.urlopen(req, timeout=20) as response:
+                        data = response.read().decode("utf-8")
+                        js = json.loads(data)
+                        _LOGGER.debug(js)
+                        token = js.get("access_token")
+                        if response.status == 200 and token:
+                            self.session = js
+                            return True
+                        last_error = js
+                except (
+                    Exception  # noqa: BLE001
+                ) as exc:  # pragma: no cover - network path
+                    last_error = {"error": str(exc)}
+                    _LOGGER.error("Login: failed %s", last_error)  # pylint: disable=broad-except
+
+            return False
+
+        headers_ = {
+            "Accept-Language": self.language,
+            "Authorization": "Basic YXBwOmFwcA==",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Connection": "Keep-Alive",
+            "User-Agent": "okhttp/4.8.1",
+        }
+        url_ = self.url + "/auth/oauth/token"
+
+        data_ = {
+            "grant_type": "password",
+            "password": self.password,
+            "scope": "server",
+            "username": self.username,
+        }
+        try:
             _LOGGER.debug("Login header: %s data: %s url: %s", headers_, data_, url_)
             response = requests.post(
                 url=url_,
@@ -150,13 +217,15 @@ class SunseekerRoboticmower:
                 data=data_,
                 timeout=10,
             )
-
             response_data = response.json()
             _LOGGER.debug(json.dumps(response_data))
-            self.session = response_data
-            return True  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error("Login: failed %s", error)  # pylint: disable=broad-except
+
+        self.session = response_data
+        if response.status_code == 200 and response_data.get("access_token"):
+            return True
+
         return False
 
     def on_after_login(self):

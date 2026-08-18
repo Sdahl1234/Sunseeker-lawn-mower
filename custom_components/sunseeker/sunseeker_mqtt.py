@@ -11,13 +11,13 @@ import ssl
 import string
 from threading import Lock, Thread, Timer
 from typing import TYPE_CHECKING, Any
+from urllib import request as re
 import uuid
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 import paho.mqtt.client as mqtt
-import requests
 
 from .const import (
     APPTYPE_NEW,
@@ -38,6 +38,16 @@ _LOGGER = logging.getLogger(__name__)
 PASSWORD_RETRY_DELAY = 5
 MAX_PASSWORD_RETRIES = 3
 PASSWORD_RETRY_COOLDOWN = 600
+
+PUBLIC_KEY_PEM = """-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u
+7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg
+2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeu
+CM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrC
+ftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWB
+SOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4
+XwIDAQAB
+-----END PUBLIC KEY-----"""
 
 
 class mqtt_needupdate:
@@ -106,8 +116,10 @@ class SunseekermqttController:
         self._password_retries = 0
         self._using_fallback = False
         # self.public_key = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeuCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrCftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWBSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4XwIDAQAB-----END PUBLIC KEY-----"
+        # self.public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwv35Rkkj9b5aj7dyIXrD\nY8YyVb4R2HZqA+8Fdamnk04JCOkS3GjQ8dVvZ/S9C90ngUr7dJ4rxKsCMekFP1ig\nlQtJJrWIFmgKZ5wRHYJD2EQol7AvtjgNbpP0ZKem2dlQd5p3M+6Az67pk8j/w672\nYXRzXZ/4NLhZz5inHxyrY9prjO4gAOOeJ3EPsGm/cDaE22WLV//mr52ZhGxkgGOl\nkkEZydo1OQA8jmYrCv4RS+nVau7hVPUNE2RuISJg1v9UbdZ+4qQdL7Ve3z56Rkdv\nPPn5E1NpHwhYm6ZrWajXBlcG5px99EMlcgblJ5oZXKZmP2GZXANOpMXksFh2vpcP\nSQIDAQAB\n-----END PUBLIC KEY-----"
         # self.public_key = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwv35Rkkj9b5aj7dyIXrDY8YyVb4R2HZqA+8Fdamnk04JCOkS3GjQ8dVvZ/S9C90ngUr7dJ4rxKsCMekFP1iglQtJJrWIFmgKZ5wRHYJD2EQol7AvtjgNbpP0ZKem2dlQd5p3M+6Az67pk8j/w672YXRzXZ/4NLhZz5inHxyrY9prjO4gAOOeJ3EPsGm/cDaE22WLV//mr52ZhGxkgGOlkkEZydo1OQA8jmYrCv4RS+nVau7hVPUNE2RuISJg1v9UbdZ+4qQdL7Ve3z56RkdvPPn5E1NpHwhYm6ZrWajXBlcG5px99EMlcgblJ5oZXKZmP2GZXANOpMXksFh2vpcPSQIDAQAB-----END PUBLIC KEY-----"
-        self.public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u\n7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg\n2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeu\nCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrC\nftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWB\nSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4\nXwIDAQAB\n-----END PUBLIC KEY-----"
+        # self.public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0f7mbMVc/YIYQbR8Ty3u\n7yx0cKX6Gt7JkVQrWynI7xM6/yVPMC1I7nXdjMlVPpc06UXoc5ClQNsTbQ4vumFg\n2RZPQwAOc7yL1Y8t1W0b9jMTztu32ZzlobfzIVkIO1R7x1I+pkyp6QDm/MnvWyeu\nCM77gS2bDv47H9COQn/gy/fy9uecyWCY3u+dXQhujLPrSJ2FFs6SwD0t5QEJjdrC\nftkKQFsflm+i5RQZBMNGT3LdAMnPK4avG642Afum0SzmNrEZrIo7pr2w0fvokbWB\nSOOeEdGAx7UVI1kHssOohqW37yJzzFMIlahZSEJ0A3Dm6yrtgobp2mQlCisqsVW4\nXwIDAQAB\n-----END PUBLIC KEY-----"
+        self.public_key = PUBLIC_KEY_PEM
         self._device_queues: dict[str, queue.Queue] = {}
         self._queues_lock: Lock = Lock()
 
@@ -139,42 +151,44 @@ class SunseekermqttController:
     def encrypt_rsa_base64(self, text: str, public_key_pem: str) -> str:
         """Encrypt text with RSA public key and return base64 encoded string."""
         public_key = serialization.load_pem_public_key(
-            public_key_pem.encode(), backend=default_backend()
+            public_key_pem.encode("utf-8"), backend=default_backend()
         )
         encrypted = public_key.encrypt(text.encode("utf-8"), padding.PKCS1v15())
         return base64.b64encode(encrypted).decode("utf-8")
 
     def edit_password_mqtt(self, password):
-        """Updates MQTT password."""
+        """Upload an encrypted MQTT password to /admin/user/edit."""
         try:
-            data_ = {
+            payload = {
                 "appIdCode": self.appId,
                 "appType": 3,
+                "appVersion": "1.7.0",
                 "mqttsPassword": password,
                 "operatingSystemCode": "android",
             }
-            headers_ = {
-                "Authorization": "bearer " + self.access_token,
+            headers = {
+                "Authorization": f"bearer {self.access_token}",
+                "Content-Type": "application/json; charset=UTF-8",
+                "Accept-Language": self.Sunseeker.language,
+                "User-Agent": "okhttp/4.8.1",
+                "version": "1.7.0",
+                "app": "brand",
             }
-            url_ = self.url + "/admin/user/edit"
-            _LOGGER.debug("Edit password mqtt")
-            _LOGGER.debug(f"data: {data_}")  # noqa: G004
-            _LOGGER.debug(f"headers: {headers_}")  # noqa: G004
-            _LOGGER.debug(f"url: {url_}")  # noqa: G004
-            response = requests.put(
-                url=url_,
-                headers=headers_,
-                json=data_,
-                timeout=10,
+            req = re.Request(
+                f"{self.url}/admin/user/edit",
+                data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                headers=headers,
+                method="PUT",
             )
-            response_data = response.json()
-            _LOGGER.debug(json.dumps(response_data))
-            if response_data.get("ok") is False:
-                _LOGGER.debug(response_data.get("msg"))
-            return  # noqa: TRY300
-
+            with re.urlopen(req, timeout=20) as response:
+                body = response.read().decode("utf-8")
+                _LOGGER.debug(f"Set MQTT password HTTP status: {response.status}")  # noqa: G004
+                _LOGGER.debug(f"Set MQTT password Response body: {body}")  # noqa: G004
+                return  # json.loads(body)
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Set MQTT password failed {error}")  # noqa: G004
+
+        return
 
     def generate_password(self) -> str:
         """Generate a new MQTT password."""
