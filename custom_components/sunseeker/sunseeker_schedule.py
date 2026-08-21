@@ -671,7 +671,8 @@ class SunseekerSchedule2:
 
     def GenerateAttributeData(self) -> dict:
         """Generate the schedule attribute data for the schedule card."""
-        schedule: dict = {self.Mapday(d): [] for d in range(1, 8)}
+        schedule: dict = {"model_type": "old"}
+        schedule.update({self.Mapday(d): [] for d in range(1, 8)})
         for daynumber in range(1, 8):
             daytext = self.Mapday(daynumber)
             for index in (1, 2):
