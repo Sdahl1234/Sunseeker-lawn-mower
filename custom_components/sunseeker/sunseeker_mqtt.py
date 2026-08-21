@@ -1303,42 +1303,34 @@ class SunseekermqttController:
                 nu, data, [], "led_night", device.ledNightFlag
             )
 
-            day_keys = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
-            is_full_schedule = data.get("cmd") == 503 or bool(day_keys & data.keys())
+            day_keys = {
+                "Mon": 1,
+                "Tue": 2,
+                "Wed": 3,
+                "Thu": 4,
+                "Fri": 5,
+                "Sat": 6,
+                "Sun": 7,
+            }
+            is_full_schedule = data.get("cmd") == 503 or bool(
+                day_keys.keys() & data.keys()
+            )
+            two_slot = device.schedule_slots == 2
+            schedule_obj = device.Schedule2 if two_slot else device.Schedule
             if is_full_schedule and any(k in data for k in day_keys):
-                for day in device.Schedule.days:
+                for day in schedule_obj.days:
                     day.start = "00:00"
                     day.end = "00:00"
                     day.trim = False
-                    day.mqtt_day = {}
-            if "Mon" in data:
-                device.Schedule.UpdateFromMqtt(data.get("Mon"), 1)
-                upd.schedule = True
-                nu.need_update = True
-            if "Tue" in data:
-                device.Schedule.UpdateFromMqtt(data.get("Tue"), 2)
-                upd.schedule = True
-                nu.need_update = True
-            if "Wed" in data:
-                device.Schedule.UpdateFromMqtt(data.get("Wed"), 3)
-                upd.schedule = True
-                nu.need_update = True
-            if "Thu" in data:
-                device.Schedule.UpdateFromMqtt(data.get("Thu"), 4)
-                upd.schedule = True
-                nu.need_update = True
-            if "Fri" in data:
-                device.Schedule.UpdateFromMqtt(data.get("Fri"), 5)
-                upd.schedule = True
-                nu.need_update = True
-            if "Sat" in data:
-                device.Schedule.UpdateFromMqtt(data.get("Sat"), 6)
-                upd.schedule = True
-                nu.need_update = True
-            if "Sun" in data:
-                device.Schedule.UpdateFromMqtt(data.get("Sun"), 7)
-                upd.schedule = True
-                nu.need_update = True
+                    if two_slot:
+                        day.enabled = False
+                    else:
+                        day.mqtt_day = {}
+            for key, daynumber in day_keys.items():
+                if key in data:
+                    schedule_obj.UpdateFromMqtt(data.get(key), daynumber)
+                    upd.schedule = True
+                    nu.need_update = True
         if device.model in (MODEL_V, MODEL_V1):
             # V models
             device.screen_lock = self.setvalue(

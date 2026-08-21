@@ -686,3 +686,39 @@ class SunseekerSchedule2:
                     }
                 )
         return schedule
+
+    def UpdateFromMqtt(self, data, daynumber: int) -> None:
+        """Update both timeslots for a day from mqtt slice data."""
+        slices = data.get("slice") if isinstance(data, dict) else None
+        slices = slices if isinstance(slices, list) else []
+        trimming = data.get("Trimming") if isinstance(data, dict) else None
+        for index in (1, 2):
+            day = self.GetDay(daynumber, index)
+            if day is None:
+                continue
+            slice_entry = slices[index - 1] if len(slices) >= index else None
+            if not isinstance(slice_entry, dict):
+                day.start = "00:00"
+                day.end = "00:00"
+                day.trim = False
+                day.enabled = False
+                continue
+            start_val = slice_entry.get("start")
+            end_val = slice_entry.get("end")
+            if start_val is not None:
+                day.start = time.strftime("%H:%M", time.gmtime(int(start_val) * 60))[
+                    0:5
+                ]
+            if end_val is not None:
+                day.end = (
+                    "24:00"
+                    if int(end_val) == 1440
+                    else time.strftime("%H:%M", time.gmtime(int(end_val) * 60))[0:5]
+                )
+            if isinstance(trimming, list):
+                day.trim = (
+                    bool(trimming[index - 1]) if len(trimming) >= index else False
+                )
+            elif trimming is not None:
+                day.trim = bool(trimming)
+            day.enabled = not (day.start == "00:00" and day.end == "00:00")
