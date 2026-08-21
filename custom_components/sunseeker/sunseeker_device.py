@@ -25,7 +25,11 @@ from .const import (
 from .sunseeker_ble import MapBorder, SunseekerBleSession
 from .sunseeker_consumable_items import SunseekerConsumableItems
 from .sunseeker_map import SunseekerMap
-from .sunseeker_schedule import Sunseeker_new_schedule, SunseekerSchedule
+from .sunseeker_schedule import (
+    Sunseeker_new_schedule,
+    SunseekerSchedule,
+    SunseekerSchedule2,
+)
 from .sunseeker_zone import SunseekerZigZag, SunseekerZone
 
 _LOGGER = logging.getLogger(__name__)
@@ -75,6 +79,8 @@ class SunseekerDevice:
         self.mulpro_zon4 = 0
         self.device_config = None
         self.schedule_slots = 1
+        self.old_supports_led = 0
+        self.old_supports_ultra = 0
         self.ultra_flag = False
         self.ultra_lv = 0
         self.ledFlag = 0
@@ -94,6 +100,7 @@ class SunseekerDevice:
         self.DeviceBluetooth = ""
         self.DeviceWifiAddress = ""
         self.Schedule: SunseekerSchedule = SunseekerSchedule()
+        self.Schedule2: SunseekerSchedule2 = SunseekerSchedule2()
         self.Schedule_new: Sunseeker_new_schedule = Sunseeker_new_schedule()
         self.Schedule_new.mower = self
 
@@ -534,12 +541,42 @@ class SunseekerDevice:
 
     def updateschedule(self) -> None:
         """Refresh schedule from settings."""
+        if self.schedule_slots == 2:
+            self._updateschedule_2slot()
+            return
         for dsl in self.settings["data"]["deviceScheduleList"]:
             daynumber = dsl.get("dayOfWeek")
             day = self.Schedule.GetDay(daynumber)
             day.start = dsl.get("startAt")[0:5]
             day.end = dsl.get("endAt")[0:5]
             day.trim = dsl.get("trimFlag")
+
+    def _updateschedule_2slot(self) -> None:
+        """Refresh 2-slot schedule from settings, assigning slot 1 then 2 per day."""
+        seen: dict[int, int] = {}
+        for dsl in self.settings["data"]["deviceScheduleList"]:
+            daynumber = dsl.get("dayOfWeek")
+            slot_index = seen.get(daynumber, 0) + 1
+            if slot_index > 2:
+                _LOGGER.debug(
+                    "Ignoring extra schedule slot for day %s (already have 2)",
+                    daynumber,
+                )
+                continue
+            seen[daynumber] = slot_index
+            day = self.Schedule2.GetDay(daynumber, slot_index)
+            if day is None:
+                _LOGGER.debug("Ignoring schedule entry for unknown day %s", daynumber)
+                continue
+            start = dsl.get("startAt")
+            end = dsl.get("endAt")
+            if not start or not end:
+                _LOGGER.debug("Ignoring schedule entry with missing times: %s", dsl)
+                continue
+            day.start = start[0:5]
+            day.end = end[0:5]
+            day.trim = dsl.get("trimFlag", False)
+            day.enabled = not (day.start == "00:00" and day.end == "00:00")
 
     def get_device_config(self):
         """Get device config. Old models."""
@@ -570,6 +607,8 @@ class SunseekerDevice:
             self.device_config = response_data
             if self.device_config.get("data"):
                 self.schedule_slots = self.device_config["data"].get("scheddule") or 1
+                self.old_supports_led = self.device_config["data"].get("led") or 0
+                self.old_supports_ultra = self.device_config["data"].get("ultra") or 0
             return  # noqa: TRY300
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error(f"Get device-configuration: failed {error}")  # noqa: G004
@@ -1303,6 +1342,98 @@ class SunseekerDevice:
                 day.end = "00:00"
                 day.trim = False
         self.set_schedule(self.Schedule.days)
+
+    def set_schedule2(self, schedule2: SunseekerSchedule2):
+        """Set 2-slot schedule data for old models supporting 2 timeslots per day."""
+        device_schedule_bos = []
+        for daynumber in range(1, 8):
+            for index in (1, 2):
+                slot = schedule2.GetDay(daynumber, index)
+                device_schedule_bos.append(
+                    {
+                        "dayOfWeek": daynumber,
+                        "endAt": slot.end + ":00",
+                        "startAt": slot.start + ":00",
+                        "trimFlag": slot.trim,
+                        "isSelected": False,
+                        "isStartPan": False,
+                    }
+                )
+
+        data = {
+            "appId": self.userid,
+            "autoFlag": False,
+            "deviceScheduleBOS": device_schedule_bos,
+            "deviceSn": self.devicesn,
+        }
+        try:
+            url = self.url + "/app_mower/device-schedule/setScheduling"
+            headers = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Content-Type": "application/json; charset=UTF-8",
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+                "Accept-Encoding": "gzip",
+            }
+            _LOGGER.debug(f"Set schedule2 url: {url} header: {headers} data: {data}")  # noqa: G004
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data.get("ok") is False:
+                self.error_text = response_data.get("msg")
+                if self.dataupdated:
+                    self.dataupdated(self.devicesn)
+                _LOGGER.debug(response_data.get("msg"))
+            else:
+                self.error_text = ""
+            return  # noqa: TRY300
+
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            self.error_text = error
+            if self.dataupdated:
+                self.dataupdated(self.devicesn)
+            _LOGGER.error(f"Set_schedule2: failed {error}")  # noqa: G004
+
+    def set_schedule_old_2slot(self, timedata: dict) -> None:
+        """Set 2-slot schedule from service call for old models supporting 2 timeslots."""
+        day_map = [
+            (1, "monday"),
+            (2, "tuesday"),
+            (3, "wednesday"),
+            (4, "thursday"),
+            (5, "friday"),
+            (6, "saturday"),
+            (7, "sunday"),
+        ]
+        for day_num, day_name in day_map:
+            slots = timedata.get(day_name, [])
+            if not isinstance(slots, list):
+                continue
+            for index in (1, 2):
+                day = self.Schedule2.GetDay(day_num, index)
+                if day is None:
+                    continue
+                entry = slots[index - 1] if len(slots) >= index else {}
+                if not isinstance(entry, dict):
+                    entry = {}
+                if entry.get("enabled", False):
+                    day.enabled = True
+                    day.start = entry.get("starttime", "00:00")
+                    day.end = entry.get("endtime", "00:00")
+                    day.trim = entry.get("trim", False)
+                else:
+                    day.enabled = False
+                    day.start = "00:00"
+                    day.end = "00:00"
+                    day.trim = False
+        self.set_schedule2(self.Schedule2)
 
     def set_zone_status(
         self,

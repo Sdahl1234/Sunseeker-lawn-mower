@@ -206,10 +206,16 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         if coordinator is None:
             raise HomeAssistantError(f"Device for {entity_id} not found")
         if coordinator.device.model == MODEL_OLD:
-            await hass.async_add_executor_job(
-                coordinator.device.set_schedule_old,
-                schedule,
-            )
+            if coordinator.device.schedule_slots == 2:
+                await hass.async_add_executor_job(
+                    coordinator.device.set_schedule_old_2slot,
+                    schedule,
+                )
+            else:
+                await hass.async_add_executor_job(
+                    coordinator.device.set_schedule_old,
+                    schedule,
+                )
         else:
             await hass.async_add_executor_job(
                 coordinator.device.set_schedule_new,

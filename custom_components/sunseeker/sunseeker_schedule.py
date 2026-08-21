@@ -622,3 +622,66 @@ class SunseekerSchedule:
                     ]
             if trimming_val is not None:
                 asc.trim = trimming_val
+
+
+class SunseekerScheduleDay2:
+    """Day for old models supporting 2 timeslots per day."""
+
+    def __init__(self, day: int, index: int) -> None:
+        """Init."""
+        self.day = day
+        self.day_index = index
+        self.start: str = "00:00"
+        self.end: str = "00:00"
+        self.trim: bool = False
+        self.enabled: bool = False
+
+
+class SunseekerSchedule2:
+    """Sunseeker schedule for old models supporting 2 timeslots per day."""
+
+    def __init__(self) -> None:
+        """Init."""
+        self.days: list[SunseekerScheduleDay2] = []
+        for x in range(1, 8):
+            self.days.append(SunseekerScheduleDay2(x, 1))
+            self.days.append(SunseekerScheduleDay2(x, 2))
+
+    def GetDay(self, daynumber: int, index: int) -> SunseekerScheduleDay2:
+        """Get the day."""
+        for day in self.days:
+            if (day.day == daynumber) and (day.day_index == index):
+                return day
+        return None
+
+    def Mapday(self, daynumber: int) -> str:
+        """Maps daynumber (1=monday..7=sunday) to text."""
+        names = [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ]
+        if 1 <= daynumber <= 7:
+            return names[daynumber - 1]
+        return ""
+
+    def GenerateAttributeData(self) -> dict:
+        """Generate the schedule attribute data for the schedule card."""
+        schedule: dict = {self.Mapday(d): [] for d in range(1, 8)}
+        for daynumber in range(1, 8):
+            daytext = self.Mapday(daynumber)
+            for index in (1, 2):
+                slot = self.GetDay(daynumber, index)
+                schedule[daytext].append(
+                    {
+                        "enabled": slot.enabled,
+                        "starttime": slot.start,
+                        "endtime": slot.end,
+                        "trim": slot.trim,
+                    }
+                )
+        return schedule

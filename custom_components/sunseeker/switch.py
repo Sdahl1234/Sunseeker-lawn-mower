@@ -41,6 +41,30 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
         )
 
         if coordinator.model in (MODEL_OLD):
+            if coordinator.device.old_supports_ultra:
+                async_add_entities(
+                    [
+                        SunseekerUltrasonicSwitch(
+                            coordinator, "Ultrasonic", "sunseeker_ultrasonic"
+                        ),
+                    ]
+                )
+            if coordinator.device.old_supports_led:
+                async_add_entities(
+                    [
+                        SunseekerLedFlagSwitch(
+                            coordinator, "Headlight", "sunseeker_led_flag"
+                        ),
+                        SunseekerLedModeSwitch(
+                            coordinator, "White light", "sunseeker_led_mode"
+                        ),
+                        SunseekerLedNightFlagSwitch(
+                            coordinator,
+                            "Headlight night only",
+                            "sunseeker_led_night_flag",
+                        ),
+                    ]
+                )
             async_add_entities(
                 [
                     SunseekerMultiZoneSwitch(
@@ -51,18 +75,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     ),
                     SunseekerScheduleSwitch(
                         coordinator, "Schedule active", "schedule_active"
-                    ),
-                    SunseekerUltrasonicSwitch(
-                        coordinator, "Ultrasonic", "sunseeker_ultrasonic"
-                    ),
-                    SunseekerLedFlagSwitch(
-                        coordinator, "Headlight", "sunseeker_led_flag"
-                    ),
-                    SunseekerLedModeSwitch(
-                        coordinator, "White light", "sunseeker_led_mode"
-                    ),
-                    SunseekerLedNightFlagSwitch(
-                        coordinator, "Headlight night only", "sunseeker_led_night_flag"
                     ),
                 ]
             )

@@ -29,49 +29,73 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                 ]
             )
         if coordinator.model == MODEL_OLD:
-            async_add_entities(
-                [
-                    SunseekerScheduleText(
-                        coordinator, "Schedule Monday", 1, "sunseeker_schedule_text_1"
-                    ),
-                    SunseekerScheduleText(
-                        coordinator, "Schedule Tuesday", 2, "sunseeker_schedule_text_2"
-                    ),
-                    SunseekerScheduleText(
-                        coordinator,
-                        "Schedule Wednesday",
-                        3,
-                        "sunseeker_schedule_text_3",
-                    ),
-                    SunseekerScheduleText(
-                        coordinator, "Schedule Thursday", 4, "sunseeker_schedule_text_4"
-                    ),
-                    SunseekerScheduleText(
-                        coordinator, "Schedule Fridays", 5, "sunseeker_schedule_text_5"
-                    ),
-                    SunseekerScheduleText(
-                        coordinator, "Schedule Saturday", 6, "sunseeker_schedule_text_6"
-                    ),
-                    SunseekerScheduleText(
-                        coordinator, "Schedule Sunday", 7, "sunseeker_schedule_text_7"
-                    ),
-                    SunseekerLedColorCodeText(
-                        coordinator,
-                        "Headlight color code",
-                        "sunseeker_led_color_code",
-                    ),
-                    SunseekerLedStartText(
-                        coordinator,
-                        "Headlight start time",
-                        "sunseeker_led_start",
-                    ),
-                    SunseekerLedEndText(
-                        coordinator,
-                        "Headlight end time",
-                        "sunseeker_led_end",
-                    ),
-                ]
-            )
+            if coordinator.device.schedule_slots == 1:
+                async_add_entities(
+                    [
+                        SunseekerScheduleText(
+                            coordinator,
+                            "Schedule Monday",
+                            1,
+                            "sunseeker_schedule_text_1",
+                        ),
+                        SunseekerScheduleText(
+                            coordinator,
+                            "Schedule Tuesday",
+                            2,
+                            "sunseeker_schedule_text_2",
+                        ),
+                        SunseekerScheduleText(
+                            coordinator,
+                            "Schedule Wednesday",
+                            3,
+                            "sunseeker_schedule_text_3",
+                        ),
+                        SunseekerScheduleText(
+                            coordinator,
+                            "Schedule Thursday",
+                            4,
+                            "sunseeker_schedule_text_4",
+                        ),
+                        SunseekerScheduleText(
+                            coordinator,
+                            "Schedule Fridays",
+                            5,
+                            "sunseeker_schedule_text_5",
+                        ),
+                        SunseekerScheduleText(
+                            coordinator,
+                            "Schedule Saturday",
+                            6,
+                            "sunseeker_schedule_text_6",
+                        ),
+                        SunseekerScheduleText(
+                            coordinator,
+                            "Schedule Sunday",
+                            7,
+                            "sunseeker_schedule_text_7",
+                        ),
+                    ]
+                )
+            if coordinator.device.old_supports_led:
+                async_add_entities(
+                    [
+                        SunseekerLedColorCodeText(
+                            coordinator,
+                            "Headlight color code",
+                            "sunseeker_led_color_code",
+                        ),
+                        SunseekerLedStartText(
+                            coordinator,
+                            "Headlight start time",
+                            "sunseeker_led_start",
+                        ),
+                        SunseekerLedEndText(
+                            coordinator,
+                            "Headlight end time",
+                            "sunseeker_led_end",
+                        ),
+                    ]
+                )
 
 
 def _normalize_led_color(value: str) -> str | None:

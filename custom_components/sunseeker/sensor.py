@@ -272,16 +272,6 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     ),
                     SunseekerSensor(
                         coordinator,
-                        None,
-                        "Schedule",
-                        None,
-                        "Schedule",
-                        "",
-                        "mdi:calendar",
-                        "sunseeker_schedule",
-                    ),
-                    SunseekerSensor(
-                        coordinator,
                         SensorDeviceClass.DURATION,
                         "Actual mowing time",
                         "min",
@@ -302,6 +292,36 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                     ),
                 ]
             )
+            if coordinator.device.schedule_slots == 2:
+                async_add_devices(
+                    [
+                        SunseekerOldSchedule2Sensor(
+                            coordinator,
+                            None,
+                            "Schedule",
+                            None,
+                            "schedule2",
+                            "",
+                            "mdi:calendar",
+                            "sunseeker_schedule",
+                        ),
+                    ]
+                )
+            else:
+                async_add_devices(
+                    [
+                        SunseekerSensor(
+                            coordinator,
+                            None,
+                            "Schedule",
+                            None,
+                            "Schedule",
+                            "",
+                            "mdi:calendar",
+                            "sunseeker_schedule",
+                        ),
+                    ]
+                )
         if coordinator.model in (MODEL_V1):
             async_add_devices(
                 [
@@ -1181,6 +1201,52 @@ class SunseekerScheduleSensor(SunseekerEntity, SensorEntity):
         """Return the state attributes."""
         # return self.device.Schedule_new.GenerateAttributeData()
         return {"schedule": self.device.Schedule_new.GenerateAttributeData()}
+
+
+class SunseekerOldSchedule2Sensor(SunseekerEntity, SensorEntity):
+    """Sunseeker Schedule Sensor for old models supporting 2 timeslots per day."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        device_class: SensorDeviceClass,
+        name: str,
+        unit: str,
+        valuepair: str,
+        source: str,
+        icon: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_device_class = device_class
+        self._attr_native_unit_of_measurement = unit
+        self._valuepair = valuepair
+        self._source = source
+        self._icon = icon
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        return "Use this in the schedule card"
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {"schedule": self.device.Schedule2.GenerateAttributeData()}
+
+    @property
+    def icon(self):
+        """Icon."""
+        return self._icon
 
 
 class SunseekerCustomEstimatedTimeSensor(SunseekerEntity, SensorEntity):

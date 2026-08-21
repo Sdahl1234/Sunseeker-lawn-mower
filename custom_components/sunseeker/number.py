@@ -124,13 +124,18 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     SunseekerMulNumber(coordinator, "MulZone2", 2, "sunseeker_mulpro2"),
                     SunseekerMulNumber(coordinator, "MulZone3", 3, "sunseeker_mulpro3"),
                     SunseekerMulNumber(coordinator, "MulZone4", 4, "sunseeker_mulpro4"),
-                    SunseekerUltrasonicLevelNumber(
-                        coordinator,
-                        "Ultrasonic level",
-                        "sunseeker_ultrasonic_level",
-                    ),
                 ]
             )
+            if coordinator.device.old_supports_ultra:
+                async_add_entities(
+                    [
+                        SunseekerUltrasonicLevelNumber(
+                            coordinator,
+                            "Ultrasonic level",
+                            "sunseeker_ultrasonic_level",
+                        ),
+                    ]
+                )
 
 
 class SunseekerRainDelayNumber(SunseekerEntity, NumberEntity):
