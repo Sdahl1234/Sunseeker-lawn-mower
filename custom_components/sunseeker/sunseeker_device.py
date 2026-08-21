@@ -73,6 +73,8 @@ class SunseekerDevice:
         self.mulpro_zon2 = 0
         self.mulpro_zon3 = 0
         self.mulpro_zon4 = 0
+        self.device_config = None
+        self.schedule_slots = 1
         self.ultra_flag = False
         self.ultra_lv = 0
         self.ledFlag = 0
@@ -195,6 +197,8 @@ class SunseekerDevice:
     def InitDevice(self) -> None:
         """Setup the device."""
         self.get_settings()
+        if self.model == MODEL_OLD:
+            self.get_device_config()
         self.update_devices()
         self.InitValues()
 
@@ -536,6 +540,39 @@ class SunseekerDevice:
             day.start = dsl.get("startAt")[0:5]
             day.end = dsl.get("endAt")[0:5]
             day.trim = dsl.get("trimFlag")
+
+    def get_device_config(self):
+        """Get device config. Old models."""
+        endpoint = f"/app_mower/device-configuration/getBySn/{self.devicesn}"
+        try:
+            url_ = self.url + endpoint
+            headers_ = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.access_token,
+                "Host": self.host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.4.1",
+            }
+            _LOGGER.debug(f"Get device-configuration header: {headers_} url: {url_}")  # noqa: G004
+            response = requests.get(
+                url=url_,
+                headers=headers_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(json.dumps(response_data))
+            if response_data["code"] != 0:
+                self.error_text = response_data.get("msg")
+                _LOGGER.debug(f"Error getting device-configuration for {self.devicesn}")  # noqa: G004
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            self.error_text = ""
+            self.device_config = response_data
+            if self.device_config.get("data"):
+                self.schedule_slots = self.device_config["data"].get("scheddule") or 1
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"Get device-configuration: failed {error}")  # noqa: G004
 
     def get_settings(self):
         """Get settings. Part of the init."""
