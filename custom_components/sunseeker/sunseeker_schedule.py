@@ -642,6 +642,7 @@ class SunseekerSchedule2:
 
     def __init__(self) -> None:
         """Init."""
+        self.schedule_pause: bool = False
         self.days: list[SunseekerScheduleDay2] = []
         for x in range(1, 8):
             self.days.append(SunseekerScheduleDay2(x, 1))
@@ -671,7 +672,7 @@ class SunseekerSchedule2:
 
     def GenerateAttributeData(self) -> dict:
         """Generate the schedule attribute data for the schedule card."""
-        schedule: dict = {"model_type": "old"}
+        schedule: dict = {"model_type": "old", "pause": self.schedule_pause}
         schedule.update({self.Mapday(d): [] for d in range(1, 8)})
         for daynumber in range(1, 8):
             daytext = self.Mapday(daynumber)

@@ -73,11 +73,24 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     SunseekerMultiZoneAutoSwitch(
                         coordinator, "MultiZone auto", "sunseeker_multi_zone_auto"
                     ),
-                    SunseekerScheduleSwitch(
-                        coordinator, "Schedule active", "schedule_active"
-                    ),
                 ]
             )
+            if coordinator.device.schedule_slots == 2:
+                async_add_entities(
+                    [
+                        SunseekerSchedule2PauseSwitch(
+                            coordinator, "Pause schedule", "sunseeker_pause_schedule"
+                        ),
+                    ]
+                )
+            else:
+                async_add_entities(
+                    [
+                        SunseekerScheduleSwitch(
+                            coordinator, "Schedule active", "schedule_active"
+                        ),
+                    ]
+                )
 
         if coordinator.model in (MODEL_V1):
             async_add_entities(
@@ -942,6 +955,57 @@ class SunseekerSchedulePauseSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return self.device.Schedule_new.schedule_pause
+
+
+class SunseekerSchedule2PauseSwitch(SunseekerEntity, SwitchEntity):
+    """Pause schedule switch for old models supporting 2 timeslots per day."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:timer-pause"
+        self.device = self._data_handler.get_device(self._sn)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        self.device.Schedule2.schedule_pause = True
+        await self.hass.async_add_executor_job(
+            self.device.set_schedule2,
+            self.device.Schedule2,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        self.device.Schedule2.schedule_pause = False
+        await self.hass.async_add_executor_job(
+            self.device.set_schedule2,
+            self.device.Schedule2,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        self.device.Schedule2.schedule_pause = not self.device.Schedule2.schedule_pause
+        await self.hass.async_add_executor_job(
+            self.device.set_schedule2,
+            self.device.Schedule2,
+        )
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return self.device.Schedule2.schedule_pause
 
 
 class SunseekerZigzagActiveSwitch(SunseekerEntity, SwitchEntity):

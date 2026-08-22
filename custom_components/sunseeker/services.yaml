@@ -109,7 +109,7 @@ set_schedule:
       description: >
         The schedule data to apply. The format depends on the model type.
         For old wired models include "model_type": "old" and provide one entry per day with enabled, starttime, endtime, and trim fields.
-        For old wired models supporting 2 timeslots per day, omit model_type and provide up to two time-slot entries per day with enabled, starttime, endtime, and trim fields (no locations).
+        For old wired models supporting 2 timeslots per day, include "model_type": "old", a top-level "pause" flag, and provide up to two time-slot entries per day with enabled, starttime, endtime, and trim fields (no locations).
         For wireless models (V/V1/X/S) omit model_type and provide up to two time-slot entries per day plus the top-level mode flags.
       required: true
       example: |
@@ -127,6 +127,8 @@ set_schedule:
 
         # Old wired model example (2 timeslots per day):
         {
+          "model_type": "old",
+          "pause": false,
           "monday": [
             { "enabled": true,  "starttime": "05:00", "endtime": "08:00", "trim": true },
             { "enabled": true,  "starttime": "20:00", "endtime": "22:00", "trim": true }

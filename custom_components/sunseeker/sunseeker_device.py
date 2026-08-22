@@ -4,6 +4,7 @@ import contextlib
 import gzip
 import json
 import logging
+from pathlib import Path
 import re
 from threading import Timer
 
@@ -577,6 +578,9 @@ class SunseekerDevice:
             day.end = end[0:5]
             day.trim = dsl.get("trimFlag", False)
             day.enabled = not (day.start == "00:00" and day.end == "00:00")
+        self.Schedule2.schedule_pause = self.settings["data"].get(
+            "pause", self.Schedule2.schedule_pause
+        )
 
     def get_device_config(self):
         """Get device config. Old models."""
@@ -636,6 +640,16 @@ class SunseekerDevice:
             )
             response_data = response.json()
             self.settings = response_data
+
+            test_schedule = False
+            if test_schedule:
+                json_file = Path(__file__).parent / "GetSettings_Old.json"
+                if json_file.is_file():
+                    _LOGGER.warning(
+                        "Loading device list from local file: %s", json_file
+                    )
+                    with json_file.open(encoding="utf-8") as f:
+                        self.settings = json.load(f)
             _LOGGER.debug(json.dumps(response_data))
             if response_data["code"] != 0:
                 self.error_text = response_data.get("msg")
@@ -1365,6 +1379,7 @@ class SunseekerDevice:
             "autoFlag": False,
             "deviceScheduleBOS": device_schedule_bos,
             "deviceSn": self.devicesn,
+            "pause": schedule2.schedule_pause,
         }
         try:
             url = self.url + "/app_mower/device-schedule/setScheduling"
@@ -1433,6 +1448,9 @@ class SunseekerDevice:
                     day.start = "00:00"
                     day.end = "00:00"
                     day.trim = False
+        self.Schedule2.schedule_pause = timedata.get(
+            "pause", self.Schedule2.schedule_pause
+        )
         self.set_schedule2(self.Schedule2)
 
     def set_zone_status(
