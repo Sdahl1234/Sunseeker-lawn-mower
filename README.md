@@ -12,6 +12,7 @@ Home assistant integration from lawnmower using the robotic-mower connect APP (O
   - Sunseeker X3, X4, X5, X7
   - Sunseeker X3 Gen2, X5 Gen2, X7 Gen2, X7 Plus Gen2
   - Sunseeker V1, V18, V3
+  - Kärcher X4, X6
 
 ## Install
 #### HACS (recommended)
@@ -276,7 +277,13 @@ In addition to the shared entities above, X and S models include:
 - **Repeat time work** *(V, X, S)* - If enabled the mower continues mowing after end cycle
 - **Schedule** - Sensor with attributes containing the full schedule object. This sensor is used as the `entity` in the schedule card and as the target for the `set_schedule` action.
 
-The schedule card works with both wireless models (V, V1, X, S) and old wired models. Point the card at the **Schedule** sensor entity.
+The schedule card works with both wireless models (V, V1, X, S) and old wired models. Old wired models may use either the legacy 1-slot-per-day format or the newer 2-slot-per-day format, depending on the mower model. For 2-slot models, the schedule keeps the `pause` flag and each day contains two slot entries.
+
+The old-model payload format is:
+- `1-slot model`: `{"monday": [{"enabled": true, "starttime": "06:00", "endtime": "18:00", "trim": false}]}`
+- `2-slot model`: `{"monday": [{"enabled": true, "starttime": "06:00", "endtime": "09:00", "trim": false}, {"enabled": true, "starttime": "18:00", "endtime": "20:00", "trim": true}], "pause": false}`
+
+Point the card at the **Schedule** sensor entity.
 
 https://github.com/Sdahl1234/sunseeker-schedule-card
 <img width="905" height="854" alt="image" src="https://github.com/user-attachments/assets/f8674bcc-1afd-4ef4-9890-8c9e57b1ca72" />
@@ -380,6 +387,8 @@ For the **Mower position** tracker to be accurate, the integration needs to know
 ## Text
 *Format of the text fields: Start and end time format HH:MM. Add Trim to mowe the border. ex. "06:15 - 17:00 Trim", "06:15 - 17:00", "08:00 - 24:00" or whole day "00:00 - 24:00"*
 
+Older old-model mowers typically use a single schedule entry per day. Newer old-model mowers support two schedule slots per day. When the feature is enabled, each day can contain up to two time ranges and the mower keeps the `pause` state for the whole week schedule.
+
 - **Schedule Monday** - Text field to update the moday schedule.
 - **Schedule Tuesday** - Text field to update the moday schedule.
 - **Schedule Wednesday** - Text field to update the moday schedule.
@@ -411,7 +420,8 @@ For the **Mower position** tracker to be accurate, the integration needs to know
 - **Error** - error text returned for the mower
 - **Errorcode** - The errorcode returned for the mower
 - **Schedule** - The state is always "schedule", and contains the full schedule as a `schedule` attribute. Use this entity in the **schedule card** (https://github.com/Sdahl1234/sunseeker-schedule-card) to view and edit the mowing schedule. The card calls the `set_schedule` action automatically when you press Submit.
-  Each day entry contains: `enabled`, `starttime` (HH:MM), `endtime` (HH:MM), `trim` (border trimming on/off).
+  For legacy old-models with 1 slot per day, each day entry contains: `enabled`, `starttime` (HH:MM), `endtime` (HH:MM), `trim` (border trimming on/off).
+  For newer old-models with 2 slots per day, each day is a list of two entries, and the schedule also exposes a `pause` flag for the whole schedule. Each slot still contains `enabled`, `starttime`, `endtime`, and `trim`.
 - **Event** - Eventscodes maped to text from app
 
 ## Device tracker
