@@ -32,6 +32,7 @@ brands = [
     "Sunseeker",
     "Texas",
     "Grouw",
+    "Kärcher",
 ]
 
 apptypes = [
