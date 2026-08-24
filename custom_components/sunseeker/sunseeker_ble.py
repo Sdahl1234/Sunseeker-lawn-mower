@@ -168,6 +168,18 @@ BLE_ALIGN_TURN_MIN = 40
 BLE_ALIGN_TURN_MAX = 110
 BLE_ALIGN_STALE_TURN_MAX = 75
 BLE_ALIGN_MIN_COMMAND_INTERVAL = 0.28
+BLE_SIMPLE_ROTATE_ENTER_ERROR_RAD = 0.65
+BLE_SIMPLE_ROTATE_EXIT_ERROR_RAD = 0.18
+BLE_SIMPLE_ROTATE_TURN_MIN = 12
+BLE_SIMPLE_ROTATE_TURN_MAX = 28
+BLE_SIMPLE_ROTATE_MIN_COMMAND_INTERVAL = 0.45
+BLE_SIMPLE_DRIVE_TURN_MAX = 95
+BLE_SIMPLE_DRIVE_TURN_GAIN = 220
+BLE_SIMPLE_DRIVE_SLOW_ERROR_RAD = 0.35
+BLE_SIMPLE_DRIVE_SLOW_SPEED_CAP = 140
+BLE_SIMPLE_DRIVE_MIN_SPEED = 80
+BLE_SIMPLE_ROUTE_SPEED_CAP = 220
+BLE_SIMPLE_NEAR_DISTANCE = 1.2
 BLE_POST_ALIGN_GRACE_CYCLES = 10
 BLE_POST_ALIGN_SPEED_CAP = 130
 BLE_ALIGN_REENTER_STRONG_ERROR_RAD = 0.75
@@ -195,6 +207,8 @@ BLE_WRONG_WAY_MOVE_THRESHOLD = 0.03
 BLE_WRONG_WAY_PROGRESS_DOT_THRESHOLD = -0.03
 BLE_WRONG_WAY_HEADING_ERR_MAX = 0.45
 BLE_WRONG_WAY_CONFIRM_CYCLES = 3
+BLE_ROUTE_WRONG_WAY_HEADING_ERR_MAX = 0.85
+BLE_ROUTE_WRONG_WAY_CONFIRM_CYCLES = 2
 BLE_DRIVE_NO_PROGRESS_STALE_CYCLES = 12
 BLE_DRIVE_NO_PROGRESS_CONFIRM_CYCLES = 20
 BLE_DRIVE_NO_PROGRESS_HEADING_ERR_MAX = 0.28
@@ -1807,18 +1821,22 @@ class SunseekerBleSession:
             use_ble_heading = [False]
 
             def _get_navigation_heading() -> float | None:
+                ble_age = time.monotonic() - _ble_pose_ts[0]
+                if _ble_heading[0] is not None and ble_age <= BLE_POSE_FRESH_AGE:
+                    use_ble_heading[0] = True
+                    return _ble_heading[0]
+
                 heading: float | None = None
                 if get_heading is not None:
                     heading = get_heading()
                 if heading is not None:
                     use_ble_heading[0] = False
                     return heading
-
-                ble_age = time.monotonic() - _ble_pose_ts[0]
-                if _ble_heading[0] is not None and ble_age <= BLE_POSE_FRESH_AGE:
-                    use_ble_heading[0] = True
-                    return _ble_heading[0]
                 return None
+
+            first_pose_deadline = time.monotonic() + BLE_POSE_REQUEST_TIMEOUT
+            while _ble_pose_ts[0] == 0.0 and time.monotonic() < first_pose_deadline:
+                await asyncio.sleep(command_interval)
 
             initial_pos = _get_ble_position()
             initial_heading = _get_navigation_heading()
@@ -1917,6 +1935,7 @@ class SunseekerBleSession:
                 _LOG.warning("[ble-nav] rotate calibration skipped (no heading source)")
             # Start moving to the points
             prev_pos: list[float] | None = None
+            simple_navigation_enabled = time.monotonic() >= 0.0
 
             for wp_idx, target in enumerate(clean_wps):
                 target_x, target_y = target[0], target[1]
@@ -1977,6 +1996,7 @@ class SunseekerBleSession:
                 drive_no_progress_count = 0
                 drive_bias_flips = 0
                 wp1_spin_error_cont: float | None = None
+                simple_rotate_error_cont: float | None = None
                 last_pose_stop_ts = 0.0
                 last_sent_v: int | None = None
                 last_sent_w: int | None = None
@@ -2204,6 +2224,124 @@ class SunseekerBleSession:
                     speed_factor = min(1.0, distance / 0.5)
                     abs_heading_error = abs(heading_error)
 
+                    if align_mode:
+                        if abs_heading_error <= BLE_SIMPLE_ROTATE_EXIT_ERROR_RAD:
+                            align_mode = False
+                            simple_rotate_error_cont = None
+                            _LOG.debug(
+                                "[ble-nav] simple rotate complete for wp%d (err=%.3f)",
+                                wp_idx + 1,
+                                heading_error,
+                            )
+                    elif abs_heading_error >= BLE_SIMPLE_ROTATE_ENTER_ERROR_RAD:
+                        align_mode = True
+                        _LOG.debug(
+                            "[ble-nav] simple heading drift -> rotate wp%d (err=%.3f)",
+                            wp_idx + 1,
+                            heading_error,
+                        )
+
+                    if align_mode:
+                        if simple_rotate_error_cont is None:
+                            simple_rotate_error_cont = heading_error
+                        else:
+                            simple_rotate_error_cont = min(
+                                (
+                                    heading_error,
+                                    heading_error + 2 * math.pi,
+                                    heading_error - 2 * math.pi,
+                                ),
+                                key=lambda candidate: abs(
+                                    candidate - simple_rotate_error_cont
+                                ),
+                            )
+                        turn_mag = int(
+                            max(
+                                BLE_SIMPLE_ROTATE_TURN_MIN,
+                                min(
+                                    BLE_SIMPLE_ROTATE_TURN_MAX,
+                                    abs(simple_rotate_error_cont)
+                                    / math.pi
+                                    * BLE_SIMPLE_ROTATE_TURN_MAX
+                                    * calibrated_turn_scale,
+                                ),
+                            )
+                        )
+                        v = 0
+                        w = (
+                            calibrated_turn_sign
+                            * (1 if simple_rotate_error_cont >= 0 else -1)
+                            * turn_mag
+                        )
+                        mode_name = "rotate"
+                    else:
+                        simple_rotate_error_cont = None
+                        near_factor = 1.0
+                        if distance <= BLE_SIMPLE_NEAR_DISTANCE:
+                            near_factor = max(0.35, distance / BLE_SIMPLE_NEAR_DISTANCE)
+                        heading_factor = max(0.35, math.cos(abs_heading_error))
+                        speed_cap = min(drive_speed, BLE_SIMPLE_ROUTE_SPEED_CAP)
+                        if wp_idx >= prewaypointcount:
+                            speed_cap = drive_speed
+                        if abs_heading_error >= BLE_SIMPLE_DRIVE_SLOW_ERROR_RAD:
+                            speed_cap = min(speed_cap, BLE_SIMPLE_DRIVE_SLOW_SPEED_CAP)
+                        v = int(speed_cap * near_factor * heading_factor)
+                        if distance > BLE_SIMPLE_NEAR_DISTANCE:
+                            v = max(v, BLE_SIMPLE_DRIVE_MIN_SPEED)
+                        w_raw = int(
+                            max(
+                                -BLE_SIMPLE_DRIVE_TURN_MAX,
+                                min(
+                                    BLE_SIMPLE_DRIVE_TURN_MAX,
+                                    heading_error
+                                    / math.pi
+                                    * BLE_SIMPLE_DRIVE_TURN_GAIN
+                                    * calibrated_turn_scale,
+                                ),
+                            )
+                        )
+                        w = calibrated_turn_sign * w_raw
+                        mode_name = "drive"
+
+                    _LOG.debug(
+                        "[ble-nav] simple cmd mode=%s v=%d w=%d heading_err=%.3f h_bias=%.3f dist=%.3f",
+                        mode_name,
+                        v,
+                        w,
+                        heading_error,
+                        heading_bias,
+                        distance,
+                    )
+
+                    send_now = True
+                    if (
+                        last_sent_v == v
+                        and last_sent_w == w
+                        and (now - last_sent_ts) < BLE_RC_REFRESH_INTERVAL
+                    ):
+                        send_now = False
+
+                    if send_now:
+                        await self.write(
+                            {
+                                "id": "remoteControlMap",
+                                "method": "action",
+                                "params": {"cmd": "remote_ctl", "v": v, "w": w},
+                            }
+                        )
+                        last_sent_v = v
+                        last_sent_w = w
+                        last_sent_ts = now
+
+                    loop_delay = command_interval
+                    if align_mode:
+                        loop_delay = max(
+                            loop_delay, BLE_SIMPLE_ROTATE_MIN_COMMAND_INTERVAL
+                        )
+                    await asyncio.sleep(loop_delay)
+                    if simple_navigation_enabled:
+                        continue
+
                     if wp_idx == 0 + prewaypointcount:
                         if (
                             align_mode
@@ -2338,12 +2476,18 @@ class SunseekerBleSession:
                         await asyncio.sleep(command_interval)
                         continue
 
+                    wrong_way_heading_err_max = BLE_WRONG_WAY_HEADING_ERR_MAX
+                    wrong_way_confirm_cycles = BLE_WRONG_WAY_CONFIRM_CYCLES
+                    if wp_idx < prewaypointcount:
+                        wrong_way_heading_err_max = BLE_ROUTE_WRONG_WAY_HEADING_ERR_MAX
+                        wrong_way_confirm_cycles = BLE_ROUTE_WRONG_WAY_CONFIRM_CYCLES
+
                     if (
                         not align_mode
                         and progress_dot is not None
                         and moved >= BLE_WRONG_WAY_MOVE_THRESHOLD
                         and progress_dot <= BLE_WRONG_WAY_PROGRESS_DOT_THRESHOLD
-                        and abs_heading_error <= BLE_WRONG_WAY_HEADING_ERR_MAX
+                        and abs_heading_error <= wrong_way_heading_err_max
                     ):
                         wrong_way_count += 1
                     elif (
@@ -2353,8 +2497,8 @@ class SunseekerBleSession:
                         wrong_way_count = 0
 
                     if (
-                        wp_idx == 0 + prewaypointcount
-                        and wrong_way_count >= BLE_WRONG_WAY_CONFIRM_CYCLES
+                        wp_idx <= prewaypointcount
+                        and wrong_way_count >= wrong_way_confirm_cycles
                     ):
                         heading_bias = _normalize_angle(heading_bias + math.pi)
                         wrong_way_count = 0
@@ -2597,7 +2741,7 @@ class SunseekerBleSession:
                             )
 
                         if (
-                            wp_idx == 0 + prewaypointcount
+                            wp_idx <= prewaypointcount
                             and align_escape_drive_cycles == 0
                             and align_consecutive_cycles >= BLE_ALIGN_MAX_CONSEC_CYCLES
                             and stale_pose_count >= BLE_ALIGN_PROBE_STALE_CYCLES

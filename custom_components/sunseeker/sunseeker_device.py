@@ -2332,7 +2332,7 @@ class SunseekerDevice:
                     get_status=get_status,
                     map_border=_mb,
                     arrival_threshold=0.10,
-                    waypoint_timeout=300.0,
+                    waypoint_timeout=180.0,
                     drive_speed=350,
                     command_interval=0.15,
                     prewaypointcount=prewaypointcount,
