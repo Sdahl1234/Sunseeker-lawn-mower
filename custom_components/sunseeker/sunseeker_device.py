@@ -7,8 +7,8 @@ import logging
 from pathlib import Path
 import re
 from threading import Timer
+import time
 
-# import time as _time
 import requests
 
 from homeassistant.core import HomeAssistant
@@ -201,6 +201,7 @@ class SunseekerDevice:
         self._path_data_validation_countdown = 0
         self._path_data_initial_delay_applied = False
         self._unloaded = False
+        self._livemap_active_until = 0.0  # Track when livemap was last requested
 
     def InitDevice(self) -> None:
         """Setup the device."""
@@ -446,6 +447,14 @@ class SunseekerDevice:
         """Check whether the mower is currently mowing."""
         return self.mode in (2, 7, 14, 15)
 
+    def mark_livemap_active(self) -> None:
+        """Mark the livemap as active for the next 60 seconds."""
+        self._livemap_active_until = time.monotonic() + 60
+
+    def is_livemap_active(self) -> bool:
+        """Check if the livemap has been requested recently."""
+        return time.monotonic() < self._livemap_active_until
+
     def _schedule_path_data_update(self, delay_seconds: float = 2) -> None:
         """Poll path eligibility every 2s, then request path data while valid."""
 
@@ -456,7 +465,11 @@ class SunseekerDevice:
             if self._unloaded:
                 return
 
-            is_valid = self.need_request_map_path and self._is_mowing()
+            is_valid = (
+                self.need_request_map_path
+                and self._is_mowing()
+                and self.is_livemap_active()
+            )
 
             if not self.need_request_map_path:
                 _LOGGER.debug(f"Requesting path data for {self.DeviceName} disabled")  # noqa: G004

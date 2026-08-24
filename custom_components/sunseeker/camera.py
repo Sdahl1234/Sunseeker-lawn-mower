@@ -60,6 +60,7 @@ class MowerCamera(SunseekerEntity, Camera):
 
     async def async_camera_image(self, **kwargs) -> bytes | None:
         """Return bytes of camera image."""
+        self.device.mark_livemap_active()
         try:
             roi_img = self.device.map.livemap
             if roi_img is not None:
