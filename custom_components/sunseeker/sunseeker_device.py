@@ -2283,36 +2283,6 @@ class SunseekerDevice:
 
         map_border = MapBorder.NEW_AREA
 
-        def get_position(_device=self) -> list[float] | None:
-            # robot_pos is the live stream used during undock/RC; RTK can lag or freeze.
-            if _device.map.last_pos_timestamp:
-                _LOGGER.debug(
-                    "add_work_area_ble: robot_pos=%.3f,%.3f (ts=%d)",
-                    _device.map.mower_pos_x,
-                    _device.map.mower_pos_y,
-                    _device.map.last_pos_timestamp,
-                )
-                return [
-                    float(_device.map.mower_pos_x),
-                    float(_device.map.mower_pos_y),
-                ]
-
-            _LOGGER.debug("add_work_area_ble: robot_pos not available yet")
-            return None
-
-        def get_status(_device=self) -> int | None:
-            with contextlib.suppress(TypeError, ValueError):
-                return int(_device.mode)
-            return None
-
-        def get_heading(_device=self) -> float | None:
-            heading = _device.map.mower_orientation
-            if heading is None:
-                _LOGGER.debug("add_work_area_ble: mower heading not available")
-                return None
-            _LOGGER.debug("add_work_area_ble: robot_pos angle=%.3f", heading)
-            return float(heading)
-
         _LOGGER.debug(
             "add_work_area_ble: connecting BLE to %s  area=%d",
             _mac or "(scan)",
@@ -2327,14 +2297,11 @@ class SunseekerDevice:
             async with SunseekerBleSession(_mac, device_sn=_sn, hass=hass) as ble:
                 result = await ble.navigate_and_record_boundary(
                     waypoints=_wpts,
-                    get_position=get_position,
-                    get_heading=get_heading,
-                    get_status=get_status,
                     map_border=_mb,
                     arrival_threshold=0.10,
+                    arrival_threshold_waypoints=0.50,
                     waypoint_timeout=180.0,
                     drive_speed=350,
-                    command_interval=0.15,
                     prewaypointcount=prewaypointcount,
                 )
             result = result or {}

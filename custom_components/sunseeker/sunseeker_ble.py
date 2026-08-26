@@ -31,39 +31,12 @@ Scan and print all nearby mowers::
 
     asyncio.run(main())
 
-Add a new work region by driving the mower around the boundary::
-
-    import asyncio
-    from custom_components.sunseeker.sunseeker_ble import (
-        SunseekerBleSession,
-        MapBorder,
-    )
-
-    async def main():
-        # Build drive commands that trace the boundary
-        # v = forward speed (-500…500), w = turn rate (-500…500)
-        cmds = [{"v": 450, "w": 0}] * 40 + [{"v": 0, "w": 250}] * 10 + [{"v": 0, "w": 0}]
-        async with SunseekerBleSession("AA:BB:CC:DD:EE:FF") as ble:
-            result = await ble.add_work_region(
-                map_border=MapBorder.NEW_AREA,
-                remote_ctl_commands=cmds,
-                loop_closed_idx=35,
-            )
-        print(result)
-
-    asyncio.run(main())
-
 .. note::
     **BLE requires physical movement.**  The mower records its boundary using
     RTK GPS while it physically drives.  ``remote_ctl`` commands only control
     the motors — the path comes from the mower's own GPS, not from the
     commands.  Sending commands while the mower is docked produces an empty
     path.
-
-    If you have pre-defined boundary points from a map card, use the HTTP map
-    file upload approach instead (``SunseekerMap.upload_map()``) — that
-    injects the coordinates directly into the map JSON without any mower
-    movement.
 
 Drive the mower manually along the boundary::
 
@@ -87,7 +60,6 @@ Drive the mower manually along the boundary::
 
 import asyncio
 import base64
-import collections.abc
 import contextlib
 import json
 import logging
@@ -141,110 +113,28 @@ BLE_CONNECT_RETRY_DELAY = 1.0
 # mathematical convention used in this module.
 BLE_TURN_SIGN = -1
 
-# Navigation coordinate transform.
-# For BLE boundary recording, MQTT ``robot_pos`` and map vertices are in the
-# same Y orientation on external-antenna setups, so keep Y non-mirrored.
-BLE_NAV_Y_SIGN = 1.0
-BLE_NAV_HEADING_SIGN = 1.0
-BLE_NAV_HEADING_OFFSET_RAD = math.pi / 2
-BLE_NAV_PIVOT_ERROR_RAD = 1.2
-BLE_FIRST_WAYPOINT_EXTRA_TIMEOUT = 45.0
-BLE_STUCK_ACCEPT_CYCLES = 20
-BLE_PRE_WAYPOINTS_STUCK_ACCEPT_DISTANCE = 0.50
-BLE_STUCK_ACCEPT_DISTANCE = 0.10
-BLE_FIRST_WAYPOINT_STUCK_ACCEPT_DISTANCE = 0.10
-BLE_NEAR_FIELD_DISTANCE = 1.5
-BLE_NEAR_FIELD_PIVOT_ERROR_RAD = 0.6
-BLE_NEAR_FIELD_SPEED_CAP = 180
-BLE_NEAR_FIELD_TURN_GAIN = 1.8
-BLE_STALE_POSE_FORCE_PIVOT_CYCLES = 8
-BLE_ALIGN_SLOW_ERROR_RAD = 0.35
-BLE_ALIGN_CRAWL_ERROR_RAD = 0.60
-BLE_ALIGN_SLOW_SPEED_CAP = 140
-BLE_ALIGN_CRAWL_SPEED_CAP = 80
-BLE_ALIGN_ENTER_ERROR_RAD = 0.65
-BLE_ALIGN_EXIT_ERROR_RAD = 0.35
-BLE_ALIGN_TURN_MIN = 40
-BLE_ALIGN_TURN_MAX = 110
-BLE_ALIGN_STALE_TURN_MAX = 75
-BLE_ALIGN_MIN_COMMAND_INTERVAL = 0.28
-BLE_SIMPLE_ROTATE_ENTER_ERROR_RAD = 0.65
-BLE_SIMPLE_ROTATE_EXIT_ERROR_RAD = 0.18
-BLE_SIMPLE_ROTATE_TURN_MIN = 12
-BLE_SIMPLE_ROTATE_TURN_MAX = 28
-BLE_SIMPLE_ROTATE_MIN_COMMAND_INTERVAL = 0.45
-BLE_SIMPLE_DRIVE_TURN_MAX = 95
-BLE_SIMPLE_DRIVE_TURN_GAIN = 220
-BLE_SIMPLE_DRIVE_SLOW_ERROR_RAD = 0.35
-BLE_SIMPLE_DRIVE_SLOW_SPEED_CAP = 140
-BLE_SIMPLE_DRIVE_MIN_SPEED = 80
-BLE_SIMPLE_ROUTE_SPEED_CAP = 220
-BLE_SIMPLE_NEAR_DISTANCE = 1.2
-BLE_POST_ALIGN_GRACE_CYCLES = 10
-BLE_POST_ALIGN_SPEED_CAP = 130
-BLE_ALIGN_REENTER_STRONG_ERROR_RAD = 0.75
-BLE_ALIGN_NO_IMPROVE_CYCLES = 20
-BLE_ALIGN_IMPROVE_EPSILON = 0.03
-BLE_ALIGN_SIGN_FLIP_LIMIT = 1
-BLE_ALIGN_MAX_CONSEC_CYCLES = 28
-BLE_ALIGN_ESCAPE_DRIVE_CYCLES = 8
-BLE_ALIGN_ESCAPE_SPEED = 85
-BLE_ALIGN_ESCAPE_TURN_CAP = 45
-BLE_FIRST_WAYPOINT_SPIN_ENTER_ERROR_RAD = 0.55
-BLE_FIRST_WAYPOINT_SPIN_EXIT_ERROR_RAD = 0.20
-BLE_FIRST_WAYPOINT_SPIN_TURN_MIN = 24
-BLE_FIRST_WAYPOINT_SPIN_TURN_MAX = 55
-BLE_FIRST_WAYPOINT_DRIVE_REENTER_ERROR_RAD = 0.75
-BLE_FIRST_WAYPOINT_DRIVE_SPEED_CAP = 120
-BLE_FIRST_WAYPOINT_DRIVE_MIN_SPEED = 70
-BLE_FIRST_WAYPOINT_DRIVE_TURN_CAP = 35
-BLE_FIRST_WAYPOINT_DRIVE_TURN_GAIN = 180
-BLE_FIRST_WAYPOINT_SLOWDOWN_DISTANCE = 0.75
-BLE_FIRST_WAYPOINT_STALE_SPEED_CAP = 95
-BLE_FIRST_WAYPOINT_STALE_TURN_CAP = 22
-BLE_FIRST_WAYPOINT_STOP_DISTANCE = 0.12
-BLE_WRONG_WAY_MOVE_THRESHOLD = 0.03
-BLE_WRONG_WAY_PROGRESS_DOT_THRESHOLD = -0.03
-BLE_WRONG_WAY_HEADING_ERR_MAX = 0.45
-BLE_WRONG_WAY_CONFIRM_CYCLES = 3
-BLE_ROUTE_WRONG_WAY_HEADING_ERR_MAX = 0.85
-BLE_ROUTE_WRONG_WAY_CONFIRM_CYCLES = 2
-BLE_DRIVE_NO_PROGRESS_STALE_CYCLES = 12
-BLE_DRIVE_NO_PROGRESS_CONFIRM_CYCLES = 20
-BLE_DRIVE_NO_PROGRESS_HEADING_ERR_MAX = 0.28
-BLE_DRIVE_NO_PROGRESS_DISTANCE_DELTA_MIN = -0.005
-BLE_DRIVE_BIAS_FLIP_LIMIT = 1
-BLE_ALIGN_AWAY_MOVE_THRESHOLD = 0.04
-BLE_ALIGN_AWAY_PROGRESS_DOT_THRESHOLD = -0.08
-BLE_ALIGN_AWAY_CONFIRM_CYCLES = 2
-BLE_ALIGN_AWAY_SIGN_FLIP_LIMIT = 2
-BLE_ALIGN_PROBE_STALE_CYCLES = 14
-BLE_ALIGN_PROBE_CYCLES = 2
-BLE_ALIGN_PROBE_SPEED = 70
-BLE_ALIGN_PROBE_TURN = 30
-BLE_ALIGN_PROBE_COOLDOWN_CYCLES = 12
-BLE_POSE_POLL_INTERVAL = 0.35
-BLE_POSE_FRESH_AGE = 2.4
-BLE_POSE_MAX_AGE = 12.0
+# Position
 BLE_POSE_POLL_KEY = "robot_pos"
-BLE_POSE_REQUEST_TIMEOUT = 1.2
-BLE_POSE_MISS_STOP_COOLDOWN = 2.0
-BLE_RC_REFRESH_INTERVAL = 0.9
-BLE_POSE_DEBUG_MAX_SAMPLES = 20
-BLE_POSE_DEBUG_EVERY = 50
-BLE_ROT_CAL_TEST_W = 80
-BLE_ROT_CAL_MIN_HEADING_DELTA = 0.04
-BLE_ROT_CAL_TARGET_HEADING_DELTA = 0.35
-BLE_ROT_CAL_SCALE_MIN = 0.6
-BLE_ROT_CAL_SCALE_MAX = 1.8
-BLE_ROT_CAL_STEP_TIME = 0.35
-BLE_ROT_CAL_SETTLE_TIME = 0.20
-BLE_ROT_CAL_WAIT_HEADING_TIMEOUT = 1.6
-BLE_ROT_CAL_WAIT_HEADING_EPS = 0.02
+POSITION_REQUEST_TIMEOUT = 1.2
+MAX_POSITION_DATA_DELAY = 1.2
+POSITION_POLL_DELAY = 0.5
+MAX_ROTATE_TIME = 60
+ROTATION_SANITY_CHECK_DELAY = 2.0
+ROTATE_SLOW_DOWN_PERIOD = 0.5
+ROTATE_SLOW_DOWN_SPEED = 20
+ROTATE_SLOW_DOWN_VALUE = 0.1
+
+# Movement
+MIN_MOVE_CORRECTION = 50
+NEAR_ARRIVAL_SPEED = 50
+NEAR_ARRIVAL_DISTANCE = 0.75
+MAX_HEADING_ERROR_BEFORE_CORRECTION = 0.25
+DRIVE_SPEED = 350
+ARRIVE_TIMEOUT = 60
+MAX_CORRECTION = 120
 
 # Undock handling before guided navigation starts.
 BLE_UNDOCK_WAIT_TIMEOUT = 12.0
-BLE_UNDOCK_MOVE_THRESHOLD = 0.25
 
 # App-observed readiness/timing guards around map recording.
 BLE_WAIT_RC_STATUS_TIMEOUT = 3.0
@@ -260,8 +150,6 @@ BLE_MERGE_FAILED_EVENT_CODES = (22,)
 BLE_AFTER_SET_BUILD_LINE_DELAY = 4.0
 BLE_BUILD_LINE_SEGMENT_ON_DELAY = 0.5
 BLE_BUILD_LINE_SEGMENT_OFF_DELAY = 0.3
-BLE_FINAL_STOP_SETTLE_TIME = 1.0
-BLE_FINAL_STOP_SETTLE_DISTANCE = 0.05
 BLE_AFTER_FINISH_BUILD_MAP_DELAY = 10.0
 
 # Seconds to wait for the mower to process each BLE command
@@ -572,135 +460,88 @@ def _parse_region_id_chunks(chunks: list[str]) -> list[int]:
     return result
 
 
-def _update_navigation_heading(
-    estimated_heading: float,
-    prev_pos: list[float] | None,
-    cur_x: float,
-    cur_y: float,
-    get_heading: collections.abc.Callable[[], float | None] | None,
-    nav_y_sign: float,
+def _best_angle_to_point(
+    destination_x: float,
+    destination_y: float,
+    current_x: float,
+    current_y: float,
+    current_angle: float | None = None,
+    nav_y_sign: float = 1.0,
 ) -> float:
-    """Return updated heading using movement deltas and optional live heading."""
-    if prev_pos is not None:
-        ddx = cur_x - prev_pos[0]
-        ddy = nav_y_sign * (cur_y - prev_pos[1])
-        moved = math.sqrt(ddx * ddx + ddy * ddy)
-        if moved > 0.03:
-            estimated_heading = math.atan2(ddy, ddx)
-            _LOG.debug(
-                "[ble-nav] heading updated to %.3f rad (moved %.3f m)",
-                estimated_heading,
-                moved,
-            )
+    """Return the target heading toward a destination point."""
+    dx = destination_x - current_x
+    dy = nav_y_sign * (destination_y - current_y)
 
-    if get_heading is not None:
-        live_heading = get_heading()
-        if live_heading is not None:
-            estimated_heading = _normalize_angle(
-                BLE_NAV_HEADING_SIGN * float(live_heading) + BLE_NAV_HEADING_OFFSET_RAD
-            )
-            _LOG.debug(
-                "[ble-nav] heading from robot_pos angle: %.3f rad",
-                estimated_heading,
-            )
+    # The mower frame uses the map Y axis as forward and the map X axis as
+    # lateral motion. The map X axis is mirrored relative to the robot's left/
+    # right convention, so invert it before converting to an angle.
+    target_heading = _normalize_angle(math.atan2(-dx, dy))
 
-    return estimated_heading
+    if current_angle is None:
+        return target_heading
+
+    relative_heading = _normalize_angle(target_heading - current_angle)
+    return _normalize_angle(current_angle + relative_heading)
+
+
+def _max_angle_deviation_for_target(
+    mower_x: float,
+    mower_y: float,
+    destination_x: float,
+    destination_y: float,
+    close_range_distance: float = 1.0,
+) -> float:
+    """Return the allowed angular tolerance when the mower is near the target.
+
+    The closer the mower is to the destination, the more slack is allowed on the
+    heading. At 100 cm or closer, the allowed deviation is increased to make the
+    final approach forgiving and prevent the mower from oscillating around the
+    target orientation.
+    """
+    # Beregn den sande fysiske afstand til målet (fortegn er ligegyldigt her)
+    distance_to_target = math.hypot(destination_x - mower_x, destination_y - mower_y)
+
+    # Hvis plæneklipperen er langt væk, kræver vi en præcis kurs (lav tolerance)
+    if distance_to_target >= close_range_distance:
+        return 0.15  # Svarer til ca. 8,5 graders tilladt afvigelse på lang afstand
+
+    # Tæt på målet (<= 1.0 m) tillades en gradvist større afvigelse (op til 1.2 rad / ~68°)
+    # Jo tættere på (mindre distance), jo større bliver returværdien.
+    return max(0.35, min(1.2, 1.5 - distance_to_target))
+
+
+def _max_angle_deviation_for_target_old(
+    mower_x: float,
+    mower_y: float,
+    best_angle: float,
+    destination_x: float,
+    destination_y: float,
+    nav_y_sign: float = -1.0,
+    close_range_distance: float = 1.0,
+) -> float:
+    """Return the allowed angular tolerance when the mower is near the target.
+
+    The closer the mower is to the destination, the more slack is allowed on the
+    heading. At 100 cm or closer, the allowed deviation is increased to make the
+    final approach forgiving and prevent the mower from oscillating around the
+    target orientation.
+    """
+    dx = destination_x - mower_x
+    dy = nav_y_sign * (destination_y - mower_y)
+    distance_to_target = math.hypot(dx, dy)
+
+    if distance_to_target >= close_range_distance:
+        return abs(_normalize_angle(best_angle)) * 0.0
+
+    # At <= 1.0 m away, allow a wider turn tolerance to keep the final approach
+    # smooth and avoid thrashing around the target heading.
+    return max(0.35, min(1.2, 1.5 - distance_to_target))
 
 
 def _coerce_float(value: Any) -> float | None:
     """Convert numeric-like values to float, returning None on failure."""
     with contextlib.suppress(TypeError, ValueError):
         return float(value)
-    return None
-
-
-def _normalize_heading_value(angle: float) -> float:
-    """Normalize heading, auto-converting degree values to radians."""
-    if abs(angle) > (2 * math.pi + 0.5) and abs(angle) <= 360.0:
-        angle = math.radians(angle)
-    return _normalize_angle(angle)
-
-
-def _extract_pose_from_payload(
-    payload: Any,
-) -> tuple[float, float, float | None] | None:
-    """Extract ``(x, y, heading_rad|None)`` from a BLE message payload."""
-    candidates: list[Any] = [payload]
-
-    if isinstance(payload, str):
-        with contextlib.suppress(json.JSONDecodeError):
-            candidates.append(json.loads(payload))
-
-    if isinstance(payload, dict):
-        keys = (
-            "robot_pos",
-            "robotPos",
-            "device_pos",
-            "pos",
-            "position",
-            "rtk_pos",
-            "rtkPos",
-            "rtk",
-            "data",
-        )
-        candidates.extend(payload[key] for key in keys if key in payload)
-
-    for item in candidates:
-        if isinstance(item, str):
-            with contextlib.suppress(json.JSONDecodeError):
-                item = json.loads(item)
-
-        if isinstance(item, (list, tuple)) and len(item) >= 2:
-            x = _coerce_float(item[0])
-            y = _coerce_float(item[1])
-            if x is None or y is None:
-                continue
-            heading: float | None = None
-            if len(item) >= 3:
-                h = _coerce_float(item[2])
-                if h is not None:
-                    heading = _normalize_heading_value(h)
-            return x, y, heading
-
-        if isinstance(item, dict):
-            nested_keys = (
-                "robot_pos",
-                "robotPos",
-                "device_pos",
-                "pos",
-                "position",
-                "rtk_pos",
-                "rtkPos",
-                "rtk",
-                "data",
-            )
-            candidates.extend(item[key] for key in nested_keys if key in item)
-
-            x = _coerce_float(item.get("x"))
-            y = _coerce_float(item.get("y"))
-            if x is None or y is None:
-                x = _coerce_float(item.get("lng"))
-                y = _coerce_float(item.get("lat"))
-            if (x is None or y is None) and isinstance(
-                item.get("point"), (list, tuple)
-            ):
-                point = item["point"]
-                if len(point) >= 2:
-                    x = _coerce_float(point[0])
-                    y = _coerce_float(point[1])
-            if x is None or y is None:
-                continue
-
-            raw_heading = (
-                item.get("angle")
-                if "angle" in item
-                else item.get("heading", item.get("yaw"))
-            )
-            heading = _coerce_float(raw_heading)
-            if heading is not None:
-                heading = _normalize_heading_value(heading)
-            return x, y, heading
-
     return None
 
 
@@ -1089,362 +930,14 @@ class SunseekerBleSession:
             await self.write(cmd)
             await asyncio.sleep(BLE_CMD_DELAY)
 
-    # ------------------------------------------------------------------
-    # Add work region
-    # ------------------------------------------------------------------
-
-    async def add_work_region(
-        self,
-        map_border: int = MapBorder.NEW_AREA,
-        remote_ctl_commands: list[dict]
-        | collections.abc.AsyncIterable[dict]
-        | None = None,
-        command_interval: float = 0.2,
-        loop_closed_idx: int | None = None,
-        send_find_charger: bool = True,
-    ) -> dict:
-        """Execute the full BLE "add work region" session on the connected mower.
-
-        This mirrors exactly what the Sunseeker app does when the user taps
-        "Add area" and drives the mower around the new boundary.
-
-        **Important — the mower must be docked when this is called.**
-        ``startBuildMap`` causes the mower to leave the charging station and
-        begin recording its RTK GPS path as it moves.  The ``remote_ctl``
-        commands steer the motors; the path data comes from the mower's own GPS
-        sensor.  The mower must be on the dock before calling this method —
-        otherwise the firmware rejects ``startBuildMap`` and the recorded path
-        will be empty.
-
-        If you have pre-defined boundary points from a map UI, use
-        ``SunseekerMap.upload_map()`` instead — it injects points directly
-        into the cloud map JSON without any mower movement.
-
-        Parameters
-        ----------
-        map_border:
-            ``MapBorder.NEW_AREA`` (0) — create a standalone new area.
-            ``MapBorder.EDIT_EXISTING_AREA`` (1) — edit border on an existing area.
-        remote_ctl_commands:
-            Drive commands ``{"v": speed, "w": turn}`` to send while the
-            mower records its RTK GPS path.  ``v`` and ``w`` range ±0.500.
-            Each command is sent once per *command_interval* seconds.
-        command_interval:
-            Seconds between consecutive ``remote_ctl`` writes (default 0.2 s).
-        loop_closed_idx:
-            Index in the command list at which to send
-            ``build_region_unblocked=true``.  This signals the mower that the
-            boundary loop is nearly closed.  Defaults to halfway through the
-            list.  Set this to the index where your path returns near the
-            starting point.
-        send_find_charger:
-            If ``True`` (default), send ``start_find_charger`` after committing
-            so the mower navigates back to the charging station.
-
-        Returns:
-        -------
-        dict with keys:
-
-        ``path_id``
-            int — server ID of the new boundary path.
-        ``name``
-            str — zone name reported by the mower (e.g. ``"Drivhus"``).
-        ``boundary``
-            list of ``[x, y]`` — outer boundary points from the mower's RTK GPS.
-        ``regions``
-            dict mapping region_id → list of ``[x, y]`` for inner sub-areas.
-
-        Example::
-
-            # Drive forward 40 ticks, turn left 10 ticks, stop
-            cmds = [{"v": 450, "w": 0}] * 40 + [{"v": 0, "w": 250}] * 10 + [{"v": 0, "w": 0}]
-            async with SunseekerBleSession("AA:BB:CC:DD:EE:FF") as ble:
-                result = await ble.add_work_region(
-                    map_border=MapBorder.NEW_AREA,
-                    remote_ctl_commands=cmds,
-                    loop_closed_idx=35,   # signal loop-closed when ~returning to start
-                )
-            # result = {"path_id": 1786371885488, "name": "Drivhus",
-            #           "boundary": [[-3.525,-5.825], ...], "regions": {}}
-        """
-        # --- Build command list ---
-        if remote_ctl_commands is not None:
-            if hasattr(remote_ctl_commands, "__aiter__"):
-                cmd_list = [c async for c in remote_ctl_commands]
-            else:
-                cmd_list = list(remote_ctl_commands)
-        else:
-            cmd_list = []
-
-        total = len(cmd_list)
-        unblocked_threshold = (
-            loop_closed_idx if loop_closed_idx is not None else total // 2
-        )
-
-        # --- State collected from mower notifications ---
-        path_chunks: dict[int | None, list[str]] = {}
-        region_id_chunks: list[str] = []
-        path_id_info: dict = {}
-        region_id_list: list[int] = []
-        _current_path_id: list[int | None] = [None]
-        _unblocked_sent = [False]
-
-        def _on_notify(_handle, data: bytearray) -> None:
-            decrypted = noline_decrypt(bytes(data))
-            if not decrypted:
-                _LOG.debug("[ble] read: <decrypt failed> raw_len=%d", len(data))
-                return
-            _LOG.debug("[ble] read: %s", decrypted)
-            try:
-                msg = json.loads(decrypted)
-            except Exception:  # noqa: BLE001
-                _LOG.debug("[ble] read: failed to parse JSON payload: %s", decrypted)
-                return
-
-            msg_id = msg.get("id", "")
-
-            if msg_id == "NRID":
-                path_id_info.update(msg.get("data", {}))
-
-            elif msg_id == "get_dealPath_list":
-                d = msg.get("data", {})
-                if "path" in d:
-                    pid = _current_path_id[0]
-                    path_chunks.setdefault(pid, []).append(d["path"])
-
-            elif msg_id == "get_regionId_list":
-                d = msg.get("data", {})
-                if "region_id" in d:
-                    region_id_chunks.append(d["region_id"])
-
-        # Subscribe to notifications
-        await self._client.start_notify(self._notify_uuid, _on_notify)
-
-        try:
-            # --- Init sequence ---
-            await self._send_init_sequence()
-            await asyncio.sleep(0.5)
-
-            # --- Pre-flight ---
-            await self.write(
-                {
-                    "id": "getDevStatus",
-                    "method": "get_property",
-                    "params": {"key": "status"},
-                }
-            )
-            await asyncio.sleep(0.1)
-            await self.write(
-                {"id": "sCPro", "method": "action", "params": {"cmd": "self_checkPro"}}
-            )
-            await asyncio.sleep(0.2)
-            await self.write(
-                {
-                    "id": "functionCheck",
-                    "key": "autoRideEdgeMap",
-                    "method": "function_check",
-                }
-            )
-            await self.write(
-                {
-                    "id": "getBuildMapStatus",
-                    "method": "get_property",
-                    "params": {"key": "build_map_status"},
-                }
-            )
-            await asyncio.sleep(0.3)
-
-            # Initial remote_ctl nudge (app always sends v=-1 before starting)
-            await self.write(
-                {
-                    "id": "remoteControlMap",
-                    "method": "action",
-                    "params": {
-                        "b": {"h": 0, "s": 0},
-                        "cmd": "remote_ctl",
-                        "v": -1,
-                        "w": 0,
-                    },
-                }
-            )
-            await self.write(
-                {"id": "functionCheck", "key": "setParea", "method": "function_check"}
-            )
-            await self.write(
-                {
-                    "id": "functionCheck",
-                    "key": "FinishBuildMap",
-                    "method": "function_check",
-                }
-            )
-            await asyncio.sleep(0.5)
-
-            # --- Start boundary recording ---
-            await self.write(
-                {
-                    "id": "getDevStatus",
-                    "method": "get_property",
-                    "params": {"key": "status"},
-                }
-            )
-            await self.write(
-                {
-                    "id": "startBuildMap",
-                    "method": "action",
-                    "params": {"cmd": "start_build_map", "map_border": map_border},
-                }
-            )
-            await asyncio.sleep(0.5)
-            await self.write(
-                {
-                    "id": "setBuildLine",
-                    "method": "set_property",
-                    "params": {"key": "build_line", "value": True},
-                }
-            )
-            await asyncio.sleep(0.3)
-
-            # --- Drive / inject points ---
-            for idx, ctl in enumerate(cmd_list):
-                v = ctl.get("v", 0)
-                w = ctl.get("w", 0)
-                await self.write(
-                    {
-                        "id": "remoteControlMap",
-                        "method": "action",
-                        "params": {"cmd": "remote_ctl", "v": v, "w": w},
-                    }
-                )
-
-                if not _unblocked_sent[0] and idx >= unblocked_threshold:
-                    await self.write(
-                        {
-                            "id": "setBuildRegionUnblocked",
-                            "method": "set_property",
-                            "params": {"key": "build_region_unblocked", "value": True},
-                        }
-                    )
-                    _unblocked_sent[0] = True
-
-                await asyncio.sleep(command_interval)
-
-            # Stop
-            await self.write(
-                {
-                    "id": "remoteControlMap",
-                    "method": "action",
-                    "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
-                }
-            )
-            await asyncio.sleep(0.3)
-
-            # --- Stop recording ---
-            await self.write(
-                {
-                    "id": "attemptStopBuildMap",
-                    "method": "action",
-                    "params": {"cmd": "attempt_stop_build_map", "in": []},
-                }
-            )
-            await asyncio.sleep(1.0)
-
-            # --- Retrieve path info ---
-            await self.write({"id": "getRegion", "method": "get_region"})
-            await asyncio.sleep(0.3)
-            await self.write({"id": "NRID", "method": "get_path_id"})
-            await asyncio.sleep(0.5)
-
-            new_path_id: int | None = path_id_info.get("path_id")
-            zone_name: str = path_id_info.get("n", "")
-
-            # Fetch outer boundary path
-            if new_path_id is not None:
-                _current_path_id[0] = new_path_id
-                await self.write(
-                    {
-                        "id": "get_dealPath_list",
-                        "method": "get_path",
-                        "path_id": new_path_id,
-                    }
-                )
-                await asyncio.sleep(1.0)
-
-            # Fetch all region IDs (inner areas)
-            await self.write({"id": "get_regionId_list", "method": "get_region_id"})
-            await asyncio.sleep(1.5)
-
-            region_id_list = _parse_region_id_chunks(region_id_chunks)
-
-            inner_region_ids = [r for r in region_id_list if r != new_path_id]
-            for rid in inner_region_ids:
-                _current_path_id[0] = rid
-                await self.write(
-                    {"id": "get_dealPath_list", "method": "get_path", "path_id": rid}
-                )
-                await asyncio.sleep(1.0)
-
-            # --- Commit ---
-            await self.write(
-                {
-                    "id": "FinishBuildMap",
-                    "method": "action",
-                    "params": {"cmd": "finish_build_map"},
-                }
-            )
-            await asyncio.sleep(0.5)
-
-            if send_find_charger:
-                await self.write(
-                    {
-                        "id": "startFindCharger",
-                        "method": "action",
-                        "params": {"cmd": "start_find_charger"},
-                    }
-                )
-                await asyncio.sleep(0.3)
-
-            # Graceful BLE disconnect
-            await self.write(
-                {
-                    "id": "bleDisconnect",
-                    "method": "action",
-                    "params": {"cmd": "ble_disconnect"},
-                }
-            )
-            await asyncio.sleep(0.5)
-
-        finally:
-            try:  # noqa: SIM105
-                await self._client.stop_notify(self._notify_uuid)
-            except Exception:  # noqa: BLE001
-                pass
-
-        # --- Build result ---
-        boundary = parse_path_chunks(path_chunks.get(new_path_id, []))
-        regions = {
-            rid: parse_path_chunks(path_chunks.get(rid, []))
-            for rid in inner_region_ids
-            if path_chunks.get(rid)
-        }
-
-        return {
-            "path_id": new_path_id,
-            "name": zone_name,
-            "boundary": boundary,
-            "regions": regions,
-        }
-
     async def navigate_and_record_boundary(  # noqa: C901  # pylint: disable=too-many-nested-blocks
         self,
         waypoints: list[list[float]],
-        get_position: collections.abc.Callable[[], list[float] | None],
-        get_heading: collections.abc.Callable[[], float | None] | None = None,
-        get_status: collections.abc.Callable[[], int | None] | None = None,
         map_border: int = MapBorder.NEW_AREA,
         arrival_threshold: float = 0.10,
+        arrival_threshold_waypoints: float = 0.50,
         waypoint_timeout: float = 300.0,
         drive_speed: int = 350,
-        command_interval: float = 0.15,
         send_find_charger: bool = True,
         prewaypointcount: int = 0,
     ) -> dict:
@@ -1460,29 +953,19 @@ class SunseekerBleSession:
             Ordered ``[[x, y], ...]`` boundary points in RTK coordinate space
             (metres, relative to charger position). A closing duplicate
             (last == first within 0.005 m) is stripped automatically.
-        get_position:
-            Compatibility callback kept for existing callers. Position
-            tracking during guided navigation now uses BLE-polled ``robot_pos``
-            directly and does not consume this callback.
-        get_heading:
-            Optional callable returning current mower heading in radians.
-            When provided, this heading is preferred over motion-inferred
-            heading to avoid spin-locks when position updates are sparse.
-        get_status:
-            Optional callable returning current mower status code. When
-            available, undock is considered complete once status leaves
-            dock/RC states (9, 10, 14), even if position telemetry is stale.
         map_border:
             Only ``MapBorder.NEW_AREA`` is supported in this flow. The
             edit-existing-area path is intentionally rejected.
         arrival_threshold:
             Distance in metres considered "arrived" (default 0.10 m).
+        arrival_threshold_waypoints:
+            Distance in metres considered "arrived" for waypoints (default 0.50 m).
         waypoint_timeout:
-            Seconds per waypoint before aborting (default 60 s). On timeout:
+            Seconds per waypoint before aborting (default 300 s). On timeout:
             motors stop, ``attemptStopBuildMap`` sent, mower sent home,
             ``TimeoutError`` raised.
         drive_speed:
-            Maximum forward speed 0.500 (default 350).
+            Maximum forward speed 500 (default 350).
         command_interval:
             Seconds between ``remote_ctl`` writes (default 0.15 s).
         send_find_charger:
@@ -1533,21 +1016,386 @@ class SunseekerBleSession:
         _ble_pose: list[tuple[float, float] | None] = [None]
         _ble_heading: list[float | None] = [None]
         _ble_pose_ts: list[float] = [0.0]
-        _last_ble_pose_poll: list[float] = [0.0]
         _ble_pose_request_pending: list[bool] = [False]
         _ble_pose_request_sent_ts: list[float] = [0.0]
-        _ble_pose_debug_count: list[int] = [0]
+        _wait_for_rmt: list[bool] = [False]
+        _prev_pos: list[tuple[float, float] | None] = [None]
+        _prev_angle: list[float | None] = [None]
+        _last_position_received_ts: list[float] = [0.0]
+        # _rotation_overshot: list[bool] = [False]
+        _movement_overshot: list[bool] = [False]
+
+        async def _wait_for_rmt_control_response_with_pos_check(
+            angle: float, deviation: float, timeout: float
+        ) -> bool:
+            """Wait until the remote-control ack is observed or the timeout expires."""
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                if _ble_heading[0] is not None:
+                    heading_error = abs(_normalize_angle(_ble_heading[0] - angle))
+                    if heading_error <= deviation:
+                        return True
+                if not _wait_for_rmt[0]:
+                    return True
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+
+                await asyncio.sleep(0.05)
+            return _wait_for_rmt[0]
+
+        async def _wait_for_rmt_control_response(timeout: float) -> bool:
+            """Wait until the remote-control ack is observed or the timeout expires."""
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                if not _wait_for_rmt[0]:
+                    return True
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                await asyncio.sleep(0.05)
+            return _wait_for_rmt[0]
+
+        async def _rotate_to_angle(
+            target_angle: float,
+            deviation: float,
+            timeout: float = 15.0,
+            turn_speed: int = 120,
+        ) -> bool:
+            """Rotate toward *target_angle* using the shortest path.
+
+            Start rotating in the shortest direction. If the mower overshoots past
+            the allowed *deviation*, reverse the turn until it settles back inside
+            the window again. Stop the motors on success or timeout.
+            """
+            deadline = time.monotonic() + timeout
+            if _ble_heading[0] is None:
+                _LOG.warning(
+                    "[ble-nav] cannot rotate to angle %.3f; no heading yet",
+                    target_angle,
+                )
+                return False
+
+            def _cur_error() -> float:
+                return _normalize_angle(target_angle - _ble_heading[0])
+
+            async def _wait_for_new_position(wait_timeout: float) -> None:
+                t = _last_position_received_ts[0]
+                waittime = time.monotonic() + wait_timeout
+                while (
+                    t == _last_position_received_ts[0] and waittime < time.monotonic()
+                ):
+                    await asyncio.sleep(0.4)
+
+            async def _apply_slow_turn(sign: int, speed: int, waittime: float) -> None:
+                await self.write(
+                    {
+                        "id": "remoteControlMap",
+                        "method": "action",
+                        "params": {"cmd": "remote_ctl", "v": 0, "w": sign * speed},
+                    }
+                )
+                await asyncio.sleep(waittime)
+                await self.write(
+                    {
+                        "id": "remoteControlMap",
+                        "method": "action",
+                        "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
+                    }
+                )
+
+            async def _apply_turn(sign: int) -> None:
+                # _wait_for_rmt[0] = False
+                await _wait_for_rmt_control_response(0.3)
+                await self.write(
+                    {
+                        "id": "remoteControlMap",
+                        "method": "action",
+                        "params": {"cmd": "remote_ctl", "v": 0, "w": sign * speed},
+                    }
+                )
+                # await _wait_for_rmt_control_response_with_pos_check(
+                #    target_angle, deviation, timeout=2.0
+                # )
+
+            direction = 1 if _cur_error() >= 0 else -1
+            last_direction = direction
+            paused = False
+            slowdown = False
+            speed = turn_speed
+            current_slowdown_period: float = ROTATE_SLOW_DOWN_PERIOD
+            while time.monotonic() < deadline:
+                no_data_time = time.monotonic() - _last_position_received_ts[0]
+                if no_data_time > MAX_POSITION_DATA_DELAY:  # no position for 1 second
+                    if not paused:
+                        _LOG.warning(
+                            "[ble-nav] No position data for %.1fs. Pause rotating",
+                            no_data_time,
+                        )
+                        await self.write(
+                            {
+                                "id": "remoteControlMap",
+                                "method": "action",
+                                "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
+                            }
+                        )
+                    paused = True
+                    await asyncio.sleep(0.5)
+                else:
+                    if paused:
+                        _LOG.warning("New position data arrived. Continuing")
+                        paused = False
+                    current_error = _cur_error()
+                    abs_error = abs(current_error)
+                    _LOG.warning(
+                        "[ble-nav] test angle abs_error  %.3f - deviation %.1fs (current_heading=%.3f, target=%.3f, error=%.3f)",
+                        abs_error,
+                        deviation,
+                        _ble_heading[0],
+                        target_angle,
+                        current_error,
+                    )
+                    if abs_error <= deviation:
+                        await self.write(
+                            {
+                                "id": "remoteControlMap",
+                                "method": "action",
+                                "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
+                            }
+                        )
+                        # we wait 1 second and check again.
+                        await asyncio.sleep(ROTATION_SANITY_CHECK_DELAY)
+                        current_error = _cur_error()
+                        abs_error = abs(current_error)
+                        _LOG.warning(
+                            "[ble-nav] second test angle abs_error  %.3f - deviation %.1fs (current_heading=%.3f, target=%.3f, error=%.3f)",
+                            abs_error,
+                            deviation,
+                            _ble_heading[0],
+                            target_angle,
+                            current_error,
+                        )
+                        if abs_error <= deviation:
+                            _LOG.debug("Second check succeded")
+                            return True
+                        _LOG.debug("Second check failed")
+
+                    if direction > 0 and current_error < -deviation:
+                        direction = -1
+                    elif direction < 0 and current_error > deviation:
+                        direction = 1
+
+                    if last_direction != direction:
+                        _LOG.debug("Change direction to %d", direction)
+                        last_direction = direction
+                        await self.write(
+                            {
+                                "id": "remoteControlMap",
+                                "method": "action",
+                                "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
+                            }
+                        )
+                        slowdown = True
+                        # slowing down even more on each turn
+                        current_slowdown_period = max(
+                            current_slowdown_period - ROTATE_SLOW_DOWN_VALUE, 0.1
+                        )
+                        speed = ROTATE_SLOW_DOWN_SPEED
+                    if slowdown:
+                        await _wait_for_new_position(2.0)
+                        await asyncio.sleep(0.1)
+                        await _apply_slow_turn(
+                            direction, ROTATE_SLOW_DOWN_SPEED, current_slowdown_period
+                        )
+                    else:
+                        await asyncio.sleep(0.1)
+                        await _apply_turn(direction)
+
+            await self.write(
+                {
+                    "id": "remoteControlMap",
+                    "method": "action",
+                    "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
+                }
+            )
+            _LOG.warning(
+                "[ble-nav] rotation to angle %.3f timed out after %.1fs (current_heading=%.3f, error=%.3f)",
+                target_angle,
+                timeout,
+                _ble_heading[0],
+                _cur_error(),
+            )
+            return False
+
+        async def _move_towards_point(
+            target_x: float,
+            target_y: float,
+            forward_speed: int = 180,
+            max_turn: int = 120,
+            timeout: float = 120.0,
+            stop_distance: float = 0.10,
+        ) -> bool:
+            """Drive toward a target while correcting the heading to stay on-course."""
+            deadline = time.monotonic() + timeout
+            start_pos = _ble_pose[0]
+            if start_pos is None:
+                _LOG.warning("[ble-nav] move_towards_point: no valid start pose")
+                return False
+
+            last_pos = start_pos
+            paused = False
+            while time.monotonic() < deadline:
+                pos = _ble_pose[0]
+                if pos is None:
+                    await asyncio.sleep(0.2)
+                    continue
+
+                no_data_time = time.monotonic() - _last_position_received_ts[0]
+                if no_data_time > MAX_POSITION_DATA_DELAY:  # no position for 1 second
+                    if not paused:
+                        _LOG.warning(
+                            "[ble-nav] No position data for %.1fs. Pause move to point",
+                            no_data_time,
+                        )
+                        await self.write(
+                            {
+                                "id": "remoteControlMap",
+                                "method": "action",
+                                "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
+                            }
+                        )
+                    paused = True
+                    await asyncio.sleep(0.5)
+                else:
+                    if paused:
+                        _LOG.warning("New position data arrived. Continuing")
+                        paused = False
+
+                    current_heading = _ble_heading[0]
+                    if current_heading is None:
+                        await asyncio.sleep(0.2)
+                        continue
+
+                    best_angle = _best_angle_to_point(
+                        destination_x=target_x,
+                        destination_y=target_y,
+                        current_x=pos[0],
+                        current_y=pos[1],
+                        # current_angle=current_heading,
+                    )
+                    heading_error = _normalize_angle(best_angle - current_heading)
+                    distance_remaining = math.hypot(
+                        target_x - pos[0], target_y - pos[1]
+                    )
+                    distance_moved = math.dist(pos, last_pos)
+                    _LOG.debug(
+                        "[ble-nav] Current position x=%.3f y=%.3f Target x=%.3f y=%.3f",
+                        pos[0],
+                        pos[1],
+                        target_x,
+                        target_y,
+                    )
+                    _LOG.debug(
+                        "[ble-nav] move_to_point remaining=%.3f m moved=%.3f m heading_error=%.3f rad target=%.3f",
+                        distance_remaining,
+                        distance_moved,
+                        heading_error,
+                        best_angle,
+                    )
+
+                    if abs(distance_remaining) <= stop_distance:
+                        await self.write(
+                            {
+                                "id": "remoteControlMap",
+                                "method": "action",
+                                "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
+                            }
+                        )
+                        _LOG.debug(
+                            "[ble-nav] move_to_point reached target (remaining=%.3f m)",
+                            distance_remaining,
+                        )
+                        return True
+
+                    if distance_remaining < (stop_distance * -1):
+                        _LOG.warning(
+                            "[ble-nav] overshot target %.3fm; stopping and rotating again",
+                            abs(distance_remaining),
+                        )
+                        await self.write(
+                            {
+                                "id": "remoteControlMap",
+                                "method": "action",
+                                "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
+                            }
+                        )
+                        _movement_overshot[0] = True
+                        return False
+
+                    if abs(heading_error) > MAX_HEADING_ERROR_BEFORE_CORRECTION:
+                        turn_correction = min(
+                            max_turn,
+                            max(
+                                MIN_MOVE_CORRECTION,
+                                int(abs(heading_error) / math.pi * max_turn),
+                            ),
+                        )
+                        w = int(math.copysign(turn_correction, heading_error))
+                        # w = w * -1
+                        max_speed = NEAR_ARRIVAL_SPEED
+                        if distance_remaining < NEAR_ARRIVAL_DISTANCE:
+                            v = min(max_speed, forward_speed // 2)
+                        else:
+                            v = max(max_speed, forward_speed // 2)
+                        _LOG.debug(
+                            "[ble-nav] move_to_point correction (rotate=%.3f speed=%.3f)",
+                            w,
+                            v,
+                        )
+                    elif distance_remaining < NEAR_ARRIVAL_DISTANCE:
+                        w = 0
+                        v = NEAR_ARRIVAL_SPEED
+                    else:
+                        w = 0
+                        v = forward_speed
+
+                    await _wait_for_rmt_control_response(timeout=2.0)
+                    await asyncio.sleep(0.4)
+                    _wait_for_rmt[0] = False
+                    await self.write(
+                        {
+                            "id": "remoteControlMap",
+                            "method": "action",
+                            "params": {"cmd": "remote_ctl", "v": v, "w": w},
+                        }
+                    )
+                    last_pos = pos
+
+            await self.write(
+                {
+                    "id": "remoteControlMap",
+                    "method": "action",
+                    "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
+                }
+            )
+            _LOG.warning(
+                "[ble-nav] move_to_point timeout: remaining=%.3f m at target=(%.3f, %.3f)",
+                math.hypot(target_x - last_pos[0], target_y - last_pos[1]),
+                target_x,
+                target_y,
+            )
+            return False
 
         async def _poll_ble_pose() -> None:
             now = time.monotonic()
             if _ble_pose_request_pending[0]:
-                if now - _ble_pose_request_sent_ts[0] < BLE_POSE_REQUEST_TIMEOUT:
+                if now - _ble_pose_request_sent_ts[0] < POSITION_REQUEST_TIMEOUT:
                     return
                 _ble_pose_request_pending[0] = False
 
             await self.write(
                 {
-                    "id": f"getPose:{BLE_POSE_POLL_KEY}",
+                    "id": "map0",
                     "method": "get_property",
                     "params": {"key": BLE_POSE_POLL_KEY},
                 }
@@ -1555,7 +1403,7 @@ class SunseekerBleSession:
             _ble_pose_request_pending[0] = True
             _ble_pose_request_sent_ts[0] = now
 
-        def _on_notify(_handle, data: bytearray) -> None:  # noqa: C901
+        def _on_notify(_handle, data: bytearray) -> None:
             decrypted = noline_decrypt(bytes(data))
             if not decrypted:
                 _LOG.debug("[ble] read: <decrypt failed> raw_len=%d", len(data))
@@ -1572,55 +1420,47 @@ class SunseekerBleSession:
                 with contextlib.suppress(TypeError, ValueError):
                     _current_status[0] = int(payload["status"])
                     _status_event.set()
+            # {"code":0,"data":{"cmd":"remote_ctl"},"id":"remoteControlMap","method":"action"}
+            if (
+                msg_id == "remoteControlMap"
+                and isinstance(payload, dict)
+                and "cmd" in payload
+                and payload["cmd"] == "remote_ctl"
+            ):
+                _wait_for_rmt[0] = False
+            # {"code":0,"data":{"robot_pos":{"angle":1.113,"point":[-0.357,-1.101]}},"id":"map0","method":"get_property"}
+            if (
+                msg_id == "map0"
+                and isinstance(payload, dict)
+                and "robot_pos" in payload
+            ):
+                robot_pos = payload["robot_pos"]
+                x = y = heading = None
+                if isinstance(robot_pos, dict):
+                    point = robot_pos.get("point")
+                    if isinstance(point, (list, tuple)) and len(point) >= 2:
+                        x = _coerce_float(point[0])
+                        y = _coerce_float(point[1])
+                    heading = _coerce_float(robot_pos.get("angle"))
 
-            pose = _extract_pose_from_payload(msg)
-            if pose is not None:
-                if msg_id.startswith("getPose:"):
-                    _ble_pose_request_pending[0] = False
-                x, y, heading = pose
+                _ble_pose_request_pending[0] = False
+                # Old values
+                _prev_pos[0] = _ble_pose[0]
+                _prev_angle[0] = _ble_heading[0]
+                _last_position_received_ts[0] = time.monotonic()
+
+                # x, y, heading = pose
                 _ble_pose[0] = (x, y)
                 _ble_pose_ts[0] = time.monotonic()
                 if heading is not None:
                     _ble_heading[0] = heading
-                if _ble_pose_debug_count[0] < BLE_POSE_DEBUG_MAX_SAMPLES:
-                    _ble_pose_debug_count[0] += 1
-                    _LOG.debug(
-                        "[ble-nav] BLE pose sample #%d from id=%s: x=%.3f y=%.3f heading=%s",
-                        _ble_pose_debug_count[0],
-                        msg_id,
-                        x,
-                        y,
-                        "-" if heading is None else f"{heading:.3f}",
-                    )
-            else:
-                payload_has_pose_keys = isinstance(payload, dict) and any(
-                    key in payload
-                    for key in (
-                        "robot_pos",
-                        "robotPos",
-                        "device_pos",
-                        "position",
-                        "pos",
-                        "rtk_pos",
-                    )
+                _LOG.debug(
+                    "[ble-nav] BLE pose sample from id=%s: x=%.3f y=%.3f heading=%s",
+                    msg_id,
+                    x,
+                    y,
+                    "-" if heading is None else f"{heading:.3f}",
                 )
-                id_looks_like_pose = (
-                    "pose" in msg_id.lower()
-                    or "pos" in msg_id.lower()
-                    or msg_id == "device_pos"
-                )
-                if payload_has_pose_keys or id_looks_like_pose:
-                    _ble_pose_debug_count[0] += 1
-                    if (
-                        _ble_pose_debug_count[0] <= BLE_POSE_DEBUG_MAX_SAMPLES
-                        or _ble_pose_debug_count[0] % BLE_POSE_DEBUG_EVERY == 0
-                    ):
-                        _LOG.debug(
-                            "[ble-nav] BLE pose probe response not parsed (id=%s data=%s)",
-                            msg_id,
-                            payload,
-                        )
-
             if msg_id == "NRID":
                 path_id_info.update(payload)
                 _LOG.debug("[ble-session] NRID: %s", path_id_info)
@@ -1767,23 +1607,21 @@ class SunseekerBleSession:
             await asyncio.sleep(0.5)
 
             # phase 4 - GPS-guided navigation
-            # 1.  Do calibration
-            # 2.  Move to first point and wait for it to be stable
-            # 3.  StartBuildMap - wait for "status":4 (Automapping)
-            # 4.1 setBuildLine "on" and Move to the next point and setBuildLine "off"
-            # 4.2 goto 4.1 until no more points
+            # 1. Start polling posistion in thread
+            # 2. Find the perfect angle to the next point
+            # 2. Determin witch way to rotate.
+            # 3. Start rotating while comparing the perfect angle
+            # 4. If perfect angle is passed. Stop rotating and check if we need to go back a little
+            # 5. when the mower is at almost perfect angle, start moving towards the point
+            # 6. While moving forward check if we are off cource and try to adjust
+            # 7. when we are close to the point, slow down.
+            # 8. If its a guide point is ok to be 50cm away, else 10cm
+            # 9. when we reach the first new area points we have to do this:
+            #    StartBuildMap - wait for "status":4 (Automapping)
+            #    setBuildLine "on" and Move to the next point and setBuildLine "off"
+            # 10 when all points are reach do the "Phase 5 — Stop recording"
 
             _LOG.debug("[ble-session] Phase 4: navigating %d waypoints", n_wps)
-
-            def _get_ble_position() -> list[float] | None:
-                ble_age = time.monotonic() - _ble_pose_ts[0]
-                if _ble_pose[0] is not None and ble_age <= BLE_POSE_MAX_AGE:
-                    ble_x, ble_y = _ble_pose[0]
-                    return [ble_x, ble_y]
-                return None
-
-            _LOG.debug("[ble-nav] BLE pose poll key: %s", BLE_POSE_POLL_KEY)
-            await _poll_ble_pose()
 
             if not undocked:
                 _LOG.error(
@@ -1816,149 +1654,47 @@ class SunseekerBleSession:
                 raise TimeoutError(
                     "navigate_and_record_boundary: mower did not undock in time"
                 )
-            # Now we are undocked and ready to calibrate
-            nav_y_sign = BLE_NAV_Y_SIGN
-            use_ble_heading = [False]
 
-            def _get_navigation_heading() -> float | None:
-                ble_age = time.monotonic() - _ble_pose_ts[0]
-                if _ble_heading[0] is not None and ble_age <= BLE_POSE_FRESH_AGE:
-                    use_ble_heading[0] = True
-                    return _ble_heading[0]
+            position_poll_stop = asyncio.Event()
+            position_poll_task: asyncio.Task[None] | None = None
 
-                heading: float | None = None
-                if get_heading is not None:
-                    heading = get_heading()
-                if heading is not None:
-                    use_ble_heading[0] = False
-                    return heading
-                return None
+            async def _position_poll_loop() -> None:
+                while not position_poll_stop.is_set():
+                    await _poll_ble_pose()
+                    # deadline = time.monotonic() + BLE_POSE_REQUEST_TIMEOUT
+                    # while not position_poll_stop.is_set() and time.monotonic() < deadline:
+                    #     if _ble_pose[0] is not None and _ble_pose_ts[0] != 0.0:
+                    #         break
+                    #     await asyncio.sleep(0.1)
+                    await asyncio.sleep(POSITION_POLL_DELAY)
+                _LOG.debug("Position polling stoped")
 
-            first_pose_deadline = time.monotonic() + BLE_POSE_REQUEST_TIMEOUT
-            while _ble_pose_ts[0] == 0.0 and time.monotonic() < first_pose_deadline:
-                await asyncio.sleep(command_interval)
+            position_poll_task = asyncio.create_task(_position_poll_loop())
 
-            initial_pos = _get_ble_position()
-            initial_heading = _get_navigation_heading()
-            if initial_heading is not None:
-                estimated_heading = initial_heading
-            elif initial_pos is not None:
-                estimated_heading = math.atan2(
-                    nav_y_sign * (clean_wps[0][1] - initial_pos[1]),
-                    clean_wps[0][0] - initial_pos[0],
-                )
-            else:
-                estimated_heading = math.atan2(
-                    nav_y_sign * (clean_wps[1][1] - clean_wps[0][1]),
-                    clean_wps[1][0] - clean_wps[0][0],
-                )
-            calibrated_turn_sign = BLE_TURN_SIGN
-            calibrated_turn_scale = 1.0
-
-            heading_before = _get_navigation_heading()
-            if heading_before is not None:
-                if use_ble_heading[0]:
-                    _LOG.debug(
-                        "[ble-nav] rotate calibration using BLE heading fallback"
-                    )
-                test_w = BLE_ROT_CAL_TEST_W
-                _LOG.debug(
-                    "[ble-nav] rotate calibration start: h0=%.3f, test_w=%d",
-                    heading_before,
-                    test_w,
-                )
-                await self.write(
-                    {
-                        "id": "remoteControlMap",
-                        "method": "action",
-                        "params": {"cmd": "remote_ctl", "v": 0, "w": test_w},
-                    }
-                )
-                await asyncio.sleep(max(command_interval, BLE_ROT_CAL_STEP_TIME))
-                heading_after = _get_navigation_heading()
-                await self.write(
-                    {
-                        "id": "remoteControlMap",
-                        "method": "action",
-                        "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
-                    }
-                )
-                await asyncio.sleep(max(command_interval, BLE_ROT_CAL_SETTLE_TIME))
-
-                # MQTT heading can lag command writes; wait briefly for a
-                # fresh sample before deciding calibration success/failure.
-                heading_wait_deadline = (
-                    time.monotonic() + BLE_ROT_CAL_WAIT_HEADING_TIMEOUT
-                )
-                while (
-                    heading_after is not None
-                    and time.monotonic() < heading_wait_deadline
-                ):
-                    if (
-                        abs(_normalize_angle(heading_after - heading_before))
-                        >= BLE_ROT_CAL_WAIT_HEADING_EPS
-                    ):
-                        break
-                    await asyncio.sleep(command_interval)
-                    latest_heading = _get_navigation_heading()
-                    if latest_heading is None:
-                        continue
-                    heading_after = latest_heading
-
-                if heading_after is not None:
-                    measured_delta = _normalize_angle(heading_after - heading_before)
-                    if abs(measured_delta) >= BLE_ROT_CAL_MIN_HEADING_DELTA:
-                        calibrated_turn_sign = 1 if measured_delta > 0 else -1
-                        calibrated_turn_scale = BLE_ROT_CAL_TARGET_HEADING_DELTA / abs(
-                            measured_delta
-                        )
-                        calibrated_turn_scale = max(
-                            BLE_ROT_CAL_SCALE_MIN,
-                            min(BLE_ROT_CAL_SCALE_MAX, calibrated_turn_scale),
-                        )
-                        _LOG.debug(
-                            "[ble-nav] rotate calibration ok: dhead=%.3f sign=%d scale=%.2f",
-                            measured_delta,
-                            calibrated_turn_sign,
-                            calibrated_turn_scale,
-                        )
-                    else:
-                        _LOG.warning(
-                            "[ble-nav] rotate calibration ignored (delta %.3f too small)",
-                            measured_delta,
-                        )
-                else:
-                    _LOG.warning(
-                        "[ble-nav] rotate calibration skipped (no heading after test turn)"
-                    )
-            else:
-                _LOG.warning("[ble-nav] rotate calibration skipped (no heading source)")
-            # Start moving to the points
-            prev_pos: list[float] | None = None
-            simple_navigation_enabled = time.monotonic() >= 0.0
-
+            # Now we are undocked and ready to start
+            await asyncio.sleep(10)  # jeg skal lige nå ud til robotten
+            # loopishere
             for wp_idx, target in enumerate(clean_wps):
                 target_x, target_y = target[0], target[1]
-                timeout_budget = waypoint_timeout
-                if wp_idx == 0 + prewaypointcount:
-                    timeout_budget += BLE_FIRST_WAYPOINT_EXTRA_TIMEOUT
-                deadline = time.monotonic() + timeout_budget
+                deadline = time.monotonic() + waypoint_timeout
                 arrived = False
-                stuck_accept_distance = BLE_PRE_WAYPOINTS_STUCK_ACCEPT_DISTANCE
-                if wp_idx == 0 + prewaypointcount:
-                    stuck_accept_distance = BLE_FIRST_WAYPOINT_STUCK_ACCEPT_DISTANCE
-                elif wp_idx > prewaypointcount:
-                    stuck_accept_distance = BLE_STUCK_ACCEPT_DISTANCE
+                work_area_point = wp_idx >= prewaypointcount
+
+                accept_distance = arrival_threshold_waypoints
+                if work_area_point:
+                    accept_distance = arrival_threshold
                 _LOG.debug(
                     "[ble-nav] → waypoint %d/%d  target=(%.3f, %.3f) timeout=%.1fs stuck_accept=%.2fm",
                     wp_idx + 1,
                     n_wps,
                     target_x,
                     target_y,
-                    timeout_budget,
-                    stuck_accept_distance,
+                    waypoint_timeout,
+                    accept_distance,
                 )
-                if wp_idx > 0 + prewaypointcount:
+                # if we are at area point 0 1 2 (3, "4", "5", "6")
+                # we have reached 3+ and starting with 4+
+                if wp_idx > prewaypointcount:
                     _LOG.debug("[ble-nav] wp%d setBuildLine=true", wp_idx + 1)
                     await self.write(
                         {
@@ -1968,910 +1704,66 @@ class SunseekerBleSession:
                         }
                     )
                     await asyncio.sleep(BLE_BUILD_LINE_SEGMENT_ON_DELAY)
-                no_fix_count = 0
-                waypoint_turn_sign = calibrated_turn_sign
-                active_turn_sign = calibrated_turn_sign
-                best_distance = math.inf
-                no_progress_count = 0
-                turn_flipped = False
-                close_stall_count = 0
-                prev_distance: float | None = None
-                away_progress_count = 0
-                nav_sign_flipped = False
-                stale_pose_count = 0
-                align_mode = True
-                post_align_grace_cycles = 0
-                align_turn_dir: int | None = None
-                align_best_error = math.inf
-                align_no_improve_count = 0
-                align_sign_flips = 0
-                align_away_count = 0
-                align_away_flips = 0
-                align_probe_cycles_left = 0
-                align_probe_cooldown = 0
-                align_consecutive_cycles = 0
-                align_escape_drive_cycles = 0
-                heading_bias = 0.0
-                wrong_way_count = 0
-                drive_no_progress_count = 0
-                drive_bias_flips = 0
-                wp1_spin_error_cont: float | None = None
-                simple_rotate_error_cont: float | None = None
-                last_pose_stop_ts = 0.0
-                last_sent_v: int | None = None
-                last_sent_w: int | None = None
-                last_sent_ts = 0.0
+
+                state: int = 0  # 0 rotating, 1 moving and adjusting
+                ble_x, ble_y = _ble_pose[0]
+                best_angle = 0
 
                 while not arrived and time.monotonic() < deadline:
-                    now = time.monotonic()
-                    if now - _last_ble_pose_poll[0] >= BLE_POSE_POLL_INTERVAL:
-                        _last_ble_pose_poll[0] = now
-                        await _poll_ble_pose()
-
-                    ble_pose_age = now - _ble_pose_ts[0]
-                    ble_pos_fresh = (
-                        _ble_pose[0] is not None and ble_pose_age <= BLE_POSE_FRESH_AGE
-                    )
-
-                    pos: list[float] | None = None
-                    if ble_pos_fresh:
-                        ble_x, ble_y = _ble_pose[0]
-                        pos = [ble_x, ble_y]
-                    elif _ble_pose[0] is not None and ble_pose_age <= BLE_POSE_MAX_AGE:
-                        ble_x, ble_y = _ble_pose[0]
-                        pos = [ble_x, ble_y]
-                        _LOG.debug(
-                            "[ble-nav] using stale BLE pose (age=%.2fs)",
-                            ble_pose_age,
-                        )
-                    else:
-                        _LOG.debug(
-                            "[ble-nav] no fresh BLE pose yet (age=%.2fs)",
-                            ble_pose_age,
-                        )
-
-                    if pos is None:
-                        no_fix_count += 1
-                        _LOG.debug(
-                            "[ble-nav] no BLE position fix — waiting (miss %d)",
-                            no_fix_count,
-                        )
-                        if no_fix_count >= 3:
-                            if now - last_pose_stop_ts >= BLE_POSE_MISS_STOP_COOLDOWN:
-                                _LOG.warning(
-                                    "[ble-nav] consecutive BLE position misses=%d — stopping motors",
-                                    no_fix_count,
-                                )
-                                await self.write(
-                                    {
-                                        "id": "remoteControlMap",
-                                        "method": "action",
-                                        "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
-                                    }
-                                )
-                                last_pose_stop_ts = now
-                        await asyncio.sleep(command_interval)
-                        continue
-                    no_fix_count = 0  # reset on successful fix
-
-                    cur_x, cur_y = pos[0], pos[1]
-                    dx = target_x - cur_x
-                    dy = nav_y_sign * (target_y - cur_y)
-                    distance = math.sqrt(dx * dx + dy * dy)
-                    progress_dot: float | None = None
-                    moved = 0.0
-
-                    if prev_pos is not None:
-                        mdx = cur_x - prev_pos[0]
-                        mdy = nav_y_sign * (cur_y - prev_pos[1])
-                        moved = math.sqrt(mdx * mdx + mdy * mdy)
-                        if moved < 0.01:
-                            stale_pose_count += 1
-                        else:
-                            stale_pose_count = 0
-                        if moved > 0.03:
-                            progress_dot = mdx * dx + mdy * dy
-                            if progress_dot < 0:
-                                away_progress_count += 1
-                            else:
-                                away_progress_count = 0
-
-                            if (
-                                wp_idx == 0
-                                and not nav_sign_flipped
-                                and away_progress_count >= 4
-                            ):
-                                nav_y_sign *= -1.0
-                                nav_sign_flipped = True
-                                away_progress_count = 0
-                                _LOG.warning(
-                                    "[ble-nav] auto-correct: flipped nav_y_sign to %.1f "
-                                    "after repeated away-motion",
-                                    nav_y_sign,
-                                )
-                                dx = target_x - cur_x
-                                dy = nav_y_sign * (target_y - cur_y)
-                                distance = math.sqrt(dx * dx + dy * dy)
-                                estimated_heading = _normalize_angle(
-                                    estimated_heading + math.pi
-                                )
-
-                    distance_delta = 0.0
-                    if prev_distance is not None:
-                        distance_delta = distance - prev_distance
-                        if (
-                            distance <= stuck_accept_distance
-                            and abs(distance - prev_distance) < 0.03
-                        ):
-                            close_stall_count += 1
-                        else:
-                            close_stall_count = 0
-                    prev_distance = distance
-
+                    ble_x, ble_y = _ble_pose[0]
+                    best_angle = _best_angle_to_point(target_x, target_y, ble_x, ble_y)
                     _LOG.debug(
-                        "[ble-nav] wp%d  pos=(%.3f,%.3f) dist=%.3f ddist=%+.3f moved=%.3f prog=%s stale=%d head=%.2f rad",
-                        wp_idx + 1,
-                        cur_x,
-                        cur_y,
-                        distance,
-                        distance_delta,
-                        moved,
-                        "-" if progress_dot is None else f"{progress_dot:+.3f}",
-                        stale_pose_count,
-                        estimated_heading,
+                        "[ble-nav] Best angle=%.3f rad",
+                        best_angle,
                     )
 
-                    do_break = False
-                    if distance < arrival_threshold:
-                        _LOG.debug(
-                            "[ble-nav] ARRIVED waypoint %d  dist=%.4f m",
-                            wp_idx + 1,
-                            distance,
+                    if state == 0:  # rotating
+                        # state0
+                        max_deviation = _max_angle_deviation_for_target(
+                            ble_x, ble_y, target_x, target_y
                         )
-                        if wp_idx == 0 + prewaypointcount:
-                            _LOG.debug(
-                                "[ble-nav] Start waypoint completion reason=arrival_threshold "
-                                "dist=%.4f m threshold=%.4f m",
-                                distance,
-                                arrival_threshold,
-                            )
-                        arrived = True
-                        do_break = True
+                        max_deviation = max(max_deviation, 0.2)
+                        _LOG.debug(
+                            "[ble-nav] Max deviation=%.3f rad",
+                            max_deviation,
+                        )
 
-                    if (
-                        wp_idx == 0 + prewaypointcount
-                        and distance <= BLE_FIRST_WAYPOINT_STOP_DISTANCE
-                    ):
-                        _LOG.debug(
-                            "[ble-nav] Start waypoint reached within stop distance %.3f m",
-                            distance,
-                        )
-                        _LOG.debug(
-                            "[ble-nav] Start waypoint completion reason=first_waypoint_stop_distance "
-                            "dist=%.4f m threshold=%.4f m",
-                            distance,
-                            BLE_FIRST_WAYPOINT_STOP_DISTANCE,
-                        )
-                        arrived = True
-                        do_break = True
-
-                    if close_stall_count >= BLE_STUCK_ACCEPT_CYCLES:
-                        _LOG.warning(
-                            "[ble-nav] waypoint %d accepted by close-range stall "
-                            "(dist=%.3f m stable for %d cycles)",
-                            wp_idx + 1,
-                            distance,
-                            close_stall_count,
-                        )
-                        if wp_idx == 0 + prewaypointcount:
-                            _LOG.debug(
-                                "[ble-nav] Start waypoint completion reason=close_range_stall "
-                                "dist=%.4f m stable_cycles=%d",
-                                distance,
-                                close_stall_count,
-                            )
-                        arrived = True
-                        do_break = True
-
-                    if wp_idx == 0 + prewaypointcount and arrived:
-                        _LOG.debug(
-                            "[ble-nav] Start point reached - startBuildMap map_border=%d",
-                            map_border,
-                        )
-                        await self.write(
-                            {
-                                "id": "getDevStatus",
-                                "method": "get_property",
-                                "params": {"key": "status"},
-                            }
-                        )
-                        await self.write(
-                            {
-                                "id": "startBuildMap",
-                                "method": "action",
-                                "params": {
-                                    "cmd": "start_build_map",
-                                    "map_border": map_border,
-                                },
-                            }
-                        )
-                        if not await _wait_for_mower_status(
-                            _current_status,
-                            _status_event,
-                            expected_status=4,
-                            timeout=BLE_WAIT_MAP_READY_TIMEOUT,
+                        if await _rotate_to_angle(
+                            best_angle, max_deviation, MAX_ROTATE_TIME
                         ):
-                            _LOG.warning(
-                                "[ble-session] status=4 (auto-mapping) not observed after startBuildMap; continuing"
-                            )
-                        await asyncio.sleep(BLE_AFTER_SET_BUILD_LINE_DELAY)
+                            state = 1
+                        else:
+                            state = 90
+                            arrived = False
+                    if state == 1:  # moving and adjusting
+                        # state1
+                        if await _move_towards_point(
+                            target_x,
+                            target_y,
+                            drive_speed,
+                            MAX_CORRECTION,
+                            ARRIVE_TIMEOUT,
+                            accept_distance,
+                        ):
+                            arrived = True
+                        elif _movement_overshot[0]:
+                            _movement_overshot[0] = False
+                            state = 0
+                        else:
+                            state = 91
+                    if state > 90:
                         break
-                    if do_break:
-                        break
-                    estimated_heading = _update_navigation_heading(
-                        estimated_heading,
-                        prev_pos,
-                        cur_x,
-                        cur_y,
-                        _get_navigation_heading,
-                        nav_y_sign,
-                    )
-                    prev_pos = [cur_x, cur_y]
-
-                    target_heading = math.atan2(dy, dx)
-                    control_heading = _normalize_angle(estimated_heading + heading_bias)
-                    heading_error = _normalize_angle(target_heading - control_heading)
-                    speed_factor = min(1.0, distance / 0.5)
-                    abs_heading_error = abs(heading_error)
-
-                    if align_mode:
-                        if abs_heading_error <= BLE_SIMPLE_ROTATE_EXIT_ERROR_RAD:
-                            align_mode = False
-                            simple_rotate_error_cont = None
-                            _LOG.debug(
-                                "[ble-nav] simple rotate complete for wp%d (err=%.3f)",
-                                wp_idx + 1,
-                                heading_error,
-                            )
-                    elif abs_heading_error >= BLE_SIMPLE_ROTATE_ENTER_ERROR_RAD:
-                        align_mode = True
-                        _LOG.debug(
-                            "[ble-nav] simple heading drift -> rotate wp%d (err=%.3f)",
-                            wp_idx + 1,
-                            heading_error,
-                        )
-
-                    if align_mode:
-                        if simple_rotate_error_cont is None:
-                            simple_rotate_error_cont = heading_error
-                        else:
-                            simple_rotate_error_cont = min(
-                                (
-                                    heading_error,
-                                    heading_error + 2 * math.pi,
-                                    heading_error - 2 * math.pi,
-                                ),
-                                key=lambda candidate: abs(
-                                    candidate - simple_rotate_error_cont
-                                ),
-                            )
-                        turn_mag = int(
-                            max(
-                                BLE_SIMPLE_ROTATE_TURN_MIN,
-                                min(
-                                    BLE_SIMPLE_ROTATE_TURN_MAX,
-                                    abs(simple_rotate_error_cont)
-                                    / math.pi
-                                    * BLE_SIMPLE_ROTATE_TURN_MAX
-                                    * calibrated_turn_scale,
-                                ),
-                            )
-                        )
-                        v = 0
-                        w = (
-                            calibrated_turn_sign
-                            * (1 if simple_rotate_error_cont >= 0 else -1)
-                            * turn_mag
-                        )
-                        mode_name = "rotate"
-                    else:
-                        simple_rotate_error_cont = None
-                        near_factor = 1.0
-                        if distance <= BLE_SIMPLE_NEAR_DISTANCE:
-                            near_factor = max(0.35, distance / BLE_SIMPLE_NEAR_DISTANCE)
-                        heading_factor = max(0.35, math.cos(abs_heading_error))
-                        speed_cap = min(drive_speed, BLE_SIMPLE_ROUTE_SPEED_CAP)
-                        if wp_idx >= prewaypointcount:
-                            speed_cap = drive_speed
-                        if abs_heading_error >= BLE_SIMPLE_DRIVE_SLOW_ERROR_RAD:
-                            speed_cap = min(speed_cap, BLE_SIMPLE_DRIVE_SLOW_SPEED_CAP)
-                        v = int(speed_cap * near_factor * heading_factor)
-                        if distance > BLE_SIMPLE_NEAR_DISTANCE:
-                            v = max(v, BLE_SIMPLE_DRIVE_MIN_SPEED)
-                        w_raw = int(
-                            max(
-                                -BLE_SIMPLE_DRIVE_TURN_MAX,
-                                min(
-                                    BLE_SIMPLE_DRIVE_TURN_MAX,
-                                    heading_error
-                                    / math.pi
-                                    * BLE_SIMPLE_DRIVE_TURN_GAIN
-                                    * calibrated_turn_scale,
-                                ),
-                            )
-                        )
-                        w = calibrated_turn_sign * w_raw
-                        mode_name = "drive"
-
-                    _LOG.debug(
-                        "[ble-nav] simple cmd mode=%s v=%d w=%d heading_err=%.3f h_bias=%.3f dist=%.3f",
-                        mode_name,
-                        v,
-                        w,
-                        heading_error,
-                        heading_bias,
-                        distance,
-                    )
-
-                    send_now = True
-                    if (
-                        last_sent_v == v
-                        and last_sent_w == w
-                        and (now - last_sent_ts) < BLE_RC_REFRESH_INTERVAL
-                    ):
-                        send_now = False
-
-                    if send_now:
-                        await self.write(
-                            {
-                                "id": "remoteControlMap",
-                                "method": "action",
-                                "params": {"cmd": "remote_ctl", "v": v, "w": w},
-                            }
-                        )
-                        last_sent_v = v
-                        last_sent_w = w
-                        last_sent_ts = now
-
-                    loop_delay = command_interval
-                    if align_mode:
-                        loop_delay = max(
-                            loop_delay, BLE_SIMPLE_ROTATE_MIN_COMMAND_INTERVAL
-                        )
-                    await asyncio.sleep(loop_delay)
-                    if simple_navigation_enabled:
-                        continue
-
-                    if wp_idx == 0 + prewaypointcount:
-                        if (
-                            align_mode
-                            and abs_heading_error
-                            <= BLE_FIRST_WAYPOINT_SPIN_EXIT_ERROR_RAD
-                        ):
-                            align_mode = False
-                            wp1_spin_error_cont = None
-                            post_align_grace_cycles = BLE_POST_ALIGN_GRACE_CYCLES
-                            _LOG.debug(
-                                "[ble-nav] first waypoint spin complete (err=%.3f)",
-                                heading_error,
-                            )
-                        elif (
-                            not align_mode
-                            and abs_heading_error
-                            >= BLE_FIRST_WAYPOINT_DRIVE_REENTER_ERROR_RAD
-                        ):
-                            align_mode = True
-                            _LOG.debug(
-                                "[ble-nav] first waypoint heading drift -> re-enter spin (err=%.3f)",
-                                heading_error,
-                            )
-
-                        if align_mode:
-                            # Keep spin direction stable when heading_error crosses
-                            # the +/-pi boundary by selecting the closest wrapped
-                            # representation to the previous cycle.
-                            if wp1_spin_error_cont is None:
-                                spin_error = heading_error
-                            else:
-                                spin_error = min(
-                                    (
-                                        heading_error,
-                                        heading_error + 2 * math.pi,
-                                        heading_error - 2 * math.pi,
-                                    ),
-                                    key=lambda candidate: abs(
-                                        candidate - wp1_spin_error_cont
-                                    ),
-                                )
-                            wp1_spin_error_cont = spin_error
-
-                            spin_turn = int(
-                                max(
-                                    BLE_FIRST_WAYPOINT_SPIN_TURN_MIN,
-                                    min(
-                                        BLE_FIRST_WAYPOINT_SPIN_TURN_MAX,
-                                        abs(spin_error)
-                                        / math.pi
-                                        * BLE_FIRST_WAYPOINT_SPIN_TURN_MAX,
-                                    ),
-                                )
-                            )
-                            spin_turn = int(spin_turn * calibrated_turn_scale)
-                            v = 0
-                            w = (
-                                calibrated_turn_sign
-                                * (1 if spin_error >= 0 else -1)
-                                * spin_turn
-                            )
-                            mode_name = "spin"
-                        else:
-                            wp1_spin_error_cont = None
-                            if post_align_grace_cycles > 0:
-                                post_align_grace_cycles -= 1
-                            near_target_factor = 1.0
-                            if distance <= BLE_FIRST_WAYPOINT_SLOWDOWN_DISTANCE:
-                                near_target_factor = max(
-                                    0.35,
-                                    distance / BLE_FIRST_WAYPOINT_SLOWDOWN_DISTANCE,
-                                )
-                            heading_factor = max(0.60, math.cos(heading_error))
-                            v = int(
-                                BLE_FIRST_WAYPOINT_DRIVE_SPEED_CAP
-                                * near_target_factor
-                                * heading_factor
-                            )
-                            if distance > BLE_FIRST_WAYPOINT_SLOWDOWN_DISTANCE:
-                                v = max(v, BLE_FIRST_WAYPOINT_DRIVE_MIN_SPEED)
-                            w = int(
-                                max(
-                                    -BLE_FIRST_WAYPOINT_DRIVE_TURN_CAP,
-                                    min(
-                                        BLE_FIRST_WAYPOINT_DRIVE_TURN_CAP,
-                                        heading_error
-                                        / math.pi
-                                        * BLE_FIRST_WAYPOINT_DRIVE_TURN_GAIN
-                                        * calibrated_turn_scale,
-                                    ),
-                                )
-                            )
-                            if stale_pose_count >= 6:
-                                v = min(v, BLE_FIRST_WAYPOINT_STALE_SPEED_CAP)
-                                w = max(
-                                    -BLE_FIRST_WAYPOINT_STALE_TURN_CAP,
-                                    min(BLE_FIRST_WAYPOINT_STALE_TURN_CAP, w),
-                                )
-                            w = calibrated_turn_sign * w
-                            mode_name = "drive"
-
-                        _LOG.debug(
-                            "[ble-nav] cmd mode=%s v=%d w=%d heading_err=%.3f h_bias=%.3f dist=%.3f",
-                            mode_name,
-                            v,
-                            w,
-                            heading_error,
-                            heading_bias,
-                            distance,
-                        )
-
-                        send_now = True
-                        if (
-                            last_sent_v == v
-                            and last_sent_w == w
-                            and (now - last_sent_ts) < BLE_RC_REFRESH_INTERVAL
-                        ):
-                            send_now = False
-
-                        if send_now:
-                            await self.write(
-                                {
-                                    "id": "remoteControlMap",
-                                    "method": "action",
-                                    "params": {"cmd": "remote_ctl", "v": v, "w": w},
-                                }
-                            )
-                            last_sent_v = v
-                            last_sent_w = w
-                            last_sent_ts = now
-
-                        await asyncio.sleep(command_interval)
-                        continue
-
-                    wrong_way_heading_err_max = BLE_WRONG_WAY_HEADING_ERR_MAX
-                    wrong_way_confirm_cycles = BLE_WRONG_WAY_CONFIRM_CYCLES
-                    if wp_idx < prewaypointcount:
-                        wrong_way_heading_err_max = BLE_ROUTE_WRONG_WAY_HEADING_ERR_MAX
-                        wrong_way_confirm_cycles = BLE_ROUTE_WRONG_WAY_CONFIRM_CYCLES
-
-                    if (
-                        not align_mode
-                        and progress_dot is not None
-                        and moved >= BLE_WRONG_WAY_MOVE_THRESHOLD
-                        and progress_dot <= BLE_WRONG_WAY_PROGRESS_DOT_THRESHOLD
-                        and abs_heading_error <= wrong_way_heading_err_max
-                    ):
-                        wrong_way_count += 1
-                    elif (
-                        progress_dot is not None
-                        and moved >= BLE_WRONG_WAY_MOVE_THRESHOLD
-                    ):
-                        wrong_way_count = 0
-
-                    if (
-                        wp_idx <= prewaypointcount
-                        and wrong_way_count >= wrong_way_confirm_cycles
-                    ):
-                        heading_bias = _normalize_angle(heading_bias + math.pi)
-                        wrong_way_count = 0
-                        drive_no_progress_count = 0
-                        drive_bias_flips += 1
-                        align_mode = True
-                        align_turn_dir = None
-                        align_best_error = math.inf
-                        align_no_improve_count = 0
-                        post_align_grace_cycles = 0
-                        _LOG.warning(
-                            "[ble-nav] wrong-way drive detected; flipped heading bias to %.3f rad and re-enter align",
-                            heading_bias,
-                        )
-
-                    if wp_idx == 0 + prewaypointcount and not align_mode:
-                        drive_no_progress_signal = (
-                            stale_pose_count >= BLE_DRIVE_NO_PROGRESS_STALE_CYCLES
-                            and abs_heading_error
-                            <= BLE_DRIVE_NO_PROGRESS_HEADING_ERR_MAX
-                            and distance_delta
-                            >= BLE_DRIVE_NO_PROGRESS_DISTANCE_DELTA_MIN
-                        )
-                        if drive_no_progress_signal:
-                            drive_no_progress_count += 1
-                        elif (
-                            moved >= BLE_WRONG_WAY_MOVE_THRESHOLD
-                            or distance_delta < -0.02
-                        ):
-                            drive_no_progress_count = 0
-
-                        if (
-                            drive_no_progress_count
-                            >= BLE_DRIVE_NO_PROGRESS_CONFIRM_CYCLES
-                            and drive_bias_flips < BLE_DRIVE_BIAS_FLIP_LIMIT
-                        ):
-                            heading_bias = _normalize_angle(heading_bias + math.pi)
-                            wrong_way_count = 0
-                            drive_no_progress_count = 0
-                            drive_bias_flips += 1
-                            align_mode = True
-                            align_turn_dir = None
-                            align_best_error = math.inf
-                            align_no_improve_count = 0
-                            post_align_grace_cycles = 0
-                            _LOG.warning(
-                                "[ble-nav] drive no-progress detected; flipped heading bias to %.3f rad and re-enter align",
-                                heading_bias,
-                            )
-
-                    if (
-                        not align_mode
-                        and post_align_grace_cycles == 0
-                        and stale_pose_count >= BLE_STALE_POSE_FORCE_PIVOT_CYCLES
-                        and abs_heading_error >= BLE_ALIGN_ENTER_ERROR_RAD
-                        and distance_delta > -0.01
-                    ):
-                        align_mode = True
-                        _LOG.debug(
-                            "[ble-nav] stale pose + weak progress -> re-enter align wp%d",
-                            wp_idx + 1,
-                        )
-
-                    if align_mode and abs_heading_error <= BLE_ALIGN_EXIT_ERROR_RAD:
-                        align_mode = False
-                        align_turn_dir = None
-                        align_best_error = math.inf
-                        align_no_improve_count = 0
-                        align_sign_flips = 0
-                        align_away_count = 0
-                        align_away_flips = 0
-                        align_consecutive_cycles = 0
-                        post_align_grace_cycles = BLE_POST_ALIGN_GRACE_CYCLES
-                        _LOG.debug(
-                            "[ble-nav] align complete for wp%d (err=%.3f)",
-                            wp_idx + 1,
-                            heading_error,
-                        )
-                    elif (
-                        not align_mode and post_align_grace_cycles == 0
-                    ) and abs_heading_error >= BLE_ALIGN_REENTER_STRONG_ERROR_RAD:
-                        align_mode = True
-                        _LOG.debug(
-                            "[ble-nav] heading drift -> re-enter align for wp%d (err=%.3f)",
-                            wp_idx + 1,
-                            heading_error,
-                        )
-
-                    if align_mode:
-                        align_consecutive_cycles += 1
-                        if align_probe_cooldown > 0:
-                            align_probe_cooldown -= 1
-
-                        v = 0
-                        no_progress_count = 0
-
-                        if (
-                            progress_dot is not None
-                            and moved >= BLE_ALIGN_AWAY_MOVE_THRESHOLD
-                            and progress_dot <= BLE_ALIGN_AWAY_PROGRESS_DOT_THRESHOLD
-                        ):
-                            align_away_count += 1
-                        elif (
-                            progress_dot is not None
-                            and moved >= BLE_ALIGN_AWAY_MOVE_THRESHOLD
-                        ):
-                            align_away_count = 0
-
-                        if (
-                            align_away_count >= BLE_ALIGN_AWAY_CONFIRM_CYCLES
-                            and align_away_flips < BLE_ALIGN_AWAY_SIGN_FLIP_LIMIT
-                        ):
-                            active_turn_sign *= -1
-                            waypoint_turn_sign = active_turn_sign
-                            align_away_flips += 1
-                            align_away_count = 0
-                            align_turn_dir = None
-                            align_best_error = math.inf
-                            align_no_improve_count = 0
-                            _LOG.warning(
-                                "[ble-nav] align away-motion detected; flipping turn sign to %d for wp%d",
-                                active_turn_sign,
-                                wp_idx + 1,
-                            )
-
-                        if align_turn_dir is None:
-                            align_turn_dir = 1 if heading_error >= 0 else -1
-                            align_best_error = abs_heading_error
-                            align_no_improve_count = 0
-                            _LOG.debug(
-                                "[ble-nav] align lock dir=%d wp%d err=%.3f",
-                                align_turn_dir,
-                                wp_idx + 1,
-                                heading_error,
-                            )
-
-                        if abs_heading_error < (
-                            align_best_error - BLE_ALIGN_IMPROVE_EPSILON
-                        ):
-                            align_best_error = abs_heading_error
-                            align_no_improve_count = 0
-                        else:
-                            align_no_improve_count += 1
-
-                        if align_no_improve_count >= BLE_ALIGN_NO_IMPROVE_CYCLES:
-                            if align_sign_flips < BLE_ALIGN_SIGN_FLIP_LIMIT:
-                                active_turn_sign *= -1
-                                waypoint_turn_sign = active_turn_sign
-                                align_sign_flips += 1
-                                align_turn_dir = 1 if heading_error >= 0 else -1
-                                align_no_improve_count = 0
-                                align_best_error = abs_heading_error
-                                _LOG.warning(
-                                    "[ble-nav] align stagnated; flipping turn sign to %d for wp%d (new dir=%d)",
-                                    active_turn_sign,
-                                    wp_idx + 1,
-                                    align_turn_dir,
-                                )
-                            else:
-                                align_turn_dir *= -1
-                                align_no_improve_count = 0
-                                align_best_error = abs_heading_error
-                                _LOG.warning(
-                                    "[ble-nav] align stagnated; reversing align direction to %d for wp%d",
-                                    align_turn_dir,
-                                    wp_idx + 1,
-                                )
-
-                        if align_turn_dir is None:
-                            align_turn_dir = 1 if heading_error >= 0 else -1
-                            _LOG.debug(
-                                "[ble-nav] align safety relock dir=%d wp%d err=%.3f",
-                                align_turn_dir,
-                                wp_idx + 1,
-                                heading_error,
-                            )
-
-                        if (
-                            align_probe_cycles_left == 0
-                            and align_probe_cooldown == 0
-                            and stale_pose_count >= BLE_ALIGN_PROBE_STALE_CYCLES
-                            and distance > max(arrival_threshold * 2.0, 0.40)
-                        ):
-                            align_probe_cycles_left = BLE_ALIGN_PROBE_CYCLES
-                            _LOG.warning(
-                                "[ble-nav] align stale pose; starting probe burst for wp%d (stale=%d err=%.3f)",
-                                wp_idx + 1,
-                                stale_pose_count,
-                                heading_error,
-                            )
-
-                        if align_probe_cycles_left > 0:
-                            probe_turn_dir = 1 if heading_error >= 0 else -1
-                            v = BLE_ALIGN_PROBE_SPEED
-                            w = active_turn_sign * probe_turn_dir * BLE_ALIGN_PROBE_TURN
-                            align_probe_cycles_left -= 1
-                            if align_probe_cycles_left == 0:
-                                align_probe_cooldown = BLE_ALIGN_PROBE_COOLDOWN_CYCLES
-                                align_turn_dir = None
-                                align_best_error = math.inf
-                                align_no_improve_count = 0
-                                align_away_count = 0
-                                _LOG.debug(
-                                    "[ble-nav] align probe burst complete for wp%d; returning to align",
-                                    wp_idx + 1,
-                                )
-                            _LOG.debug(
-                                "[ble-nav] align probe wp%d v=%d w=%d remaining=%d",
-                                wp_idx + 1,
-                                v,
-                                w,
-                                align_probe_cycles_left,
-                            )
-                        else:
-                            w_mag = int(
-                                max(
-                                    BLE_ALIGN_TURN_MIN,
-                                    min(
-                                        BLE_ALIGN_TURN_MAX,
-                                        abs_heading_error
-                                        / math.pi
-                                        * BLE_ALIGN_TURN_MAX,
-                                    ),
-                                )
-                            )
-                            w_mag = int(w_mag * calibrated_turn_scale)
-                            if stale_pose_count >= 3:
-                                w_mag = min(w_mag, BLE_ALIGN_STALE_TURN_MAX)
-                            w = active_turn_sign * align_turn_dir * w_mag
-                            _LOG.debug(
-                                "[ble-nav] align mode wp%d  v=%d w=%d err=%.3f dir=%d tsign=%d best=%.3f stagn=%d",
-                                wp_idx + 1,
-                                v,
-                                w,
-                                heading_error,
-                                align_turn_dir,
-                                active_turn_sign,
-                                align_best_error,
-                                align_no_improve_count,
-                            )
-
-                        if (
-                            wp_idx <= prewaypointcount
-                            and align_escape_drive_cycles == 0
-                            and align_consecutive_cycles >= BLE_ALIGN_MAX_CONSEC_CYCLES
-                            and stale_pose_count >= BLE_ALIGN_PROBE_STALE_CYCLES
-                        ):
-                            align_mode = False
-                            align_escape_drive_cycles = BLE_ALIGN_ESCAPE_DRIVE_CYCLES
-                            post_align_grace_cycles = max(
-                                post_align_grace_cycles,
-                                BLE_ALIGN_ESCAPE_DRIVE_CYCLES,
-                            )
-                            align_turn_dir = None
-                            align_best_error = math.inf
-                            align_no_improve_count = 0
-                            align_probe_cycles_left = 0
-                            align_probe_cooldown = BLE_ALIGN_PROBE_COOLDOWN_CYCLES
-                            align_consecutive_cycles = 0
-                            _LOG.warning(
-                                "[ble-nav] align spin guard activated on wp%d; forcing %d drive cycles",
-                                wp_idx + 1,
-                                BLE_ALIGN_ESCAPE_DRIVE_CYCLES,
-                            )
-                    else:
-                        align_consecutive_cycles = 0
-                        if post_align_grace_cycles > 0:
-                            post_align_grace_cycles -= 1
-                        align_turn_dir = None
-                        align_best_error = math.inf
-                        align_no_improve_count = 0
-                        align_away_count = 0
-                        align_probe_cycles_left = 0
-                        (
-                            best_distance,
-                            no_progress_count,
-                            turn_flipped,
-                            waypoint_turn_sign,
-                        ) = _update_turn_sign_on_progress(
-                            distance,
-                            arrival_threshold,
-                            best_distance,
-                            no_progress_count,
-                            turn_flipped,
-                            waypoint_turn_sign,
-                            wp_idx + 1,
-                        )
-                        active_turn_sign = waypoint_turn_sign
-                        heading_factor = max(0.25, math.cos(heading_error))
-                        v = int(drive_speed * speed_factor * heading_factor)
-                        if post_align_grace_cycles > 0:
-                            v = min(v, BLE_POST_ALIGN_SPEED_CAP)
-                        if distance <= BLE_NEAR_FIELD_DISTANCE:
-                            v = min(v, BLE_NEAR_FIELD_SPEED_CAP)
-                        if abs_heading_error >= BLE_ALIGN_CRAWL_ERROR_RAD:
-                            v = min(v, BLE_ALIGN_CRAWL_SPEED_CAP)
-                        elif abs_heading_error >= BLE_ALIGN_SLOW_ERROR_RAD:
-                            v = min(v, BLE_ALIGN_SLOW_SPEED_CAP)
-                        turn_gain = BLE_NEAR_FIELD_TURN_GAIN
-                        if distance > BLE_NEAR_FIELD_DISTANCE:
-                            turn_gain = 1.0
-                        w_raw = int(
-                            max(
-                                -320,
-                                min(
-                                    320,
-                                    heading_error
-                                    / math.pi
-                                    * 300
-                                    * turn_gain
-                                    * calibrated_turn_scale,
-                                ),
-                            )
-                        )
-                        w = waypoint_turn_sign * w_raw
-                        v = max(v, 0)
-
-                        if align_escape_drive_cycles > 0:
-                            align_escape_drive_cycles -= 1
-                            v = max(v, BLE_ALIGN_ESCAPE_SPEED)
-                            w = max(
-                                -BLE_ALIGN_ESCAPE_TURN_CAP,
-                                min(BLE_ALIGN_ESCAPE_TURN_CAP, w),
-                            )
-                            _LOG.debug(
-                                "[ble-nav] align escape drive wp%d v=%d w=%d remaining=%d",
-                                wp_idx + 1,
-                                v,
-                                w,
-                                align_escape_drive_cycles,
-                            )
-
-                    _LOG.debug(
-                        "[ble-nav] cmd mode=%s v=%d w=%d heading_err=%.3f h_bias=%.3f wrong_way=%d",
-                        "align" if align_mode else "drive",
-                        v,
-                        w,
-                        heading_error,
-                        heading_bias,
-                        wrong_way_count,
-                    )
-
-                    send_now = True
-                    if (
-                        last_sent_v == v
-                        and last_sent_w == w
-                        and (now - last_sent_ts) < BLE_RC_REFRESH_INTERVAL
-                    ):
-                        send_now = False
-
-                    if send_now:
-                        await self.write(
-                            {
-                                "id": "remoteControlMap",
-                                "method": "action",
-                                "params": {"cmd": "remote_ctl", "v": v, "w": w},
-                            }
-                        )
-                        last_sent_v = v
-                        last_sent_w = w
-                        last_sent_ts = now
-                    loop_delay = command_interval
-                    if align_mode:
-                        loop_delay = max(loop_delay, BLE_ALIGN_MIN_COMMAND_INTERVAL)
-                    await asyncio.sleep(loop_delay)
 
                 if not arrived:
-                    pos_str = str(_get_ble_position())
+                    # Stop polling position (has to move to the end of the loop)
+                    position_poll_stop.set()
+                    if position_poll_task is not None:
+                        await asyncio.wait_for(position_poll_task, timeout=5)
+
                     _LOG.error(
-                        "[ble-nav] TIMEOUT waypoint %d/%d  last_pos=%s",
+                        "[ble-nav] TIMEOUT waypoint %d/%d",
                         wp_idx + 1,
                         n_wps,
-                        pos_str,
                     )
                     await self.write(
                         {
@@ -2907,19 +1799,10 @@ class SunseekerBleSession:
                     await asyncio.sleep(0.3)
                     raise TimeoutError(
                         f"navigate_and_record_boundary: timeout at waypoint "
-                        f"{wp_idx + 1}/{n_wps} (last position: {pos_str})"
+                        f"{wp_idx + 1}/{n_wps}"
                     )
 
-                if wp_idx == n_wps - 2:
-                    _LOG.debug("[ble-nav] unblocked signal at waypoint %d", wp_idx + 1)
-                    await self.write(
-                        {
-                            "id": "setBuildRegionUnblocked",
-                            "method": "set_property",
-                            "params": {"key": "build_region_unblocked", "value": True},
-                        }
-                    )
-
+                # arrived
                 await self.write(
                     {
                         "id": "remoteControlMap",
@@ -2928,7 +1811,43 @@ class SunseekerBleSession:
                     }
                 )
                 await asyncio.sleep(0.2)
-                if wp_idx > 0 + prewaypointcount:
+
+                # arrived at first area point 0, 1, 2, ("3", 4, 5, 6)
+                if wp_idx == prewaypointcount and arrived:
+                    _LOG.debug(
+                        "[ble-nav] Start point reached - startBuildMap map_border=%d",
+                        map_border,
+                    )
+                    await self.write(
+                        {
+                            "id": "getDevStatus",
+                            "method": "get_property",
+                            "params": {"key": "status"},
+                        }
+                    )
+                    await self.write(
+                        {
+                            "id": "startBuildMap",
+                            "method": "action",
+                            "params": {
+                                "cmd": "start_build_map",
+                                "map_border": map_border,
+                            },
+                        }
+                    )
+                    if not await _wait_for_mower_status(
+                        _current_status,
+                        _status_event,
+                        expected_status=4,
+                        timeout=BLE_WAIT_MAP_READY_TIMEOUT,
+                    ):
+                        _LOG.warning(
+                            "[ble-session] status=4 (auto-mapping) not observed after startBuildMap; continuing"
+                        )
+                    await asyncio.sleep(BLE_AFTER_SET_BUILD_LINE_DELAY)
+
+                # arrived at 2nd+ area point 0, 1, 2, (3, "4", "5", "6")
+                if wp_idx > prewaypointcount and arrived:
                     await self.write(
                         {
                             "id": "setBuildLine",
@@ -2946,22 +1865,17 @@ class SunseekerBleSession:
                     "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
                 }
             )
-            await asyncio.sleep(0.3)
 
-            # Match the app trace: once the final segment ends, stop polling pose
+            # Once the final segment ends, stop polling pose
             # and wait for the mower to settle before issuing attemptStopBuildMap.
-            settle_pos = _get_ble_position()
-            stable_deadline = time.monotonic() + BLE_FINAL_STOP_SETTLE_TIME
-            while time.monotonic() < stable_deadline:
-                pos = _get_ble_position()
-                if pos is not None and settle_pos is not None:
-                    if math.dist(pos, settle_pos) <= BLE_FINAL_STOP_SETTLE_DISTANCE:
-                        await asyncio.sleep(0.15)
-                        continue
-                    settle_pos = pos
-                    stable_deadline = time.monotonic() + BLE_FINAL_STOP_SETTLE_TIME
-                await asyncio.sleep(0.15)
-            _LOG.debug("[ble-nav] final stop settle complete; pose polling is now idle")
+            _LOG.debug(
+                "[ble-nav] final stop settle complete; position polling is now idle"
+            )
+            await asyncio.sleep(0.3)
+            # Stop polling position
+            position_poll_stop.set()
+            if position_poll_task is not None:
+                await asyncio.wait_for(position_poll_task, timeout=5)
 
             # Phase 5 — Stop recording
             _LOG.debug("[ble-session] Phase 5: stop recording")
