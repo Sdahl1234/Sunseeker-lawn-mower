@@ -130,9 +130,9 @@ ROTATE_SLOW_DOWN_VALUE = 0.1
 MIN_MOVE_CORRECTION = 50
 NEAR_ARRIVAL_SPEED = 50
 NEAR_ARRIVAL_DISTANCE = 0.75
-MAX_HEADING_ERROR_BEFORE_CORRECTION = 0.25
+MAX_HEADING_ERROR_BEFORE_CORRECTION = 0.10
 DRIVE_SPEED = 350
-ARRIVE_TIMEOUT = 60
+ARRIVE_TIMEOUT = 120
 MAX_CORRECTION = 120
 MAX_OVERSHOT = 0.2
 MAX_DEVIATION = 0.5
@@ -498,48 +498,18 @@ def _max_angle_deviation_for_target(
 ) -> float:
     """Return the allowed angular tolerance when the mower is near the target.
 
-    The closer the mower is to the destination, the more slack is allowed on the
-    heading. At 100 cm or closer, the allowed deviation is increased to make the
-    final approach forgiving and prevent the mower from oscillating around the
+    The closer the mower is to the destination, It has to be more accurate.
+    At 100 cm (close_range_distance) or closer, the allowed deviation is decreased to make the
+    final approach better and prevent the mower from oscillating around the
     target orientation.
     """
-    # Beregn den sande fysiske afstand til målet (fortegn er ligegyldigt her)
     distance_to_target = math.hypot(destination_x - mower_x, destination_y - mower_y)
 
-    # Hvis plæneklipperen er langt væk, kræver vi en præcis kurs (lav tolerance)
     if distance_to_target >= close_range_distance:
-        return 0.20  # Svarer til ca. 8,5 graders tilladt afvigelse på lang afstand
+        return 0.15
 
-    # Tæt på målet (<= 1.0 m) tillades en mere præcis kursturværdien.
-    return 0.10  # max(0.35, min(1.2, 1.5 - distance_to_target))
-
-
-def _max_angle_deviation_for_target_old(
-    mower_x: float,
-    mower_y: float,
-    best_angle: float,
-    destination_x: float,
-    destination_y: float,
-    nav_y_sign: float = -1.0,
-    close_range_distance: float = 1.0,
-) -> float:
-    """Return the allowed angular tolerance when the mower is near the target.
-
-    The closer the mower is to the destination, the more slack is allowed on the
-    heading. At 100 cm or closer, the allowed deviation is increased to make the
-    final approach forgiving and prevent the mower from oscillating around the
-    target orientation.
-    """
-    dx = destination_x - mower_x
-    dy = nav_y_sign * (destination_y - mower_y)
-    distance_to_target = math.hypot(dx, dy)
-
-    if distance_to_target >= close_range_distance:
-        return abs(_normalize_angle(best_angle)) * 0.0
-
-    # At <= 1.0 m away, allow a wider turn tolerance to keep the final approach
-    # smooth and avoid thrashing around the target heading.
-    return max(0.35, min(1.2, 1.5 - distance_to_target))
+    # Close on target (<= 1.0 m)
+    return 0.10
 
 
 def _coerce_float(value: Any) -> float | None:
@@ -547,32 +517,6 @@ def _coerce_float(value: Any) -> float | None:
     with contextlib.suppress(TypeError, ValueError):
         return float(value)
     return None
-
-
-def _update_turn_sign_on_progress(
-    distance: float,
-    arrival_threshold: float,
-    best_distance: float,
-    no_progress_count: int,
-    turn_flipped: bool,
-    waypoint_turn_sign: int,
-    waypoint_idx: int,
-) -> tuple[float, int, bool, int]:
-    """Track progress and flip turn sign once if waypoint distance stalls."""
-    if distance < best_distance - 0.03:
-        return distance, 0, turn_flipped, waypoint_turn_sign
-
-    no_progress_count += 1
-    if no_progress_count >= 18 and not turn_flipped and distance > arrival_threshold:
-        waypoint_turn_sign *= -1
-        turn_flipped = True
-        no_progress_count = 0
-        _LOG.warning(
-            "[ble-nav] no progress to waypoint %d; flipping turn sign to %d",
-            waypoint_idx,
-            waypoint_turn_sign,
-        )
-    return best_distance, no_progress_count, turn_flipped, waypoint_turn_sign
 
 
 async def _wait_for_mower_status(
@@ -940,8 +884,8 @@ class SunseekerBleSession:
         map_border: int = MapBorder.NEW_AREA,
         arrival_threshold: float = 0.10,
         arrival_threshold_waypoints: float = 0.50,
-        waypoint_timeout: float = 300.0,
-        drive_speed: int = 350,
+        waypoint_timeout: float = ARRIVE_TIMEOUT,
+        drive_speed: int = DRIVE_SPEED,
         send_find_charger: bool = True,
         prewaypointcount: int = 0,
     ) -> dict:
@@ -1494,13 +1438,13 @@ class SunseekerBleSession:
                 _ble_pose_ts[0] = time.monotonic()
                 if heading is not None:
                     _ble_heading[0] = heading
-                _LOG.debug(
-                    "[ble-nav] BLE pose sample from id=%s: x=%.3f y=%.3f heading=%s",
-                    msg_id,
-                    x,
-                    y,
-                    "-" if heading is None else f"{heading:.3f}",
-                )
+                # _LOG.debug(
+                #    "[ble-nav] BLE pose sample from id=%s: x=%.3f y=%.3f heading=%s",
+                #    msg_id,
+                #    x,
+                #    y,
+                #    "-" if heading is None else f"{heading:.3f}",
+                # )
             if msg_id == "NRID":
                 path_id_info.update(payload)
                 _LOG.debug("[ble-session] NRID: %s", path_id_info)
@@ -1786,7 +1730,7 @@ class SunseekerBleSession:
                             startpoint_y,
                             drive_speed,
                             MAX_CORRECTION,
-                            ARRIVE_TIMEOUT,
+                            waypoint_timeout,
                             accept_distance,
                         ):
                             arrived = True
