@@ -113,7 +113,7 @@ BLE_CONNECT_RETRY_DELAY = 1.0
 # mathematical convention used in this module.
 BLE_TURN_SIGN = -1
 
-TESTING = True
+TESTING = False
 
 # Position
 BLE_POSE_POLL_KEY = "robot_pos"
@@ -589,6 +589,7 @@ class SunseekerBleSession:
         hass: HomeAssistant | None = None,
     ) -> None:
         """Init."""
+        self.device = None
         self.mac = mac
         self.device_sn = device_sn
         self.dev_model = dev_model
@@ -1019,7 +1020,7 @@ class SunseekerBleSession:
             """
             deadline = time.monotonic() + timeout
             if _ble_heading[0] is None:
-                _LOG.warning(
+                _LOG.debug(
                     "[ble-nav-position] cannot rotate to angle %.3f; no heading yet",
                     target_angle,
                 )
@@ -1077,7 +1078,7 @@ class SunseekerBleSession:
                 no_data_time = time.monotonic() - _last_position_received_ts[0]
                 if no_data_time > MAX_POSITION_DATA_DELAY:  # no position for 1 second
                     if not paused:
-                        _LOG.warning(
+                        _LOG.debug(
                             "[ble-nav-position] No position data for %.1fs. Pause rotating",
                             no_data_time,
                         )
@@ -1092,12 +1093,12 @@ class SunseekerBleSession:
                     await asyncio.sleep(0.5)
                 else:
                     if paused:
-                        _LOG.warning("New position data arrived. Continuing")
+                        _LOG.debug("New position data arrived. Continuing")
                         paused = False
                     current_error = _cur_error()
                     abs_error = abs(current_error)
-                    _LOG.warning(
-                        "[ble-nav-position] test angle abs_error  %.3f - deviation %.1fs (current_heading=%.3f, target=%.3f, error=%.3f)",
+                    _LOG.debug(
+                        "[ble-nav-position] test angle error  %.3f - deviation %.1fs (current_heading=%.3f, target=%.3f, error=%.3f)",
                         abs_error,
                         deviation,
                         _ble_heading[0],
@@ -1116,8 +1117,8 @@ class SunseekerBleSession:
                         await asyncio.sleep(ROTATION_SANITY_CHECK_DELAY)
                         current_error = _cur_error()
                         abs_error = abs(current_error)
-                        _LOG.warning(
-                            "[ble-nav-position] second test angle abs_error  %.3f - deviation %.1fs (current_heading=%.3f, target=%.3f, error=%.3f)",
+                        _LOG.debug(
+                            "[ble-nav-position] second test angle error  %.3f - deviation %.1fs (current_heading=%.3f, target=%.3f, error=%.3f)",
                             abs_error,
                             deviation,
                             _ble_heading[0],
@@ -1192,7 +1193,7 @@ class SunseekerBleSession:
             deadline = time.monotonic() + timeout
             start_pos = _ble_pose[0]
             if start_pos is None:
-                _LOG.warning("[ble-nav-move] no valid start pose")
+                _LOG.warning("[ble-nav-move] no valid start position")
                 return False
             distance_total = math.dist(
                 [startpoint_x, startpoint_y], [target_x, target_y]
@@ -1208,7 +1209,7 @@ class SunseekerBleSession:
                 no_data_time = time.monotonic() - _last_position_received_ts[0]
                 if no_data_time > MAX_POSITION_DATA_DELAY:  # no position for 1 second
                     if not paused:
-                        _LOG.warning(
+                        _LOG.debug(
                             "[ble-nav-move] No position data for %.1fs. Pause move to point",
                             no_data_time,
                         )
@@ -1223,7 +1224,7 @@ class SunseekerBleSession:
                     await asyncio.sleep(0.5)
                 else:
                     if paused:
-                        _LOG.warning("New position data arrived. Continuing")
+                        _LOG.debug("New position data arrived. Continuing")
                         paused = False
 
                     current_heading = _ble_heading[0]
@@ -1287,7 +1288,7 @@ class SunseekerBleSession:
                     else:
                         _max_deviation = MAX_DEVIATION_WAY_POINT
                     if abs(heading_error) > _max_deviation:
-                        _LOG.warning(
+                        _LOG.debug(
                             "[ble-nav-move] Out of cource. diviation at %.3f max allowed %.3f; stopping moving and rotating again",
                             heading_error,
                             _max_deviation,
@@ -1302,7 +1303,7 @@ class SunseekerBleSession:
                         _movement_diviation[0] = True
                         return False
                     if distance_moved > distance_total + stop_distance + MAX_OVERSHOT:
-                        _LOG.warning(
+                        _LOG.debug(
                             "[ble-nav-move] overshot target with %.3fm; stopping moving and rotating again",
                             abs(distance_remaining - stop_distance),
                         )
@@ -1362,7 +1363,7 @@ class SunseekerBleSession:
                     "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
                 }
             )
-            _LOG.warning(
+            _LOG.debug(
                 "[ble-nav-move] timeout: remaining=%.3f m at target=(%.3f, %.3f)",
                 math.hypot(target_x - last_pos[0], target_y - last_pos[1]),
                 target_x,
@@ -1508,11 +1509,13 @@ class SunseekerBleSession:
 
         try:
             # Phase 1 — Init
+            await self.device.set_ble_status("Phase 1: init sequence")
             _LOG.debug("[ble-session] Phase 1: init sequence")
             await self._send_init_sequence()
             await asyncio.sleep(0.5)
 
             # Phase 2 — Pre-flight
+            await self.device.set_ble_status("Phase 2: pre-flight checks")
             _LOG.debug("[ble-session] Phase 2: pre-flight checks")
             await self.write(
                 {
@@ -1543,6 +1546,7 @@ class SunseekerBleSession:
             await asyncio.sleep(0.3)
 
             # Phase 3 — Enter RC mode - Leaving the dock
+            await self.device.set_ble_status("Phase 3: enter remote-control mode")
             _LOG.debug("[ble-session] Phase 3: enter remote-control mode")
             undocked = False
             await self.write(
@@ -1589,7 +1593,6 @@ class SunseekerBleSession:
                 }
             )
             await asyncio.sleep(0.5)
-
             # phase 4 - GPS-guided navigation
             # 1. Start polling posistion in thread
             # 2. Find the perfect angle to the next point
@@ -1605,9 +1608,11 @@ class SunseekerBleSession:
             #    setBuildLine "on" and Move to the next point and setBuildLine "off"
             # 10 when all points are reach do the "Phase 5 — Stop recording"
 
+            await self.device.set_ble_status(f"Phase 4 - navigation {n_wps} waypoint")
             _LOG.debug("[ble-session] Phase 4: navigating %d waypoints", n_wps)
 
             if not undocked:
+                await self.device.set_ble_status("Phase 4 - Error undocking")
                 _LOG.error(
                     "[ble-nav] mower did not clear dock within %.1fs, aborting navigation",
                     BLE_UNDOCK_WAIT_TIMEOUT,
@@ -1694,6 +1699,7 @@ class SunseekerBleSession:
                 state: int = 0  # 0 rotating, 1 moving and adjusting
                 ble_x, ble_y = _ble_pose[0]
                 best_angle = 0
+                await self.device.set_ble_status(f"Phase 4 - Point {wp_idx + 1}")
 
                 while not arrived and time.monotonic() < deadline:
                     ble_x, ble_y = _ble_pose[0]
@@ -1705,6 +1711,9 @@ class SunseekerBleSession:
 
                     if state == 0:  # rotating
                         # state0
+                        await self.device.set_ble_status(
+                            f"Phase 4 - Point {wp_idx + 1} - Locating"
+                        )
                         max_deviation = _max_angle_deviation_for_target(
                             ble_x, ble_y, target_x, target_y
                         )
@@ -1719,10 +1728,16 @@ class SunseekerBleSession:
                         ):
                             state = 1
                         else:
+                            await self.device.set_ble_status(
+                                f"Phase 4 - Point {wp_idx + 1} - Locating error"
+                            )
                             state = 90
                             arrived = False
                     if state == 1:  # moving and adjusting
                         # state1
+                        await self.device.set_ble_status(
+                            f"Phase 4 - Point {wp_idx + 1} - Moving"
+                        )
                         if await _move_towards_point(
                             target_x,
                             target_y,
@@ -1734,6 +1749,9 @@ class SunseekerBleSession:
                             accept_distance,
                         ):
                             arrived = True
+                            await self.device.set_ble_status(
+                                f"Phase 4 - Point {wp_idx + 1} - Arrived"
+                            )
                         elif _movement_overshot[0]:
                             _movement_overshot[0] = False
                             state = 0
@@ -1742,10 +1760,16 @@ class SunseekerBleSession:
                             state = 0
                         else:
                             state = 91
+                            await self.device.set_ble_status(
+                                f"Phase 4 - Point {wp_idx + 1} - Error"
+                            )
                     if state > 90:
                         break
 
                 if not arrived:
+                    await self.device.set_ble_status(
+                        f"Phase 4 - Point {wp_idx + 1} - Did not arrive"
+                    )
                     # Stop polling position (has to move to the end of the loop)
                     position_poll_stop.set()
                     if position_poll_task is not None:
@@ -1810,6 +1834,9 @@ class SunseekerBleSession:
                         map_border,
                     )
                     if not TESTING:
+                        await self.device.set_ble_status(
+                            f"Phase 4 - Point {wp_idx + 1} - Arrived new area"
+                        )
                         await self.write(
                             {
                                 "id": "getDevStatus",
@@ -1858,7 +1885,7 @@ class SunseekerBleSession:
                     "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
                 }
             )
-
+            await self.device.set_ble_status("Phase 4 - Moving done")
             # Once the final segment ends, stop polling pose
             # and wait for the mower to settle before issuing attemptStopBuildMap.
             _LOG.debug(
@@ -1871,6 +1898,7 @@ class SunseekerBleSession:
                 await asyncio.wait_for(position_poll_task, timeout=5)
 
             if TESTING:
+                await self.device.set_ble_status("Phase 4 - Testing succes going home")
                 if send_find_charger:
                     await self.write(
                         {
@@ -1892,6 +1920,7 @@ class SunseekerBleSession:
                 return None
 
             # Phase 5 — Stop recording
+            await self.device.set_ble_status("Phase 5 - Stop recording")
             _LOG.debug("[ble-session] Phase 5: stop recording")
             stop_recording_event_seen.clear()
             stop_recording_event_code[0] = None
@@ -1912,6 +1941,7 @@ class SunseekerBleSession:
                 await asyncio.sleep(0.1)
 
             if not stop_recording_event_seen.is_set():
+                await self.device.set_ble_status("Phase 5 - Stop recording failed")
                 _LOG.error(
                     "[ble-session] stop recording event %s not received within %.1fs; "
                     "aborting before getRegion/merge",
@@ -1945,6 +1975,7 @@ class SunseekerBleSession:
 
             if len(region_candidates) == 2:
                 merge_region = list(region_candidates)
+                await self.device.set_ble_status("Phase 5 - Merging areas")
                 _LOG.debug(
                     "[ble-session] merging regions for new-area flow: %s",
                     merge_region,
@@ -1970,6 +2001,7 @@ class SunseekerBleSession:
                     _LOG.warning(
                         "[ble-session] merge rejected by mower (event_code=22); aborting new-area flow"
                     )
+                    await self.device.set_ble_status("Phase 5 - Merge failed")
                     raise RuntimeError(
                         "merge rejected by mower (event_code=22); cannot merge "
                         "new-area boundary with existing regions"
@@ -1979,15 +2011,20 @@ class SunseekerBleSession:
                         "[ble-session] merge_result not received within %.1fs",
                         BLE_WAIT_MERGE_RESULT_TIMEOUT,
                     )
+                    await self.device.set_ble_status(
+                        "Phase 5 - Merge result not received"
+                    )
                     raise RuntimeError(
                         "merge_result not received for new-area boundary"
                     )
             elif len(region_candidates) == 1:
+                await self.device.set_ble_status("Phase 5 - New area no merge")
                 _LOG.debug(
                     "[ble-session] skip merge: getRegion returned 1 candidate (%s)",
                     region_candidates,
                 )
             elif len(region_candidates) > 2:
+                await self.device.set_ble_status("Phase 5 - New area no merge")
                 _LOG.warning(
                     "[ble-session] unexpected getRegion result size=%d (%s); no merge applied",
                     len(region_candidates),
@@ -2002,6 +2039,7 @@ class SunseekerBleSession:
                 await asyncio.sleep(0.1)
 
             # Phase 6 — Retrieve path data
+            await self.device.set_ble_status("Phase 6 - Getting the new area id")
             new_path_id: int | None = merge_result_path_id[0] or path_id_info.get(
                 "path_id"
             )
@@ -2011,6 +2049,9 @@ class SunseekerBleSession:
                     "[ble-session] NRID did not provide path_id within %.1fs",
                     BLE_WAIT_NRID_TIMEOUT,
                 )
+            await self.device.set_ble_status(
+                f"Phase 6 - pathid={new_path_id} Name: {zone_name}"
+            )
             _LOG.debug(
                 "[ble-session] Phase 6: path_id=%s  name=%r", new_path_id, zone_name
             )
@@ -2044,6 +2085,7 @@ class SunseekerBleSession:
                 await asyncio.sleep(1.0)
 
             # Phase 7 — Commit
+            await self.device.set_ble_status("Phase 7 - Comitting")
             _LOG.debug("[ble-session] Phase 7: commit")
             await self.write(
                 {
@@ -2055,6 +2097,7 @@ class SunseekerBleSession:
             await asyncio.sleep(BLE_AFTER_FINISH_BUILD_MAP_DELAY)
 
             if send_find_charger:
+                await self.device.set_ble_status("Phase 7 - Going home")
                 await self.write(
                     {
                         "id": "startFindCharger",
@@ -2063,7 +2106,7 @@ class SunseekerBleSession:
                     }
                 )
                 await asyncio.sleep(0.3)
-
+            await self.device.set_ble_status("Phase 7 - Disconnecting")
             await self.write(
                 {
                     "id": "bleDisconnect",

@@ -94,6 +94,7 @@ class SunseekerDevice:
 
         # callback function to datacoordinaton
         self.dataupdated = None
+        self.asyncdataupdated = None
 
         self.DeviceModel = ""
         self.DeviceName = ""
@@ -202,6 +203,13 @@ class SunseekerDevice:
         self._path_data_initial_delay_applied = False
         self._unloaded = False
         self._livemap_active_until = 0.0  # Track when livemap was last requested
+        self.ble_status: str = ""
+
+    async def set_ble_status(self, value: str) -> None:
+        """Setting Ble status from outside."""
+        self.ble_status = value
+        if self.asyncdataupdated:
+            await self.asyncdataupdated(self.devicesn)
 
     def InitDevice(self) -> None:
         """Setup the device."""
@@ -2294,11 +2302,14 @@ class SunseekerDevice:
         _sn = self.devicesn
 
         try:
-            async with SunseekerBleSession(_mac, device_sn=_sn, hass=hass) as ble:
+            async with SunseekerBleSession(
+                _mac, device_sn=_sn, dev_model=self.DeviceModel, hass=hass
+            ) as ble:
+                ble.device = self
                 result = await ble.navigate_and_record_boundary(
                     waypoints=_wpts,
                     map_border=_mb,
-                    arrival_threshold=0.10,
+                    arrival_threshold=0.05,
                     arrival_threshold_waypoints=0.50,
                     waypoint_timeout=180.0,
                     drive_speed=350,

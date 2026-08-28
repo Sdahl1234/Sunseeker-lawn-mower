@@ -646,6 +646,16 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_devices):
                         "mdi:wifi",
                         "sunseeker_robot_signal",
                     ),
+                    SunseekerBleSensor(
+                        coordinator,
+                        None,
+                        "Ble status",
+                        None,
+                        "ble_status",
+                        "",
+                        "mdi:bluetooth",
+                        "sunseeker_ble_status",
+                    ),
                 ]
             )
 
@@ -1369,6 +1379,47 @@ class SunseekerWorkRecordSensor(SunseekerEntity, SensorEntity):
             "records": self.device.work_records,
             "current_record_detail": self.device.work_record_detail,
         }
+
+    @property
+    def icon(self):
+        """Icon."""
+        return self._icon
+
+
+class SunseekerBleSensor(SunseekerEntity, SensorEntity):
+    """Sunseeker Ble sensor (MODEL_X and MODEL_S only)."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        device_class: SensorDeviceClass,
+        name: str,
+        unit: str,
+        valuepair: str,
+        source: str,
+        icon: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_device_class = device_class
+        self._attr_native_unit_of_measurement = unit
+        self._valuepair = valuepair
+        self._source = source
+        self._icon = icon
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.device = self._data_handler.get_device(self._sn)
+
+    @property
+    def state(self):
+        """Return the number of available work records."""
+        return self.device.ble_status
 
     @property
     def icon(self):

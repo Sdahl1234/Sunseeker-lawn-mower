@@ -71,6 +71,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.modelname = self.device.ModelName  # X3
         self.apptype = self.device.apptype
         self.device.dataupdated = self.dataupdated
+        self.device.asyncdataupdated = self.async_dataupdated
         self._schedule_store: Store = Store(
             hass,
             version=1,
@@ -232,6 +233,10 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             await self.device.map.generate_livemap()
         if self.map_entity:
             await self.map_entity.trigger_update()
+
+    async def async_dataupdated(self, devicesn: str):
+        """Async Callback when data is updated."""
+        await self.hass.async_add_executor_job(self.dataupdated, devicesn)
 
     def dataupdated(
         self,

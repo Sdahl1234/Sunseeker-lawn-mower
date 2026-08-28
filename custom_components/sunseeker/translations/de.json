@@ -343,7 +343,10 @@
         "state": {
           "docking": "Dockt"
         }
-      }
+      },
+			"sunseeker_ble_status": {
+				"name": "Ble status"
+			}
     },
     "binary_sensor": {
       "sunseeker_zone_finish_custom": {
