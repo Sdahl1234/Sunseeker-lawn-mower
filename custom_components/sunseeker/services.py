@@ -402,6 +402,11 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         )
 
     async def async_handle_execute_cmd(call: ServiceCall):
+        if not _LOGGER.isEnabledFor(logging.DEBUG):
+            raise HomeAssistantError(
+                "sunseeker.execute_cmd is only available when debug logging is enabled"
+            )
+
         entity_id = call.data["entity_id"]
         cmd_type = call.data["type"]
         data = dict(call.data["data"])

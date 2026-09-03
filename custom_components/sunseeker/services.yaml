@@ -218,7 +218,8 @@ backup_map:
 execute_cmd:
   name: Execute raw mower command
   description: >
-    Send a raw Sunseeker property or action command to a lawn mower entity.
+    Debug-only service for sending a raw Sunseeker property or action command to a lawn mower entity.
+    This command only works when the Sunseeker integration is configured with debug logging enabled.
     Use the command type to choose whether to call get_property, set_property, or set_action.
   fields:
     entity_id:
