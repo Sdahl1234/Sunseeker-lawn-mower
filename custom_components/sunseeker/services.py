@@ -36,6 +36,7 @@ SERVICE_START_MOWING_SELECTED_AREA = "start_mowing_selected_area"
 SERVICE_STOP_TASK = "stop_task"
 SERVICE_LOAD_WORK_RECORD = "load_work_record"
 SERVICE_GET_WORK_RECORDS = "get_work_records"
+SERVICE_EXECUTE_CMD = "execute_cmd"
 
 SET_DELETE_BACKUP = vol.Schema(
     {
@@ -129,6 +130,21 @@ GET_WORK_RECORDS_SCHEMA = vol.Schema(
             vol.Coerce(int), vol.Range(min=1, max=50)
         ),
         vol.Optional("append", default=False): cv.boolean,
+    }
+)
+
+EXECUTE_CMD_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
+        vol.Required("type"): vol.Any(
+            "get_property",
+            "set_property",
+            "set_action",
+            vol.All(vol.Coerce(int), vol.In([1, 2, 3])),
+        ),
+        vol.Required("data"): dict,
+        vol.Optional("cmdurl", default=None): vol.Any(None, cv.string),
+        vol.Optional("include_device_data", default=True): cv.boolean,
     }
 )
 
@@ -385,6 +401,43 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             append,
         )
 
+    async def async_handle_execute_cmd(call: ServiceCall):
+        entity_id = call.data["entity_id"]
+        cmd_type = call.data["type"]
+        data = dict(call.data["data"])
+        cmdurl = call.data.get("cmdurl")
+        include_device_data = call.data.get("include_device_data", True)
+
+        if isinstance(cmd_type, str):
+            cmd_type = {
+                "get_property": 1,
+                "set_property": 2,
+                "set_action": 3,
+            }[cmd_type]
+
+        ent_reg = er.async_get(hass)
+        entry = ent_reg.async_get(entity_id)
+        if not entry:
+            raise HomeAssistantError(f"Entity {entity_id} not found")
+
+        dsn = entry.unique_id.split(".")[
+            2
+        ]  # Example: "Sunseeker_lawnmower.name.CE1234563534545"
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+
+        if include_device_data:
+            data.setdefault("appId", coordinator.device.userid)
+            data.setdefault("deviceSn", coordinator.device.devicesn)
+
+        await hass.async_add_executor_job(
+            coordinator.device.execute_cmd,
+            data,
+            cmd_type,
+            cmdurl,
+        )
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_DELETE_BACKUP,
@@ -456,6 +509,12 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         SERVICE_SET_PIN,
         async_handle_set_pin,
         schema=SET_PIN_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_EXECUTE_CMD,
+        async_handle_execute_cmd,
+        schema=EXECUTE_CMD_SCHEMA,
     )
 
     return True

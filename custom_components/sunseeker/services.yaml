@@ -215,6 +215,55 @@ backup_map:
       required: true
       selector:
         text:
+execute_cmd:
+  name: Execute raw mower command
+  description: >
+    Send a raw Sunseeker property or action command to a lawn mower entity.
+    Use the command type to choose whether to call get_property, set_property, or set_action.
+  fields:
+    entity_id:
+      name: Mower entity
+      description: The mower entity to control.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    type:
+      name: Command type
+      description: The Sunseeker command type to execute.
+      required: true
+      selector:
+        select:
+          options:
+            - get_property
+            - set_property
+            - set_action
+    data:
+      name: Data
+      description: The payload to send to the mower command endpoint. appId and deviceSn are added automatically by default.
+      required: true
+      example: |
+        {
+          "id": "getDevAllProperty",
+          "key": "all",
+          "method": "get_property"
+        }
+      selector:
+        object: {}
+    cmdurl:
+      name: Custom command URL
+      description: Optional override for the API command path, for example "/iot_mower/wireless/device/". Leave blank to use the default endpoint.
+      required: false
+      selector:
+        text:
+    include_device_data:
+      name: Include appId and deviceSn
+      description: Add the mower's appId and deviceSn to the payload automatically. Disable this to send exactly the custom data you provide.
+      required: false
+      default: true
+      selector:
+        boolean:
+
 delete_backup:
   name: Delete backup map
   description: >

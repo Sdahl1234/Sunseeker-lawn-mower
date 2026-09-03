@@ -820,6 +820,53 @@ class SunseekerDevice:
                         self.func_refesh_token()
                     return
 
+    def execute_cmd(self, data, type, cmdurl: str | None = None):
+        """Executes get_property, set_property or set_action from service call."""
+        if type == 1:
+            self.get_property(data, cmdurl)
+        elif type == 2:
+            self.set_property(data, cmdurl)
+        elif type == 3:
+            self.set_action(data, cmdurl)
+
+    # not tested
+    def enter_pincode(self, pin: str):
+        """Verifys pin V1 models."""
+
+        def is_valid_pin(vpin: str) -> bool:
+            return bool(re.fullmatch(r"[0-9]{4}", vpin))
+
+        if not is_valid_pin(pin) or not is_valid_pin(pin):
+            raise ValueError("PIN must be exactly 4 digits from 0 to 9")
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            # "id": "verifyPwd",
+            "method": "inputPassword",
+            "password": pin,
+        }
+        self.set_property(data, "/app_wirelessv1_mower/wirelessv1/device/")
+
+    # teste on X models with result -1003
+    def verify_pincode(self, pin: str):
+        """Verifys pin X models."""
+
+        def is_valid_pin(vpin: str) -> bool:
+            return bool(re.fullmatch(r"[0-9]{4}", vpin))
+
+        if not is_valid_pin(pin) or not is_valid_pin(pin):
+            raise ValueError("PIN must be exactly 4 digits from 0 to 9")
+        data = {
+            "appId": self.userid,
+            "cmd": "verify_passwd",
+            # "action": "verify_passwd",
+            "deviceSn": self.devicesn,
+            "id": "verifyPwd",
+            "method": "action",
+            "password": pin,
+        }
+        self.set_action(data)
+
     def change_pincode(self, oldpin: str, newpin: str):
         """Change the pincode."""
 
@@ -899,9 +946,16 @@ class SunseekerDevice:
         }
         self.get_property(data)
 
-    def get_property(self, data):
+    def get_property(self, data, cmdurl: str | None = None):
         """Get property."""
-        endpoint = self.cmdurl + "get_property"
+        if self.model == MODEL_V1:
+            cmd = "getProperty"
+        else:
+            cmd = "get_property"
+        if cmdurl is not None:
+            endpoint = cmdurl + cmd
+        else:
+            endpoint = self.cmdurl + cmd
         try:
             url_ = self.url + endpoint
             headers_ = {
@@ -1982,11 +2036,14 @@ class SunseekerDevice:
         }
         self.set_property(data)
 
-    def set_action(self, data):
+    def set_action(self, data, cmdurl: str | None = None):
         """Set property status."""
         try:
             cmd = "action"
-            url = self.url + self.cmdurl + cmd
+            if cmdurl is not None:
+                url = self.url + cmdurl + cmd
+            else:
+                url = self.url + self.cmdurl + cmd
             headers = {
                 "Accept-Language": self.language,
                 "Authorization": "bearer " + self.access_token,
@@ -2021,14 +2078,17 @@ class SunseekerDevice:
                 self.dataupdated(self.devicesn)
             _LOGGER.error(f"Set action: failed {error}")  # noqa: G004
 
-    def set_property(self, data):
+    def set_property(self, data, cmdurl: str | None = None):
         """Set property status."""
         try:
             if self.model == MODEL_V1:
                 cmd = "setProperty"
             else:
                 cmd = "set_property"
-            url = self.url + self.cmdurl + cmd
+            if cmdurl is not None:
+                url = self.url + cmdurl + cmd
+            else:
+                url = self.url + self.cmdurl + cmd
             headers = {
                 "Accept-Language": self.language,
                 "Authorization": "bearer " + self.access_token,
