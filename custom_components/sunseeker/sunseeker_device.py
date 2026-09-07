@@ -2321,6 +2321,7 @@ class SunseekerDevice:
                 "mower must be on the charging station to start boundary recording",
                 self.mode,
             )
+            await self.set_ble_status("Failed: mower is not docked")
             return
 
         # if self.RTKSignal < 3:
@@ -2337,6 +2338,7 @@ class SunseekerDevice:
             _LOGGER.debug(
                 "add_work_area_ble: no new work area IDs found — nothing to record"
             )
+            await self.set_ble_status("Failed: no new work area found")
             return
 
         if len(new_ids) > 1:
@@ -2345,6 +2347,7 @@ class SunseekerDevice:
                 "per session, aborting",
                 len(new_ids),
             )
+            await self.set_ble_status("Failed: more than one new work area found")
             return
 
         area_id = next(iter(new_ids))
@@ -2355,6 +2358,7 @@ class SunseekerDevice:
                 "route points to reach the new area",
                 area_id,
             )
+            await self.set_ble_status("Failed: no access route for the new area")
             return
 
         _LOGGER.debug(
@@ -2380,6 +2384,7 @@ class SunseekerDevice:
                 area_id,
                 len(waypoints),
             )
+            await self.set_ble_status("Failed: new area has too few points")
             return
 
         map_border = MapBorder.NEW_AREA
@@ -2432,12 +2437,14 @@ class SunseekerDevice:
                 area_id,
                 exc,
             )
+            await self.set_ble_status(f"Failed: timed out ({exc})")
         except Exception as exc:  # noqa: BLE001
             _LOGGER.error(
                 "Add_work_area_ble: area %d BLE session failed: %s",
                 area_id,
                 exc,
             )
+            await self.set_ble_status(f"Failed: {exc}")
         finally:
             self.ble_session = None
             self.ble_pose = None

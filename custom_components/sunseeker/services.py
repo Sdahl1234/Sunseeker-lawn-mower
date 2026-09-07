@@ -1,5 +1,6 @@
 """Sunseeker service call handlers."""
 
+import asyncio
 import logging
 
 import voluptuous as vol
@@ -178,6 +179,11 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             coordinator.device.delete_backup,
             int(mapid),
         )
+        # delete_backup is a fire-and-forget cloud command with no ack, so
+        # give the server a moment before refetching the backup list.
+        await asyncio.sleep(2.0)
+        if coordinator.device.request_map_refresh:
+            await coordinator.device.request_map_refresh()
 
     async def async_handle_restore_map(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -196,6 +202,11 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             coordinator.device.restore_map,
             int(mapid),
         )
+        # restore_map is a fire-and-forget cloud command with no ack, so give
+        # the server a moment to apply it before refetching the map.
+        await asyncio.sleep(3.0)
+        if coordinator.device.request_map_refresh:
+            await coordinator.device.request_map_refresh()
 
     async def async_handle_backup_map(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -214,6 +225,11 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             coordinator.device.backup_map,
             int(mapid),
         )
+        # backup_map is a fire-and-forget cloud command with no ack, so give
+        # the server a moment before refetching the backup list.
+        await asyncio.sleep(2.0)
+        if coordinator.device.request_map_refresh:
+            await coordinator.device.request_map_refresh()
 
     async def async_handle_set_schedule(call: ServiceCall):
         entity_id = call.data["entity_id"]
