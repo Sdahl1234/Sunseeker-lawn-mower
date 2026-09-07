@@ -77,8 +77,13 @@ from bleak_retry_connector import (
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
-from homeassistant.components.bluetooth import async_ble_device_from_address
+from homeassistant.components.bluetooth import (
+    async_ble_device_from_address,
+    async_discovered_service_info,
+)
 from homeassistant.core import HomeAssistant
+
+from .devdebug import BLE_TESTING
 
 _LOG = logging.getLogger(__name__)
 
@@ -108,18 +113,25 @@ BLE_CONNECT_TIMEOUT = 20.0
 BLE_CONNECT_ATTEMPTS = 3
 BLE_CONNECT_RETRY_DELAY = 1.0
 
+# How long to wait for HA's bluetooth integration to have an advertisement
+# cached (e.g. right after HA/the ESPHome proxy restarts) before falling back
+# to a local BleakScanner.discover() scan.
+BLE_HA_DISCOVERY_POLL_TIMEOUT = 5.0
+BLE_HA_DISCOVERY_POLL_INTERVAL = 0.5
+
 # Navigation turn direction multiplier.
 # Some mower firmware interprets positive angular velocity opposite to the
 # mathematical convention used in this module.
 BLE_TURN_SIGN = -1
 
-TESTING = False
+TESTING = BLE_TESTING
 
 # Position
 BLE_POSE_POLL_KEY = "robot_pos"
 POSITION_REQUEST_TIMEOUT = 1.2
 MAX_POSITION_DATA_DELAY = 0.8
 POSITION_POLL_DELAY = 0.5
+INITIAL_POSITION_WAIT_TIMEOUT = 5.0
 MAX_ROTATE_TIME = 60
 ROTATION_SANITY_CHECK_DELAY = 2.0
 ROTATE_SLOW_DOWN_PERIOD = 0.5
@@ -132,7 +144,7 @@ NEAR_ARRIVAL_SPEED = 50
 NEAR_ARRIVAL_DISTANCE = 0.75
 MAX_HEADING_ERROR_BEFORE_CORRECTION = 0.10
 DRIVE_SPEED = 350
-ARRIVE_TIMEOUT = 120
+ARRIVE_TIMEOUT = 300
 MAX_CORRECTION = 120
 MAX_OVERSHOT = 0.2
 MAX_DEVIATION = 0.5
@@ -151,6 +163,8 @@ BLE_WAIT_MERGE_RESULT_TIMEOUT = 2.5
 BLE_WAIT_NRID_TIMEOUT = 2.5
 BLE_WAIT_STOP_RECORDING_EVENT_TIMEOUT = 20.0  # 10.0
 BLE_STOP_RECORDING_EVENT_CODES = (13,)
+BLE_WAIT_BUILD_MAP_STATUS_TIMEOUT = 3.0
+BLE_WAIT_BUILD_LINE_ACK_TIMEOUT = 3.0
 BLE_MERGE_FAILED_EVENT_CODES = (22,)
 BLE_AFTER_SET_BUILD_LINE_DELAY = 4.0
 BLE_BUILD_LINE_SEGMENT_ON_DELAY = 0.5
@@ -186,6 +200,10 @@ class MapBorder:
 
     NEW_AREA = 0
     EDIT_EXISTING_AREA = 1
+
+
+class NavigationCancelledError(Exception):
+    """Raised when an active boundary-navigation operation is cancelled."""
 
 
 # ===========================================================================
@@ -314,6 +332,55 @@ async def scan_for_mower(
     if not candidates and uuid_only_candidates:
         # Some mowers do not advertise a stable local name, so SN suffix matching
         # is impossible. Fall back to UUID-only detection in that case.
+        if sn_suffix and len(uuid_only_candidates) > 1:
+            return None
+        candidates = uuid_only_candidates
+
+    if not candidates:
+        return None
+    if sn_suffix:
+        for mac, name in candidates:
+            if _sn_suffix(name).upper() == sn_suffix:
+                return mac, name
+    return candidates[0]
+
+
+def _find_mower_via_ha_bluetooth(
+    hass: HomeAssistant, device_sn: str | None = None
+) -> tuple[str, str] | None:
+    """Look up an already-discovered mower from HA's Bluetooth integration.
+
+    Unlike :func:`scan_for_mower` (which drives a fresh local adapter scan via
+    ``BleakScanner.discover``), this reuses advertisements HA already tracks —
+    including mowers only reachable through an ESPHome/remote BLE proxy — so a
+    mower that is already visible to HA is found instantly, without scanning.
+    """
+    sn_suffix = device_sn[-6:].upper() if device_sn else None
+
+    def _normalize_uuid(value: str) -> str:
+        return value.strip().lower().strip("{}")
+
+    candidates: list[tuple[str, str]] = []
+    uuid_only_candidates: list[tuple[str, str]] = []
+    for info in async_discovered_service_info(hass, connectable=True):
+        name = info.name or ""
+        advertised_uuids = {_normalize_uuid(u) for u in (info.service_uuids or [])}
+        advertised_uuids.update(_normalize_uuid(u) for u in (info.service_data or {}))
+        has_noline_service = _normalize_uuid(NOLINE_SERVICE_UUID) in advertised_uuids
+
+        if _is_mower_name(name):
+            suffix = _sn_suffix(name).upper()
+            if sn_suffix and suffix != sn_suffix:
+                continue
+            candidates.append((info.address, name))
+            continue
+
+        if has_noline_service:
+            uuid_only_candidates.append(
+                (info.address, name or "Unknown Sunseeker mower")
+            )
+
+    if not candidates and uuid_only_candidates:
         if sn_suffix and len(uuid_only_candidates) > 1:
             return None
         candidates = uuid_only_candidates
@@ -524,18 +591,24 @@ async def _wait_for_mower_status(
     status_event: asyncio.Event,
     expected_status: int,
     timeout: float,
+    cancel_event: asyncio.Event | None = None,
 ) -> bool:
     """Wait for mower status push/update to reach expected_status."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
+        if cancel_event is not None and cancel_event.is_set():
+            raise NavigationCancelledError
         if status_ref[0] == expected_status:
             return True
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             break
+        wait_timeout = min(remaining, 0.1) if cancel_event is not None else remaining
         try:
-            await asyncio.wait_for(status_event.wait(), timeout=remaining)
+            await asyncio.wait_for(status_event.wait(), timeout=wait_timeout)
         except TimeoutError:
+            if remaining > wait_timeout:
+                continue
             break
         status_event.clear()
     return status_ref[0] == expected_status
@@ -601,6 +674,11 @@ class SunseekerBleSession:
         self._notify_uuid: str | None = None
         self._connected = False
         self._active_notify_callback: Any | None = None
+        self._navigation_cancel_event = asyncio.Event()
+
+    def cancel_navigation(self) -> None:
+        """Request cancellation of the active boundary-navigation operation."""
+        self._navigation_cancel_event.set()
 
     # ------------------------------------------------------------------
     # Context manager support
@@ -649,6 +727,11 @@ class SunseekerBleSession:
 
     async def _connect_client(self) -> None:
         """Establish a BLE client connection with retry support."""
+        if self._client is not None and self._client.is_connected:
+            _LOG.debug("[ble] reusing active connection to %s", self.mac)
+            self._connected = True
+            return
+
         mac_or_device = await self._resolve_device()
 
         if hasattr(mac_or_device, "address"):
@@ -676,6 +759,12 @@ class SunseekerBleSession:
         for attempt in range(1, BLE_CONNECT_ATTEMPTS + 1):
             if attempt > 1:
                 mac_or_device = await self._resolve_device()
+
+            # The mower is not advertising (e.g. it still thinks it's connected
+            # from a previous session that never disconnected cleanly), so
+            # force-drop any stale connection before trying to connect fresh.
+            with contextlib.suppress(Exception):
+                await close_stale_connections_by_address(mac_or_device)
 
             self._client = BleakClient(
                 mac_or_device,
@@ -714,7 +803,7 @@ class SunseekerBleSession:
 
             await ble.disconnect()
         """
-        if self._client is not None:
+        if self._client is not None and self._client.is_connected:
             try:  # noqa: SIM105
                 await self._client.disconnect()
             except Exception:  # noqa: BLE001
@@ -730,7 +819,7 @@ class SunseekerBleSession:
         """
         _LOG.info("[ble] connection dropped — reconnecting (mac=%s)", self.mac)
 
-        if self._client is not None:
+        if self._client is not None and not self._client.is_connected:
             try:  # noqa: SIM105
                 await self._client.disconnect()
             except Exception:  # noqa: BLE001
@@ -772,9 +861,13 @@ class SunseekerBleSession:
         Priority:
         1. If ``hass`` is available and ``mac`` is known → use HA's bluetooth
            integration so the connection routes through the best ESPHome proxy.
-        2. If ``mac`` is known but no ``hass`` → return raw MAC string for
+        2. If ``mac`` is unknown and ``hass`` is available → check devices HA's
+           bluetooth integration already knows about (including ones only seen
+           through a remote/ESPHome proxy) before doing anything else.
+        3. If ``mac`` is known but no ``hass`` → return raw MAC string for
            direct OS-level connection.
-        3. If ``mac`` is unknown → BLE scan using serial number.
+        4. If ``mac`` is still unknown → fall back to a local BLE scan using
+           the serial number.
         """
         if self._hass is not None and self.mac:
             try:
@@ -796,14 +889,42 @@ class SunseekerBleSession:
                 )
 
         if self.mac is None:
-            _LOG.debug("[ble] no MAC — scanning for mower (sn=%s)", self.device_sn)
-            result = await scan_for_mower(
-                device_sn=self.device_sn, timeout=self.scan_timeout
-            )
-            if result is None:
-                raise RuntimeError("No Sunseeker mower found during BLE scan")
-            self.mac, found_name = result
-            _LOG.debug("[ble] scan found mower: %s (%s)", self.mac, found_name)
+            if self._hass is not None:
+                found = None
+                deadline = time.monotonic() + BLE_HA_DISCOVERY_POLL_TIMEOUT
+                while True:
+                    found = _find_mower_via_ha_bluetooth(self._hass, self.device_sn)
+                    if found is not None or time.monotonic() >= deadline:
+                        break
+                    # HA's bluetooth cache may not have a fresh advertisement
+                    # yet right after startup/reconnect — give it a moment.
+                    await asyncio.sleep(BLE_HA_DISCOVERY_POLL_INTERVAL)
+                if found is not None:
+                    self.mac, found_name = found
+                    _LOG.debug(
+                        "[ble] found mower already known to HA bluetooth: %s (%s)",
+                        self.mac,
+                        found_name,
+                    )
+                    if self.device is not None:
+                        self.device.set_ble_mac(self.mac)
+                    ble_device = async_ble_device_from_address(
+                        self._hass, self.mac, connectable=True
+                    )
+                    if ble_device is not None:
+                        return ble_device
+
+            if self.mac is None:
+                _LOG.debug("[ble] no MAC — scanning for mower (sn=%s)", self.device_sn)
+                result = await scan_for_mower(
+                    device_sn=self.device_sn, timeout=self.scan_timeout
+                )
+                if result is None:
+                    raise RuntimeError("No Sunseeker mower found during BLE scan")
+                self.mac, found_name = result
+                _LOG.debug("[ble] scan found mower: %s (%s)", self.mac, found_name)
+                if self.device is not None:
+                    self.device.set_ble_mac(self.mac)
 
         return self.mac
 
@@ -937,6 +1058,37 @@ class SunseekerBleSession:
                 f"map_border={map_border} is not implemented"
             )
 
+        self._navigation_cancel_event.clear()
+
+        async def _sleep_or_cancel(delay: float) -> None:
+            """Sleep while responding promptly to a navigation cancellation."""
+            try:
+                await asyncio.wait_for(
+                    self._navigation_cancel_event.wait(), timeout=delay
+                )
+            except TimeoutError:
+                return
+            raise NavigationCancelledError
+
+        async def _wait_for_event_or_cancel(
+            event: asyncio.Event, timeout: float
+        ) -> bool:
+            """Wait for *event* up to *timeout*, aborting early on cancellation."""
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                if self._navigation_cancel_event.is_set():
+                    raise NavigationCancelledError
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                try:
+                    await asyncio.wait_for(event.wait(), timeout=min(remaining, 0.1))
+                except TimeoutError:
+                    continue
+                else:
+                    return True
+            return event.is_set()
+
         clean_wps = _strip_closing_duplicate(waypoints)
         n_wps = len(clean_wps)
         if n_wps < 3:
@@ -957,11 +1109,17 @@ class SunseekerBleSession:
         merge_failed_event = asyncio.Event()
         stop_recording_event_seen = asyncio.Event()
         stop_recording_event_code: list[int | None] = [None]
+        stop_recording_ack_seen: list[bool] = [False]
+        finish_build_map_event = asyncio.Event()
         region_id_list: list[int] = []
         region_candidates: list[int] = []
         _current_path_id: list = [None]
         _current_status: list[int | None] = [None]
         _status_event = asyncio.Event()
+        _current_build_map_status: list[int | None] = [None]
+        _build_map_status_event = asyncio.Event()
+        _current_build_line: list[int | None] = [None]
+        _build_line_event = asyncio.Event()
         _ble_pose: list[tuple[float, float] | None] = [None]
         _ble_heading: list[float | None] = [None]
         _ble_pose_ts: list[float] = [0.0]
@@ -974,6 +1132,10 @@ class SunseekerBleSession:
         # _rotation_overshot: list[bool] = [False]
         _movement_overshot: list[bool] = [False]
         _movement_diviation: list[bool] = [False]
+        position_poll_stop = asyncio.Event()
+        position_poll_task: asyncio.Task[None] | None = None
+        loop = asyncio.get_running_loop()
+        _pose_tasks: set[asyncio.Task] = set()
 
         async def _wait_for_rmt_control_response_with_pos_check(
             angle: float, deviation: float, timeout: float
@@ -991,7 +1153,7 @@ class SunseekerBleSession:
                 if remaining <= 0:
                     break
 
-                await asyncio.sleep(0.05)
+                await _sleep_or_cancel(0.05)
             return _wait_for_rmt[0]
 
         async def _wait_for_rmt_control_response(timeout: float) -> bool:
@@ -1003,7 +1165,7 @@ class SunseekerBleSession:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     break
-                await asyncio.sleep(0.05)
+                await _sleep_or_cancel(0.05)
             return _wait_for_rmt[0]
 
         async def _rotate_to_angle(
@@ -1035,7 +1197,7 @@ class SunseekerBleSession:
                 while (
                     t == _last_position_received_ts[0] and waittime < time.monotonic()
                 ):
-                    await asyncio.sleep(0.4)
+                    await _sleep_or_cancel(0.4)
 
             async def _apply_slow_turn(sign: int, speed: int, waittime: float) -> None:
                 await self.write(
@@ -1045,7 +1207,7 @@ class SunseekerBleSession:
                         "params": {"cmd": "remote_ctl", "v": 0, "w": sign * speed},
                     }
                 )
-                await asyncio.sleep(waittime)
+                await _sleep_or_cancel(waittime)
                 await self.write(
                     {
                         "id": "remoteControlMap",
@@ -1090,7 +1252,7 @@ class SunseekerBleSession:
                             }
                         )
                     paused = True
-                    await asyncio.sleep(0.5)
+                    await _sleep_or_cancel(0.5)
                 else:
                     if paused:
                         _LOG.debug("New position data arrived. Continuing")
@@ -1114,7 +1276,7 @@ class SunseekerBleSession:
                             }
                         )
                         # we wait 1 second and check again.
-                        await asyncio.sleep(ROTATION_SANITY_CHECK_DELAY)
+                        await _sleep_or_cancel(ROTATION_SANITY_CHECK_DELAY)
                         current_error = _cur_error()
                         abs_error = abs(current_error)
                         _LOG.debug(
@@ -1155,12 +1317,12 @@ class SunseekerBleSession:
                         speed = ROTATE_SLOW_DOWN_SPEED
                     if slowdown:
                         await _wait_for_new_position(2.0)
-                        await asyncio.sleep(0.1)
+                        await _sleep_or_cancel(0.1)
                         await _apply_slow_turn(
                             direction, ROTATE_SLOW_DOWN_SPEED, current_slowdown_period
                         )
                     else:
-                        await asyncio.sleep(0.1)
+                        await _sleep_or_cancel(0.1)
                         await _apply_turn(direction)
 
             await self.write(
@@ -1203,7 +1365,7 @@ class SunseekerBleSession:
             while time.monotonic() < deadline:
                 pos = _ble_pose[0]
                 if pos is None:
-                    await asyncio.sleep(0.2)
+                    await _sleep_or_cancel(0.2)
                     continue
 
                 no_data_time = time.monotonic() - _last_position_received_ts[0]
@@ -1221,7 +1383,7 @@ class SunseekerBleSession:
                             }
                         )
                     paused = True
-                    await asyncio.sleep(0.5)
+                    await _sleep_or_cancel(0.5)
                 else:
                     if paused:
                         _LOG.debug("New position data arrived. Continuing")
@@ -1229,7 +1391,7 @@ class SunseekerBleSession:
 
                     current_heading = _ble_heading[0]
                     if current_heading is None:
-                        await asyncio.sleep(0.2)
+                        await _sleep_or_cancel(0.2)
                         continue
 
                     best_angle = _best_angle_to_point(
@@ -1345,7 +1507,7 @@ class SunseekerBleSession:
                         v = forward_speed
 
                     await _wait_for_rmt_control_response(timeout=2.0)
-                    await asyncio.sleep(0.4)
+                    await _sleep_or_cancel(0.4)
                     _wait_for_rmt[0] = False
                     await self.write(
                         {
@@ -1371,6 +1533,41 @@ class SunseekerBleSession:
             )
             return False
 
+        async def _set_build_line_and_wait(value: bool) -> bool:
+            """Send setBuildLine and wait for the matching ack."""
+            _current_build_line[0] = None
+            _build_line_event.clear()
+            await self.write(
+                {
+                    "id": "setBuildLine",
+                    "method": "set_property",
+                    "params": {"key": "build_line", "value": value},
+                }
+            )
+            # {"code":0,"data":{"build_line":true|false}}
+            return await _wait_for_mower_status(
+                _current_build_line,
+                _build_line_event,
+                expected_status=1 if value else 0,
+                timeout=BLE_WAIT_BUILD_LINE_ACK_TIMEOUT,
+                cancel_event=self._navigation_cancel_event,
+            )
+
+        async def _set_build_line_with_retry(value: bool) -> None:
+            """Send setBuildLine, retry once on missing ack, then continue regardless."""
+            if await _set_build_line_and_wait(value):
+                return
+            _LOG.warning(
+                "[ble-session] build_line=%s ack not observed within %.1fs; retrying",
+                value,
+                BLE_WAIT_BUILD_LINE_ACK_TIMEOUT,
+            )
+            if not await _set_build_line_and_wait(value):
+                _LOG.warning(
+                    "[ble-session] build_line=%s ack still not observed after retry; continuing",
+                    value,
+                )
+
         async def _poll_ble_pose() -> None:
             now = time.monotonic()
             if _ble_pose_request_pending[0]:
@@ -1388,6 +1585,57 @@ class SunseekerBleSession:
             _ble_pose_request_pending[0] = True
             _ble_pose_request_sent_ts[0] = now
 
+        def _schedule_pose_update(x: float, y: float, heading: float | None) -> None:
+            # Notifications arrive from the BLE callback, so hand the state
+            # update back to the loop instead of awaiting it here.
+            if self.device is None or x is None or y is None:
+                return
+            task = loop.create_task(self.device.set_ble_pose(x, y, heading))
+            _pose_tasks.add(task)
+            task.add_done_callback(_pose_tasks.discard)
+
+        def _update_int_ref(
+            payload: Any, key: str, ref: list[int | None], event: asyncio.Event
+        ) -> None:
+            if not (isinstance(payload, dict) and key in payload):
+                return
+            with contextlib.suppress(TypeError, ValueError):
+                ref[0] = int(payload[key])
+                event.set()
+
+        # Simple "msg_id → (payload key, ref, event)" acks tracked via _update_int_ref.
+        _ack_trackers = {
+            "getBuildMapStatus": (
+                "build_map_status",
+                _current_build_map_status,
+                _build_map_status_event,
+            ),
+            "setBuildLine": ("build_line", _current_build_line, _build_line_event),
+        }
+
+        def _handle_robot_pos(payload: dict) -> None:
+            robot_pos = payload["robot_pos"]
+            x = y = heading = None
+            if isinstance(robot_pos, dict):
+                point = robot_pos.get("point")
+                if isinstance(point, (list, tuple)) and len(point) >= 2:
+                    x = _coerce_float(point[0])
+                    y = _coerce_float(point[1])
+                heading = _coerce_float(robot_pos.get("angle"))
+
+            _ble_pose_request_pending[0] = False
+            # Old values
+            _prev_pos[0] = _ble_pose[0]
+            _prev_angle[0] = _ble_heading[0]
+            _last_position_received_ts[0] = time.monotonic()
+
+            # x, y, heading = pose
+            _ble_pose[0] = (x, y)
+            _ble_pose_ts[0] = time.monotonic()
+            if heading is not None:
+                _ble_heading[0] = heading
+            _schedule_pose_update(x, y, _ble_heading[0])
+
         def _on_notify(_handle, data: bytearray) -> None:
             decrypted = noline_decrypt(bytes(data))
             if not decrypted:
@@ -1401,10 +1649,12 @@ class SunseekerBleSession:
                 return
             msg_id = msg.get("id", "")
             payload = msg.get("data", {})
-            if isinstance(payload, dict) and "status" in payload:
-                with contextlib.suppress(TypeError, ValueError):
-                    _current_status[0] = int(payload["status"])
-                    _status_event.set()
+            _update_int_ref(payload, "status", _current_status, _status_event)
+            # {"code":0,"data":{"build_map_status":0},"id":"getBuildMapStatus","method":"get_property"}
+            # {"code":0,"data":{"build_line":true},"id":"setBuildLine","method":"set_property"}
+            tracker = _ack_trackers.get(msg_id)
+            if tracker is not None:
+                _update_int_ref(payload, *tracker)
             # {"code":0,"data":{"cmd":"remote_ctl"},"id":"remoteControlMap","method":"action"}
             if (
                 msg_id == "remoteControlMap"
@@ -1419,26 +1669,7 @@ class SunseekerBleSession:
                 and isinstance(payload, dict)
                 and "robot_pos" in payload
             ):
-                robot_pos = payload["robot_pos"]
-                x = y = heading = None
-                if isinstance(robot_pos, dict):
-                    point = robot_pos.get("point")
-                    if isinstance(point, (list, tuple)) and len(point) >= 2:
-                        x = _coerce_float(point[0])
-                        y = _coerce_float(point[1])
-                    heading = _coerce_float(robot_pos.get("angle"))
-
-                _ble_pose_request_pending[0] = False
-                # Old values
-                _prev_pos[0] = _ble_pose[0]
-                _prev_angle[0] = _ble_heading[0]
-                _last_position_received_ts[0] = time.monotonic()
-
-                # x, y, heading = pose
-                _ble_pose[0] = (x, y)
-                _ble_pose_ts[0] = time.monotonic()
-                if heading is not None:
-                    _ble_heading[0] = heading
+                _handle_robot_pos(payload)
                 # _LOG.debug(
                 #    "[ble-nav] BLE pose sample from id=%s: x=%.3f y=%.3f heading=%s",
                 #    msg_id,
@@ -1449,6 +1680,21 @@ class SunseekerBleSession:
             if msg_id == "NRID":
                 path_id_info.update(payload)
                 _LOG.debug("[ble-session] NRID: %s", path_id_info)
+            elif (
+                msg_id == "attemptStopBuildMap"
+                and isinstance(payload, dict)
+                and payload.get("cmd") == "attempt_stop_build_map"
+            ):
+                # {"code":0,"data":{"cmd":"attempt_stop_build_map"}}
+                stop_recording_ack_seen[0] = True
+                stop_recording_event_seen.set()
+            elif (
+                msg_id == "FinishBuildMap"
+                and isinstance(payload, dict)
+                and payload.get("cmd") == "finish_build_map"
+            ):
+                # {"code":0,"data":{"cmd":"finish_build_map"}}
+                finish_build_map_event.set()
             elif msg_id == "report_event":
                 if isinstance(payload, dict):
                     event_code = payload.get("event_code")
@@ -1512,7 +1758,7 @@ class SunseekerBleSession:
             await self.device.set_ble_status("Phase 1: init sequence")
             _LOG.debug("[ble-session] Phase 1: init sequence")
             await self._send_init_sequence()
-            await asyncio.sleep(0.5)
+            await _sleep_or_cancel(0.5)
 
             # Phase 2 — Pre-flight
             await self.device.set_ble_status("Phase 2: pre-flight checks")
@@ -1524,11 +1770,11 @@ class SunseekerBleSession:
                     "params": {"key": "status"},
                 }
             )
-            await asyncio.sleep(0.1)
+            await _sleep_or_cancel(0.1)
             await self.write(
                 {"id": "sCPro", "method": "action", "params": {"cmd": "self_checkPro"}}
             )
-            await asyncio.sleep(0.2)
+            await _sleep_or_cancel(0.2)
             await self.write(
                 {
                     "id": "functionCheck",
@@ -1536,6 +1782,9 @@ class SunseekerBleSession:
                     "method": "function_check",
                 }
             )
+            # {"id":"getBuildMapStatus","params":{"key":"build_map_status"}}
+            _current_build_map_status[0] = None
+            _build_map_status_event.clear()
             await self.write(
                 {
                     "id": "getBuildMapStatus",
@@ -1543,7 +1792,17 @@ class SunseekerBleSession:
                     "params": {"key": "build_map_status"},
                 }
             )
-            await asyncio.sleep(0.3)
+            if not await _wait_for_mower_status(
+                _current_build_map_status,
+                _build_map_status_event,
+                expected_status=0,
+                timeout=BLE_WAIT_BUILD_MAP_STATUS_TIMEOUT,
+                cancel_event=self._navigation_cancel_event,
+            ):
+                _LOG.warning(
+                    "[ble-session] build_map_status=0 not observed within %.1fs; continuing",
+                    BLE_WAIT_BUILD_MAP_STATUS_TIMEOUT,
+                )
 
             # Phase 3 — Enter RC mode - Leaving the dock
             await self.device.set_ble_status("Phase 3: enter remote-control mode")
@@ -1566,6 +1825,7 @@ class SunseekerBleSession:
                 _status_event,
                 expected_status=14,
                 timeout=BLE_UNDOCK_WAIT_TIMEOUT,
+                cancel_event=self._navigation_cancel_event,
             ):
                 _LOG.warning(
                     "[ble-session] status=14 (Leaving the charger) not observed after RC entry"
@@ -1575,6 +1835,7 @@ class SunseekerBleSession:
                 _status_event,
                 expected_status=1,
                 timeout=BLE_UNDOCK_WAIT_TIMEOUT,
+                cancel_event=self._navigation_cancel_event,
             ):
                 undocked = True
             else:
@@ -1592,7 +1853,7 @@ class SunseekerBleSession:
                     "method": "function_check",
                 }
             )
-            await asyncio.sleep(0.5)
+            await _sleep_or_cancel(0.5)
             # phase 4 - GPS-guided navigation
             # 1. Start polling posistion in thread
             # 2. Find the perfect angle to the next point
@@ -1660,8 +1921,22 @@ class SunseekerBleSession:
 
             position_poll_task = asyncio.create_task(_position_poll_loop())
 
+            # The poll loop above requests the first sample asynchronously; wait
+            # for it to actually arrive before using _ble_pose[0] below.
+            wait_deadline = time.monotonic() + INITIAL_POSITION_WAIT_TIMEOUT
+            while _ble_pose[0] is None and time.monotonic() < wait_deadline:
+                await _sleep_or_cancel(0.1)
+            if _ble_pose[0] is None:
+                position_poll_stop.set()
+                with contextlib.suppress(TimeoutError):
+                    await asyncio.wait_for(position_poll_task, timeout=5)
+                raise RuntimeError(
+                    "navigate_and_record_boundary: no initial mower position "
+                    f"received within {INITIAL_POSITION_WAIT_TIMEOUT:.1f}s"
+                )
+
             # Now we are undocked and ready to start
-            await asyncio.sleep(10)  # jeg skal lige nå ud til robotten
+            # await asyncio.sleep(10)  # jeg skal lige nå ud til robotten
             # loopishere
             for wp_idx, target in enumerate(clean_wps):
                 startpoint_x, startpoint_y = _ble_pose[0]
@@ -1687,13 +1962,8 @@ class SunseekerBleSession:
                 if wp_idx > prewaypointcount:
                     _LOG.debug("[ble-nav] wp%d setBuildLine=true", wp_idx + 1)
                     if not TESTING:
-                        await self.write(
-                            {
-                                "id": "setBuildLine",
-                                "method": "set_property",
-                                "params": {"key": "build_line", "value": True},
-                            }
-                        )
+                        await _set_build_line_with_retry(True)
+                        # {"code":0,"data":{"build_line":true}}
                         await asyncio.sleep(BLE_BUILD_LINE_SEGMENT_ON_DELAY)
 
                 state: int = 0  # 0 rotating, 1 moving and adjusting
@@ -1844,38 +2114,48 @@ class SunseekerBleSession:
                                 "params": {"key": "status"},
                             }
                         )
-                        await self.write(
-                            {
-                                "id": "startBuildMap",
-                                "method": "action",
-                                "params": {
-                                    "cmd": "start_build_map",
-                                    "map_border": map_border,
-                                },
-                            }
-                        )
-                        if not await _wait_for_mower_status(
-                            _current_status,
-                            _status_event,
-                            expected_status=4,
-                            timeout=BLE_WAIT_MAP_READY_TIMEOUT,
-                        ):
-                            _LOG.warning(
-                                "[ble-session] status=4 (auto-mapping) not observed after startBuildMap; continuing"
+
+                        async def _start_build_map_and_wait() -> bool:
+                            _current_status[0] = None
+                            _status_event.clear()
+                            await self.write(
+                                {
+                                    "id": "startBuildMap",
+                                    "method": "action",
+                                    "params": {
+                                        "cmd": "start_build_map",
+                                        "map_border": map_border,
+                                    },
+                                }
                             )
+                            # {"code":0,"data":{"cmd":"start_build_map"}} **startBuildMap ACK**
+                            # {"data":{"event_code":39}} Mapping started event
+                            # {"data":{"status":15}} **status=15 = mapping mode**
+                            # {"data":{"status":4}} **status=4 = map recording active**
+                            return await _wait_for_mower_status(
+                                _current_status,
+                                _status_event,
+                                expected_status=4,
+                                timeout=BLE_WAIT_MAP_READY_TIMEOUT,
+                                cancel_event=self._navigation_cancel_event,
+                            )
+
+                        if not await _start_build_map_and_wait():
+                            _LOG.warning(
+                                "[ble-session] status=4 (auto-mapping) not observed after startBuildMap; retrying"
+                            )
+                            if not await _start_build_map_and_wait():
+                                _LOG.warning(
+                                    "[ble-session] status=4 (auto-mapping) still not observed after retry; continuing"
+                                )
                         await asyncio.sleep(BLE_AFTER_SET_BUILD_LINE_DELAY)
 
                 # arrived at 2nd+ area point 0, 1, 2, (3, "4", "5", "6")
                 if wp_idx > prewaypointcount and arrived:
                     _LOG.debug("[ble-nav] wp%d setBuildLine=false", wp_idx + 1)
                     if not TESTING:
-                        await self.write(
-                            {
-                                "id": "setBuildLine",
-                                "method": "set_property",
-                                "params": {"key": "build_line", "value": False},
-                            }
-                        )
+                        await _set_build_line_with_retry(False)
+                        # {"code":0,"data":{"build_line":false}}
                         await asyncio.sleep(BLE_BUILD_LINE_SEGMENT_OFF_DELAY)
 
             await self.write(
@@ -1917,6 +2197,9 @@ class SunseekerBleSession:
                     }
                 )
                 await asyncio.sleep(0.5)
+                # Fake the final phase so the card's progress panel reaches
+                # 100% — testing mode never runs the real Phase 5-7 commands.
+                await self.device.set_ble_status("Phase 7 - Disconnecting (test mode)")
                 return None
 
             # Phase 5 — Stop recording
@@ -1924,6 +2207,7 @@ class SunseekerBleSession:
             _LOG.debug("[ble-session] Phase 5: stop recording")
             stop_recording_event_seen.clear()
             stop_recording_event_code[0] = None
+            stop_recording_ack_seen[0] = False
             await self.write(
                 {
                     "id": "attemptStopBuildMap",
@@ -1931,6 +2215,7 @@ class SunseekerBleSession:
                     "params": {"cmd": "attempt_stop_build_map", "in": []},
                 }
             )
+            # {"code":0,"data":{"cmd":"attempt_stop_build_map"}}
             stop_event_deadline = (
                 time.monotonic() + BLE_WAIT_STOP_RECORDING_EVENT_TIMEOUT
             )
@@ -1943,20 +2228,25 @@ class SunseekerBleSession:
             if not stop_recording_event_seen.is_set():
                 await self.device.set_ble_status("Phase 5 - Stop recording failed")
                 _LOG.error(
-                    "[ble-session] stop recording event %s not received within %.1fs; "
-                    "aborting before getRegion/merge",
+                    "[ble-session] stop recording not confirmed (no attemptStopBuildMap "
+                    "ack or report_event %s) within %.1fs; aborting before getRegion/merge",
                     BLE_STOP_RECORDING_EVENT_CODES,
                     BLE_WAIT_STOP_RECORDING_EVENT_TIMEOUT,
                 )
                 raise RuntimeError(
-                    "stop recording event 13 not received; cannot continue to "
-                    "getRegion or merge"
+                    "attemptStopBuildMap ack / stop recording event 13 not received; "
+                    "cannot continue to getRegion or merge"
                 )
 
-            _LOG.debug(
-                "[ble-session] stop recording confirmed by report_event code=%s",
-                stop_recording_event_code[0],
-            )
+            if stop_recording_ack_seen[0]:
+                _LOG.debug(
+                    "[ble-session] stop recording confirmed by attemptStopBuildMap ack"
+                )
+            else:
+                _LOG.debug(
+                    "[ble-session] stop recording confirmed by report_event code=%s",
+                    stop_recording_event_code[0],
+                )
 
             await self.write({"id": "getRegion", "method": "get_region"})
             await asyncio.sleep(0.3)
@@ -2087,6 +2377,7 @@ class SunseekerBleSession:
             # Phase 7 — Commit
             await self.device.set_ble_status("Phase 7 - Comitting")
             _LOG.debug("[ble-session] Phase 7: commit")
+            finish_build_map_event.clear()
             await self.write(
                 {
                     "id": "FinishBuildMap",
@@ -2094,7 +2385,14 @@ class SunseekerBleSession:
                     "params": {"cmd": "finish_build_map"},
                 }
             )
-            await asyncio.sleep(BLE_AFTER_FINISH_BUILD_MAP_DELAY)
+            # {"code":0,"data":{"cmd":"finish_build_map"},"id":"FinishBuildMap","method":"action"}
+            if not await _wait_for_event_or_cancel(
+                finish_build_map_event, BLE_AFTER_FINISH_BUILD_MAP_DELAY
+            ):
+                _LOG.warning(
+                    "[ble-session] finish_build_map ack not observed within %.1fs; continuing",
+                    BLE_AFTER_FINISH_BUILD_MAP_DELAY,
+                )
 
             if send_find_charger:
                 await self.device.set_ble_status("Phase 7 - Going home")
@@ -2105,7 +2403,7 @@ class SunseekerBleSession:
                         "params": {"cmd": "start_find_charger"},
                     }
                 )
-                await asyncio.sleep(0.3)
+                await _sleep_or_cancel(0.3)
             await self.device.set_ble_status("Phase 7 - Disconnecting")
             await self.write(
                 {
@@ -2114,7 +2412,40 @@ class SunseekerBleSession:
                     "params": {"cmd": "ble_disconnect"},
                 }
             )
-            await asyncio.sleep(0.5)
+            await _sleep_or_cancel(0.5)
+
+        except NavigationCancelledError:
+            _LOG.info("[ble-session] navigation cancelled; returning mower to dock")
+            position_poll_stop.set()
+            if position_poll_task is not None:
+                with contextlib.suppress(TimeoutError):
+                    await asyncio.wait_for(position_poll_task, timeout=5)
+            await self.device.set_ble_status("Navigation cancelled - returning to dock")
+            for command in (
+                {
+                    "id": "remoteControlMap",
+                    "method": "action",
+                    "params": {"cmd": "remote_ctl", "v": 0, "w": 0},
+                },
+                {
+                    "id": "attemptStopBuildMap",
+                    "method": "action",
+                    "params": {"cmd": "attempt_stop_build_map", "in": []},
+                },
+                {
+                    "id": "startFindCharger",
+                    "method": "action",
+                    "params": {"cmd": "start_find_charger"},
+                },
+                {
+                    "id": "bleDisconnect",
+                    "method": "action",
+                    "params": {"cmd": "ble_disconnect"},
+                },
+            ):
+                with contextlib.suppress(Exception):
+                    await self.write(command)
+            return None
 
         finally:
             try:  # noqa: SIM105
@@ -2122,6 +2453,7 @@ class SunseekerBleSession:
             except Exception:  # noqa: BLE001
                 pass
             self._active_notify_callback = None
+            await self.disconnect()
 
         boundary = parse_path_chunks(path_chunks.get(new_path_id, []))
         regions = {

@@ -25,7 +25,12 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                         coordinator,
                         "Charger GPS position",
                         "sunseeker_charger_gps",
-                    )
+                    ),
+                    SunseekerBleMacText(
+                        coordinator,
+                        "BLE MAC address",
+                        "sunseeker_ble_mac",
+                    ),
                 ]
             )
         if coordinator.model == MODEL_OLD:
@@ -379,3 +384,51 @@ class SunseekerChargerGPSText(SunseekerEntity, TextEntity):
             self.data_coordinator.async_set_updated_data(self.data_coordinator.data)
         except (ValueError, IndexError) as ex:
             _LOGGER.debug("Invalid charger GPS value '%s': %s", value, ex)
+
+
+_MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+
+
+class SunseekerBleMacText(SunseekerEntity, TextEntity):
+    """Text entity to set the mower's BLE MAC address manually.
+
+    Use this when the mower can't be auto-discovered (e.g. it still has a
+    stale BLE connection from a previous session and has stopped
+    advertising), so ``sunseeker.set_map``'s add-work-area BLE flow can
+    connect directly instead of scanning.
+    """
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._name = name
+        self.mode = "text"
+        self.native_max = 17
+        self.native_min = 0
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+
+    @property
+    def native_value(self) -> str:
+        """Return the currently known BLE MAC address."""
+        return self.data_coordinator.device.DeviceBluetooth
+
+    async def async_set_value(self, value: str) -> None:
+        """Store a manually entered MAC address, or clear if empty."""
+        value = value.strip()
+        if value == "":
+            self.data_coordinator.device.set_ble_mac("")
+            self.async_write_ha_state()
+            return
+        if not _MAC_RE.match(value):
+            _LOGGER.debug("Invalid BLE MAC address '%s'", value)
+            return
+        self.data_coordinator.device.set_ble_mac(value.upper())
+        self.async_write_ha_state()

@@ -603,6 +603,9 @@
       "sunseeker_charger_gps": {
         "name": "GPS-Position der Ladestation"
       },
+      "sunseeker_ble_mac": {
+        "name": "BLE-MAC-Adresse"
+      },
       "sunseeker_led_color_code": {
         "name": "Frontlicht-Farbcode"
       },

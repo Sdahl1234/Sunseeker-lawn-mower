@@ -93,6 +93,12 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             version=1,
             key=f"{DOMAIN}.map_settings.{self.devicesn.replace(' ', '_')}",
         )
+        self._ble_mac_store: Store = Store(
+            hass,
+            version=1,
+            key=f"{DOMAIN}.ble_mac.{self.devicesn.replace(' ', '_')}",
+        )
+        self.device.ble_mac_updated = self._on_ble_mac_updated
         self.jdata = self.data_default
         self.livemap_entity = None  # MowerImage
         self.map_entity = None  # MowerImage
@@ -104,6 +110,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             self.hass.add_job(self.schedule_load_data)
         self.hass.add_job(self.charger_gps_load_data)
         self.hass.add_job(self.map_settings_load_data)
+        self.hass.add_job(self.ble_mac_load_data)
         self.hass.add_job(self.device.map.reload_maps)
         if self.device.model in (MODEL_X, MODEL_S):
             uv = mqtt_update_values()
@@ -224,6 +231,25 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             {"draw_mode": self.device.map.draw_mode}
         )
 
+    async def ble_mac_load_data(self):
+        """Load the last known BLE MAC from storage.
+
+        Survives HA restarts so a mower that stopped advertising (e.g. it
+        still thinks it's connected from a session that never disconnected
+        cleanly) can still be reached directly by address.
+        """
+        data = await self._ble_mac_store.async_load()
+        if data:
+            try:
+                self.device.DeviceBluetooth = str(data["mac"])
+            except (KeyError, TypeError) as ex:
+                _LOGGER.debug("BLE mac load failed: %s", ex)
+
+    def _on_ble_mac_updated(self, mac: str) -> None:
+        """Callback from the device when its BLE MAC is discovered/updated."""
+        self.hass.add_job(self._ble_mac_store.async_save, {"mac": mac})
+        self.hass.add_job(self.async_set_updated_data, None)
+
     async def set_map_draw_mode(self, mode: str) -> None:
         """Set the map draw mode, persist it, and regenerate the map image."""
         self.device.map.draw_mode = mode
@@ -287,6 +313,13 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
     async def Handle_image_update(self, uv: mqtt_update_values):
         """Function to call none async."""
         if self.model in (MODEL_V, MODEL_V1):
+            return
+        if self.device.ble_session is not None:
+            # A BLE add-work-area session owns the map/image state until it
+            # finishes; refreshing it now would race with the recording.
+            _LOGGER.debug(
+                "Image handler - skipped, BLE session active %s", self.devicesn
+            )
             return
         async with self._image_update_lock:
             _LOGGER.debug("Image handler - start %s", self.devicesn)

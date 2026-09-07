@@ -591,6 +591,9 @@
             "sunseeker_charger_gps": {
                 "name": "Latausaseman GPS-sijainti"
             },
+            "sunseeker_ble_mac": {
+                "name": "BLE MAC-osoite"
+            },
             "sunseeker_led_color_code": {
                 "name": "Ajovalon värikoodi"
             },

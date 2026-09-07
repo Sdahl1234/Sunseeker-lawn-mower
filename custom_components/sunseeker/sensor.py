@@ -1422,6 +1422,17 @@ class SunseekerBleSensor(SunseekerEntity, SensorEntity):
         return self.device.ble_status
 
     @property
+    def extra_state_attributes(self):
+        """Expose the live mower pose so the map card can draw the mower."""
+        pose = self.device.ble_pose or {}
+        return {
+            "session_active": self.device.ble_session is not None,
+            "mower_x": pose.get("x"),
+            "mower_y": pose.get("y"),
+            "mower_angle": pose.get("angle"),
+        }
+
+    @property
     def icon(self):
         """Icon."""
         return self._icon

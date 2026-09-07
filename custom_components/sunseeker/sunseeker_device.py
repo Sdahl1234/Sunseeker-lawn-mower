@@ -204,12 +204,38 @@ class SunseekerDevice:
         self._unloaded = False
         self._livemap_active_until = 0.0  # Track when livemap was last requested
         self.ble_status: str = ""
+        self.ble_pose: dict | None = None
+        self.ble_session: SunseekerBleSession | None = None
+        # Called with the new MAC whenever it's discovered/updated, so the
+        # coordinator can persist it across HA restarts.
+        self.ble_mac_updated = None
 
     async def set_ble_status(self, value: str) -> None:
         """Setting Ble status from outside."""
         self.ble_status = value
         if self.asyncdataupdated:
             await self.asyncdataupdated(self.devicesn)
+
+    async def set_ble_pose(self, x: float, y: float, angle: float | None) -> None:
+        """Store the live mower pose reported during a BLE session."""
+        self.ble_pose = {"x": x, "y": y, "angle": angle}
+        if self.asyncdataupdated:
+            await self.asyncdataupdated(self.devicesn)
+
+    async def cancel_ble_session(self) -> bool:
+        """Abort the running BLE work-area recording session."""
+        session = self.ble_session
+        if session is None:
+            return False
+        session.cancel_navigation()
+        await self.set_ble_status("Stopping - waiting for the mower")
+        return True
+
+    def set_ble_mac(self, mac: str) -> None:
+        """Store the mower's BLE MAC and notify listeners for persistence."""
+        self.DeviceBluetooth = mac
+        if self.ble_mac_updated:
+            self.ble_mac_updated(mac)
 
     def InitDevice(self) -> None:
         """Setup the device."""
@@ -2362,28 +2388,35 @@ class SunseekerDevice:
         _sn = self.devicesn
 
         try:
-            async with SunseekerBleSession(
+            ble = SunseekerBleSession(
                 _mac, device_sn=_sn, dev_model=self.DeviceModel, hass=hass
-            ) as ble:
-                ble.device = self
+            )
+            # Must be set before entering the context manager: __aenter__
+            # connects immediately, and _resolve_device() needs .device to
+            # persist a newly discovered MAC via set_ble_mac().
+            ble.device = self
+            async with ble:
+                self.ble_session = ble
                 result = await ble.navigate_and_record_boundary(
                     waypoints=_wpts,
                     map_border=_mb,
                     arrival_threshold=0.05,
                     arrival_threshold_waypoints=0.50,
-                    waypoint_timeout=180.0,
+                    waypoint_timeout=300.0,
                     drive_speed=350,
                     prewaypointcount=prewaypointcount,
                 )
-            result = result or {}
-            _LOGGER.info(
-                "Add_work_area_ble: area %d recorded successfully "
-                "path_id=%s name=%r boundary_pts=%d",
-                area_id,
-                result.get("path_id"),
-                result.get("name"),
-                len(result.get("boundary", [])),
-            )
+            if not result:
+                _LOGGER.info("Add_work_area_ble: area %d aborted", area_id)
+            else:
+                _LOGGER.info(
+                    "Add_work_area_ble: area %d recorded successfully "
+                    "path_id=%s name=%r boundary_pts=%d",
+                    area_id,
+                    result.get("path_id"),
+                    result.get("name"),
+                    len(result.get("boundary", [])),
+                )
         except TimeoutError as exc:
             _LOGGER.error(
                 "Add_work_area_ble: area %d timed out — mower sent home: %s",
@@ -2396,6 +2429,9 @@ class SunseekerDevice:
                 area_id,
                 exc,
             )
+        finally:
+            self.ble_session = None
+            self.ble_pose = None
 
     def _get_new_region_route(self, mapdata, area_id: int) -> list[list[float]]:
         """Return the route the mower drives to reach the new work area.

@@ -341,3 +341,16 @@ get_work_records:
       default: false
       selector:
         boolean:
+
+cancel_add_work_area:
+  name: Cancel add work area
+  description: >
+    Abort the running Bluetooth session that records a new work area and send the mower home.
+  fields:
+    entity_id:
+      name: Image entity with map data
+      description: The mowers Image entity used to start the work area recording.
+      required: true
+      selector:
+        entity:
+          domain: image
