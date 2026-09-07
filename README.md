@@ -4,7 +4,7 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.28
+#### V1.2.29
 
 ## Tested models
   - Adano RM5, RM6, RM9
@@ -16,6 +16,8 @@ Home assistant integration from lawnmower using the robotic-mower connect APP (O
 
 ## Install
 #### HACS (recommended)
+[Install Sunseeker robotic mower in Home Assistant](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sdahl1234&repository=Sunseeker-lawn-mower&category=integration)
+
 In HACS, search for **Sunseeker robotic mower** and click **Download**.
 Restart Home Assistant and go to *Devices and Services* and press *+Add integration*.
 Search for *Sunseeker robotic mower* and add it.
@@ -45,11 +47,11 @@ This integration requires **Python 3.14 or newer**. Home Assistant 2025.1 and la
 English, Danish, German, Finnish, French and Polish
 
 # Lovelace cards
-- **Schedule card** *(wireless models and old models)* - https://github.com/Sdahl1234/sunseeker-schedule-card
-- **Mower control card** *(wireless models only)* - https://github.com/Sdahl1234/sunseeker-mower-control-card
-- **Mower zones card** *(wireless models only)* - https://github.com/Sdahl1234/sunseeker-zone-card
-- **Mower map-edit card** *(wireless models only)* - https://github.com/Sdahl1234/sunseeker-map-edit-card
-- **Mower work-record card** *(wireless models only)* - https://github.com/Sdahl1234/sunseeker-work-record-card
+- **Schedule card** *(wireless models and old models)* - [Source](https://github.com/Sdahl1234/sunseeker-schedule-card) | [Install in Home Assistant](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sdahl1234&repository=sunseeker-schedule-card&category=plugin)
+- **Mower control card** *(wireless models only)* - [Source](https://github.com/Sdahl1234/sunseeker-mower-control-card) | [Install in Home Assistant](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sdahl1234&repository=sunseeker-mower-control-card&category=plugin)
+- **Mower zones card** *(wireless models only)* - [Source](https://github.com/Sdahl1234/sunseeker-zone-card) | [Install in Home Assistant](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sdahl1234&repository=sunseeker-zone-card&category=plugin)
+- **Mower map-edit card** *(wireless models only)* - [Source](https://github.com/Sdahl1234/sunseeker-map-edit-card) | [Install in Home Assistant](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sdahl1234&repository=sunseeker-map-edit-card&category=plugin)
+- **Mower work-record card** *(wireless models only)* - [Source](https://github.com/Sdahl1234/sunseeker-work-record-card) | [Install in Home Assistant](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sdahl1234&repository=sunseeker-work-record-card&category=plugin)
 
 # Entities
 
@@ -210,8 +212,9 @@ In addition to the shared entities above, X and S models include:
 - **Cutterplade health** - Cutterplade health percentage *(all X and S)*
 - **Cutterplade time left** - Time remaining before cutterplade cleaning *(all X and S)*
 - **Actual mowing time** - Time mowed since last charge *(all X and S)*
-- **Work records** - Work record data (used with the work record card) *(all X and S)*
+- **Work Records** - Work record data (used with the work record card) *(all X and S)*
 - **Work region** - Zone the mower is currently in, based on its live map position *(all X and S)*
+- **Ble status** - Live status text of an in-progress BLE-recorded work zone (e.g. `Phase 4 - Point 3 - Moving`, `Failed: ...`), with the mower's live map position/heading and waypoint count as attributes. Used by the map-edit card's progress panel *(all X and S)*
 - **{zone} Estimated time** - Estimated mowing time per zone *(all X and S)*
 - **{zone} Area** - Area size per zone *(all X and S)*
 - **Small blade health** - Small blade health percentage *(X3 Gen2/3, X5 Gen2/3, X9 only)*
@@ -230,9 +233,11 @@ In addition to the shared entities above, X and S models include:
 - **Heat map** - Heat map image *(all X and S)*
 - **Wifi map** - Wifi signal map image *(all X and S)*
 - **4G net map** - 4G net map *(X3 Gen2/3, X4 X5 Gen2/3, X7 Gen2/3, X9, S3, S4 only only)*
+- **Mower image** - Photo of the mower itself, used by the map-edit card to draw its live position while recording a new work zone *(all wireless models)*
 
 ### Text
 - **Charger GPS position** - Set the GPS coordinates of the charging station for accurate mower position tracking *(all X and S)*
+- **BLE MAC address** - Manually set the mower's Bluetooth MAC address when it can't be auto-discovered (e.g. it still has a stale BLE connection and has stopped advertising). Auto-populated and persisted once discovered *(all X and S)*
 
 ### Device tracker
 - **Mower location** - Anti-theft GPS location *(all wireless models)*
@@ -299,6 +304,22 @@ https://github.com/Sdahl1234/sunseeker-schedule-card
 https://github.com/Sdahl1234/sunseeker-map-edit-card
 <img width="1612" height="539" alt="image" src="https://github.com/user-attachments/assets/c7018b9c-1d94-495f-b47d-ab00c1029020" />
 
+### Adding a new work zone *(X and S models only)*
+The map-edit card can drive the mower over Bluetooth to record a new work zone boundary.
+A few things to know before drawing one:
+
+- **Drawing close to an existing zone merges into it; drawing away from it creates a new, separate zone.**
+  If the new outline touches or overlaps an existing work zone, the mower treats it as an extension of
+  that zone. If it's drawn away from any existing zone, it becomes its own, brand-new zone.
+- **A new (non-merged) zone has no passage to reach it.** Without a passage, the mower has no drivable
+  route back to the charger from that zone once it's done, so **you must add a passage** connecting the
+  new zone to an existing one (or to the charger route) before mowing it, or the mower may not be able
+  to find its way home.
+- Only one new zone can be recorded per submit, and the map must be otherwise unedited when you start.
+
+See the card's own README for the full step-by-step flow, BLE requirements, and troubleshooting:
+https://github.com/Sdahl1234/sunseeker-map-edit-card#adding-a-work-zone
+
 ## Mower control card
 https://github.com/Sdahl1234/sunseeker-mower-control-card
 <img width="901" height="714" alt="image" src="https://github.com/user-attachments/assets/78235dbd-8555-4bed-b386-7da1a846735f" />
@@ -339,6 +360,8 @@ For the **Mower position** tracker to be accurate, the integration needs to know
 | **Backup map** | Save the current map under a backup ID | `entity_id` (lawn_mower), `mapid` – backup ID string |
 | **Restore map** | Restore a previously backed-up map | `entity_id` (lawn_mower), `mapid` – backup ID string |
 | **Delete backup** | Delete a backed-up map | `entity_id` (lawn_mower), `mapid` – backup ID string |
+| **Refresh map** | Force-refetch the map and backup list from the server (e.g. after a backup, restore, or new work zone that hasn't shown up yet) | `entity_id` (image entity) |
+| **Cancel add work area** | Abort the running BLE session that records a new work zone and send the mower home | `entity_id` (image entity) |
 | **Change pin** | Change the mower's 4-digit PIN code | `entity_id` (lawn_mower), `old_pin`, `new_pin` |
 | **Load work record** | Load the detail of a single work record by URL | `entity_id` (lawn_mower), `url` – work record URL |
 | **Get work records** | Retrieve a page of work records | `entity_id` (lawn_mower), `pos` (default 1), `count` (default 10, max 50), `append` (default false) |
