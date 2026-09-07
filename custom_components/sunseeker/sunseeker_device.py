@@ -206,9 +206,16 @@ class SunseekerDevice:
         self.ble_status: str = ""
         self.ble_pose: dict | None = None
         self.ble_session: SunseekerBleSession | None = None
+        # Total Phase-4 waypoint count, exposed on the ble_status sensor so
+        # the card can restore per-waypoint progress after a page reload.
+        self.ble_waypoint_total: int = 0
         # Called with the new MAC whenever it's discovered/updated, so the
         # coordinator can persist it across HA restarts.
         self.ble_mac_updated = None
+        # Called after a BLE session commits a new work area, to force-fetch
+        # the authoritative map from the server (MQTT alone doesn't reliably
+        # signal that a full map refetch is needed).
+        self.request_map_refresh = None
 
     async def set_ble_status(self, value: str) -> None:
         """Setting Ble status from outside."""
@@ -2417,6 +2424,8 @@ class SunseekerDevice:
                     result.get("name"),
                     len(result.get("boundary", [])),
                 )
+                if self.request_map_refresh:
+                    await self.request_map_refresh()
         except TimeoutError as exc:
             _LOGGER.error(
                 "Add_work_area_ble: area %d timed out — mower sent home: %s",
@@ -2432,6 +2441,7 @@ class SunseekerDevice:
         finally:
             self.ble_session = None
             self.ble_pose = None
+            self.ble_waypoint_total = 0
 
     def _get_new_region_route(self, mapdata, area_id: int) -> list[list[float]]:
         """Return the route the mower drives to reach the new work area.

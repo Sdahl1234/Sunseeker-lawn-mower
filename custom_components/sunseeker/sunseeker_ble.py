@@ -1869,6 +1869,7 @@ class SunseekerBleSession:
             #    setBuildLine "on" and Move to the next point and setBuildLine "off"
             # 10 when all points are reach do the "Phase 5 — Stop recording"
 
+            self.device.ble_waypoint_total = n_wps
             await self.device.set_ble_status(f"Phase 4 - navigation {n_wps} waypoint")
             _LOG.debug("[ble-session] Phase 4: navigating %d waypoints", n_wps)
 

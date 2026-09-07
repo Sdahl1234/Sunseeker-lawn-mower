@@ -1430,6 +1430,7 @@ class SunseekerBleSensor(SunseekerEntity, SensorEntity):
             "mower_x": pose.get("x"),
             "mower_y": pose.get("y"),
             "mower_angle": pose.get("angle"),
+            "waypoint_total": self.device.ble_waypoint_total,
         }
 
     @property

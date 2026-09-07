@@ -99,6 +99,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             key=f"{DOMAIN}.ble_mac.{self.devicesn.replace(' ', '_')}",
         )
         self.device.ble_mac_updated = self._on_ble_mac_updated
+        self.device.request_map_refresh = self._request_map_refresh
         self.jdata = self.data_default
         self.livemap_entity = None  # MowerImage
         self.map_entity = None  # MowerImage
@@ -249,6 +250,20 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         """Callback from the device when its BLE MAC is discovered/updated."""
         self.hass.add_job(self._ble_mac_store.async_save, {"mac": mac})
         self.hass.add_job(self.async_set_updated_data, None)
+
+    async def _request_map_refresh(self) -> None:
+        """Force-refetch the map from the server (e.g. after a BLE-recorded zone).
+
+        MQTT map updates only trigger a full refetch when the payload carries
+        ``backup_map_amount``/``map_temp_name``, which doesn't reliably happen
+        right after a BLE session commits a new zone — so ask the server
+        directly instead of waiting for that.
+        """
+        await self.hass.async_add_executor_job(self.device.map.get_map_info)
+        await self.hass.async_add_executor_job(self.device.map.get_backup_map_data)
+        await self.device.map.reload_maps()
+        if self.map_entity:
+            await self.map_entity.trigger_update()
 
     async def set_map_draw_mode(self, mode: str) -> None:
         """Set the map draw mode, persist it, and regenerate the map image."""
