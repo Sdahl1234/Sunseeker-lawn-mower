@@ -39,8 +39,15 @@ SERVICE_LOAD_WORK_RECORD = "load_work_record"
 SERVICE_GET_WORK_RECORDS = "get_work_records"
 SERVICE_EXECUTE_CMD = "execute_cmd"
 SERVICE_CANCEL_ADD_WORK_AREA = "cancel_add_work_area"
+SERVICE_REFRESH_MAP = "refresh_map"
 
 CANCEL_ADD_WORK_AREA_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
+    }
+)
+
+REFRESH_MAP_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_ENTITY_ID): cv.entity_id,
     }
@@ -301,6 +308,21 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
             raise HomeAssistantError(f"Device for {entity_id} not found")
         if not await coordinator.device.cancel_ble_session():
             raise HomeAssistantError("No work area recording session is running")
+
+    async def async_handle_refresh_map(call: ServiceCall):
+        entity_id = call.data["entity_id"]
+
+        ent_reg = er.async_get(hass)
+        entry = ent_reg.async_get(entity_id)
+        if not entry:
+            raise HomeAssistantError(f"Entity {entity_id} not found")
+
+        dsn = entry.unique_id.split("_")[1]  # Example: "mower_CE1234563534545"
+        coordinator = _find_coordinator(hass, dsn)
+        if coordinator is None:
+            raise HomeAssistantError(f"Device for {entity_id} not found")
+        if coordinator.device.request_map_refresh:
+            await coordinator.device.request_map_refresh()
 
     async def async_handle_set_pin(call: ServiceCall):
         entity_id = call.data["entity_id"]
@@ -565,6 +587,13 @@ async def async_setup_services(hass: HomeAssistant) -> bool:  # noqa: C901
         SERVICE_CANCEL_ADD_WORK_AREA,
         async_handle_cancel_add_work_area,
         schema=CANCEL_ADD_WORK_AREA_SCHEMA,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REFRESH_MAP,
+        async_handle_refresh_map,
+        schema=REFRESH_MAP_SCHEMA,
     )
 
     return True

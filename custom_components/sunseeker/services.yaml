@@ -354,3 +354,18 @@ cancel_add_work_area:
       selector:
         entity:
           domain: image
+
+refresh_map:
+  name: Refresh map
+  description: >
+    Force-refetch the map and backup list from the server. Useful after a backup,
+    restore, or new work area since the mower can take a moment to upload the
+    updated map to the server after the request.
+  fields:
+    entity_id:
+      name: Image entity with map data
+      description: The mowers Image entity to refresh.
+      required: true
+      selector:
+        entity:
+          domain: image
