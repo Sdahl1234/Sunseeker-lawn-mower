@@ -233,12 +233,11 @@ class SunseekerBinarySensor(SunseekerEntity, BinarySensorEntity):
             return self.device.mul_en
         if self._valuepair == "mul_auto":
             return self.device.mul_auto
-        if self.device.model == MODEL_OLD:
-            if self._valuepair == "deviceOnlineFlag":
+        if self._valuepair == "deviceOnlineFlag":
+            if self.device.model == MODEL_OLD:
                 flag = self.device.deviceOnlineFlag
                 return isinstance(flag, dict) and flag.get("online") == "1"
-        elif self.device.model in [MODEL_V, MODEL_V1, MODEL_X, MODEL_S]:
-            if self._valuepair == "deviceOnlineFlag":
+            elif self.device.model in [MODEL_V, MODEL_V1, MODEL_X, MODEL_S]:
                 flag = self.device.deviceOnlineFlag
                 if isinstance(flag, dict):
                     return flag.get("online") == "1"
