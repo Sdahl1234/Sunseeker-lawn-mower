@@ -849,6 +849,12 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
                     codes = OLD_ERROR_CODES_EN
                 val = codes.get(self.device.errortype, f"Error {self.device.errortype}")
             elif self.device.model in (MODEL_OLD, MODEL_V1):
+                onlineflag = self.device.deviceOnlineFlag
+                if isinstance(onlineflag, dict):
+                    if onlineflag.get("online") == "1":
+                        return SUNSEEKER_OFFLINE
+                elif bool(onlineflag):
+                    return SUNSEEKER_OFFLINE
                 if ival == 0:
                     val = SUNSEEKER_STANDBY
                 elif ival == 1:
