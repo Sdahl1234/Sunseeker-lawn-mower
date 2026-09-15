@@ -9,5 +9,5 @@
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/Sdahl1234/Sunseeker-lawn-mower/issues",
   "requirements": ["requests", "paho-mqtt", "pycryptodome"],
-  "version": "1.2.28"
+  "version": "1.2.29"
 }

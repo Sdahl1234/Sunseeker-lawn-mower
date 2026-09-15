@@ -203,6 +203,7 @@ class SunseekerDevice:
         self._path_data_initial_delay_applied = False
         self._unloaded = False
         self._livemap_active_until = 0.0  # Track when livemap was last requested
+        self.charger_gps_configured = None
         self.ble_status: str = ""
         self.ble_pose: dict | None = None
         self.ble_session: SunseekerBleSession | None = None
@@ -509,7 +510,10 @@ class SunseekerDevice:
             is_valid = (
                 self.need_request_map_path
                 and self._is_mowing()
-                and self.is_livemap_active()
+                and (
+                    self.is_livemap_active()
+                    or (self.charger_gps_configured and self.charger_gps_configured())
+                )
             )
 
             if not self.need_request_map_path:

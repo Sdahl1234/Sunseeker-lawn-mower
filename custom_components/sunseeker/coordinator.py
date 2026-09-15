@@ -98,6 +98,7 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             version=1,
             key=f"{DOMAIN}.ble_mac.{self.devicesn.replace(' ', '_')}",
         )
+        self.device.charger_gps_configured = self._charger_gps_configured
         self.device.ble_mac_updated = self._on_ble_mac_updated
         self.device.request_map_refresh = self._request_map_refresh
         self.jdata = self.data_default
@@ -216,6 +217,10 @@ class SunseekerDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         await self._charger_gps_store.async_save(
             {"lat": self.charger_gps_lat, "lng": self.charger_gps_lng}
         )
+
+    def _charger_gps_configured(self) -> bool:
+        """Return whether a charger GPS position is configured."""
+        return self.charger_gps_lat is not None and self.charger_gps_lng is not None
 
     async def map_settings_load_data(self):
         """Load map settings from storage."""
