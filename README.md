@@ -35,12 +35,12 @@ Search for *Sunseeker robotic mower* and add it.
 This integration requires **Python 3.14 or newer**. Home Assistant 2025.1 and later ships with Python 3.14, so no manual action is needed when running a supported HA release.
 
 ## Configuration
-- Producent: If your mower is not on the list, just select sunseeker
+- Brand: If your mower is not on the list, just select sunseeker
 - Model_id: New if your mower is wireless
 - Region: EU or US. Only used in wireless mowers
-- Name: Any name you want to call your account.
 - Email and Password: Your loging credentials to the app.
-<img width="340" height="579" alt="image" src="https://github.com/user-attachments/assets/ce71f60a-338c-41f6-b3ff-6789bcb44810" />
+<img width="451" height="471" alt="image" src="https://github.com/user-attachments/assets/58417579-9c8c-4a38-8e37-8b77b3158025" />
+
 
 
 ## Translation
@@ -275,7 +275,8 @@ In addition to the shared entities above, X and S models include:
   - **{zonename} Zigzag angle 1–4** *(Number)* - The angle for each zigzag pass in this zone (0–180°). Only active when zone Cutting pattern is Zigzag.
   - **{zonename} Zigzag active 1–4** *(Switch)* - Enable/disable each zigzag angle slot for this zone.
 - Easy way to control the zones is using the zone card https://github.com/Sdahl1234/sunseeker-zone-card
-<img width="1004" height="853" alt="image" src="https://github.com/user-attachments/assets/e5e50298-bd6f-44fe-b570-79ac30f8e55d" />
+<img width="910" height="810" alt="image" src="https://github.com/user-attachments/assets/2a8ef0ff-a91c-4063-a790-6ac7019eaed9" />
+
 
 ## Schedule
 - **Pause schedule** *(V1, X, S)* - Turns on/off the schedule
@@ -291,7 +292,8 @@ The old-model payload format is:
 Point the card at the **Schedule** sensor entity.
 
 https://github.com/Sdahl1234/sunseeker-schedule-card
-<img width="905" height="854" alt="image" src="https://github.com/user-attachments/assets/f8674bcc-1afd-4ef4-9890-8c9e57b1ca72" />
+<img width="810" height="804" alt="image" src="https://github.com/user-attachments/assets/a2ebdace-d194-44de-8759-2ad4f14defe0" />
+
 
 ## Map *(X and S models only)*
 - **Map** - Image of the map - Use this one in the sunseeker-map-edit-card
@@ -302,7 +304,8 @@ https://github.com/Sdahl1234/sunseeker-schedule-card
 
 ## Mower Map edit card
 https://github.com/Sdahl1234/sunseeker-map-edit-card
-<img width="1612" height="539" alt="image" src="https://github.com/user-attachments/assets/c7018b9c-1d94-495f-b47d-ab00c1029020" />
+<img width="1587" height="469" alt="image" src="https://github.com/user-attachments/assets/e27ca38f-3846-41e0-ad68-f78047ef07b9" />
+
 
 ### Adding a new work zone *(X and S models only)*
 The map-edit card can drive the mower over Bluetooth to record a new work zone boundary.
@@ -322,7 +325,8 @@ https://github.com/Sdahl1234/sunseeker-map-edit-card#adding-a-work-zone
 
 ## Mower control card
 https://github.com/Sdahl1234/sunseeker-mower-control-card
-<img width="901" height="714" alt="image" src="https://github.com/user-attachments/assets/78235dbd-8555-4bed-b386-7da1a846735f" />
+<img width="819" height="601" alt="image" src="https://github.com/user-attachments/assets/cbecb334-e782-4741-bc41-88c67b945e82" />
+
 
 ## Mower work record card *(X and S models only)*
 - **Sensors**
