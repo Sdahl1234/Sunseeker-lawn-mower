@@ -1242,7 +1242,13 @@ class SunseekermqttController:
                 with contextlib.suppress(json.JSONDecodeError, ValueError):
                     datanode = json.loads(datanode)
             if isinstance(datanode, dict):
-                if device.model in (MODEL_V1, MODEL_OLD):
+                if device.model == MODEL_OLD:
+                    online_flag = datanode.get("online")
+                    if online_flag is not None:
+                        device.deviceOnlineFlag = {
+                            "online": "0" if online_flag in (0, False, "0") else "1"
+                        }
+                elif device.model == MODEL_V1:
                     device.deviceOnlineFlag = datanode
                 self.handle_mqtt_data_data(upd, nu, data, datanode, device)
 

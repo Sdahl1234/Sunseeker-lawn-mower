@@ -317,8 +317,11 @@ class SunseekerDevice:
 
         if self.apptype == APPTYPE_OLD:
             self.station = self.devicedata["data"].get("stationFlag")
-            if self.devicedata["data"].get("onlineFlag"):
-                self.deviceOnlineFlag = {"online": "1"}
+            online_flag = self.devicedata["data"].get("onlineFlag")
+            if online_flag is not None:
+                self.deviceOnlineFlag = {
+                    "online": "0" if online_flag in (0, False, "0") else "1"
+                }
             self.zoneOpenFlag = self.settings["data"].get("zoneOpenFlag")
             self.mul_en = self.settings["data"].get("zoneOpenFlag")
             self.mul_auto = self.settings["data"].get("zoneAutomaticFlag")
