@@ -1,5 +1,6 @@
 """Support for Sunseeker lawnmower."""
 
+from functools import partial
 import json
 import logging
 
@@ -539,9 +540,19 @@ class _SunseekerLedBaseSwitch(SunseekerEntity, SwitchEntity):
         )
 
     async def _set_led(self, **kwargs) -> None:
+        led_flag, color_code, mode_code, start, end, night_flag = self._led_args(
+            **kwargs
+        )
         await self.hass.async_add_executor_job(
-            self.device.set_led,
-            *self._led_args(**kwargs),
+            partial(
+                self.device.set_led,
+                ledFlag=led_flag,
+                ledColorCode=color_code,
+                ledEnd=end,
+                ledModeCode=mode_code,
+                ledStart=start,
+                ledNightFlag=night_flag,
+            )
         )
 
 

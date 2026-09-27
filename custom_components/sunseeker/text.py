@@ -1,5 +1,6 @@
 """Support for Sunseeker lawnmower."""
 
+from functools import partial
 import json
 import logging
 import re
@@ -155,27 +156,20 @@ class _SunseekerLedBaseText(SunseekerEntity, TextEntity):
         self.device = self._data_handler.get_device(self._sn)
 
     async def _set_led(self, **kwargs) -> None:
-        await self.hass.async_add_executor_job(
-            self.device.set_led,
-            self.device.ledFlag
-            if kwargs.get("ledFlag") is None
-            else kwargs.get("ledFlag"),
-            self.device.ledColorCode
-            if kwargs.get("ledColorCode") is None
-            else kwargs.get("ledColorCode"),
-            self.device.ledModeCode
-            if kwargs.get("ledModeCode") is None
-            else kwargs.get("ledModeCode"),
-            self.device.ledStart
-            if kwargs.get("ledStart") is None
-            else kwargs.get("ledStart"),
-            self.device.ledEnd
-            if kwargs.get("ledEnd") is None
-            else kwargs.get("ledEnd"),
-            self.device.ledNightFlag
-            if kwargs.get("ledNightFlag") is None
-            else kwargs.get("ledNightFlag"),
-        )
+        led_args = {
+            name: kwargs.get(name)
+            if kwargs.get(name) is not None
+            else getattr(self.device, name)
+            for name in (
+                "ledFlag",
+                "ledColorCode",
+                "ledEnd",
+                "ledModeCode",
+                "ledStart",
+                "ledNightFlag",
+            )
+        }
+        await self.hass.async_add_executor_job(partial(self.device.set_led, **led_args))
 
 
 class SunseekerLedColorCodeText(_SunseekerLedBaseText):
