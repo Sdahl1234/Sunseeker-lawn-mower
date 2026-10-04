@@ -1979,12 +1979,12 @@ class SunseekerDevice:
         }
         self.set_property(data)
 
+    # This method is not used
     def set_schedue_mode(self, mode: int):
         """Set schedule."""
         # 0 = ingen, 1 = recommended, 2 = custom
         if mode == 20:
             self.set_schedule_data()
-        mode = 100
         if mode == 10:
             self.get_schedule_data()
 
@@ -2017,7 +2017,7 @@ class SunseekerDevice:
                 "method": "set_property",
                 "value": False,
             }
-            # self.set_property(data)
+            self.set_property(data)
             data = {
                 "appId": self.userid,
                 "deviceSn": self.devicesn,
@@ -2045,7 +2045,7 @@ class SunseekerDevice:
                 "method": "set_property",
                 "value": False,
             }
-            # self.set_property(data)
+            self.set_property(data)
 
     def set_custom_flag(self, on: bool):
         """Set custom flag."""

@@ -923,7 +923,7 @@ class SunseekerScheduleModeSelect(SunseekerEntity, SelectEntity):
         reverse_mapping = {
             "no_schedule": 0,
             "recommended": 1,
-            "user_definded": 2,
+            "user_defined": 2,
         }
         mode = reverse_mapping.get(option, 1)
         # Call your integration's method to set the mode

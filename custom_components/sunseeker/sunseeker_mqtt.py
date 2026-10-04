@@ -1090,9 +1090,18 @@ class SunseekermqttController:
             nu, datanode, [], "energy_saving_mode", device.enery_mode
         )
         # online
-        device.deviceOnlineFlag = self.setvalue(
-            nu, datanode, [], "online", device.deviceOnlineFlag
-        )
+        if device.model == MODEL_OLD:
+            if (online_flag := datanode.get("online")) is not None:
+                device.deviceOnlineFlag = self.update_var_if_changed(
+                    nu,
+                    "online",
+                    device.deviceOnlineFlag,
+                    {"online": "0" if online_flag in (0, False, "0") else "1"},
+                )
+        else:
+            device.deviceOnlineFlag = self.setvalue(
+                nu, datanode, [], "online", device.deviceOnlineFlag
+            )
         # task info
         device.task_id = self.setvalue(nu, datanode, [], "task_id", device.task_id)
         device.schedule_cancel = self.setvalue(
@@ -1242,13 +1251,9 @@ class SunseekermqttController:
                 with contextlib.suppress(json.JSONDecodeError, ValueError):
                     datanode = json.loads(datanode)
             if isinstance(datanode, dict):
-                if device.model == MODEL_OLD:
-                    online_flag = datanode.get("online")
-                    if online_flag is not None:
-                        device.deviceOnlineFlag = {
-                            "online": "0" if online_flag in (0, False, "0") else "1"
-                        }
-                elif device.model == MODEL_V1:
+                if data["data"] is not datanode:
+                    data = {**data, "data": datanode}
+                if device.model == MODEL_V1:
                     device.deviceOnlineFlag = datanode
                 self.handle_mqtt_data_data(upd, nu, data, datanode, device)
 
