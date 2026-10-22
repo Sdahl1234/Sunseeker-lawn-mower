@@ -4,11 +4,10 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from pytest_homeassistant.common import MockConfigEntry
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
-
-from tests.common import MockConfigEntry
 
 DOMAIN = "sunseeker"
 
@@ -19,8 +18,8 @@ pytestmark = pytest.mark.usefixtures("enable_custom_integrations")
 def diagnostic_coordinator() -> MagicMock:
     """Return a coordinator containing representative diagnostic data."""
     coordinator = MagicMock()
-    coordinator.devicesn = "secret-serial"
-    coordinator.unique_id = "sunseeker-secret-serial"
+    coordinator.devicesn = "device-serial"
+    coordinator.unique_id = "sunseeker-serial"
     coordinator.model = "X"
     coordinator.apptype = "New app"
     coordinator.region = "EU"
@@ -71,7 +70,7 @@ async def test_config_entry_diagnostics_redacts_sensitive_data(
         region="EU",
         url="https://example.test",
         host="example.test",
-        deviceArray=["secret-serial"],
+        deviceArray=["serial"],
         session={"authorization": "secret-authorization"},
         devicelist_OLD_models=[],
         devicelist_NEW_models=[],

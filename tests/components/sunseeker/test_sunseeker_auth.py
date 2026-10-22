@@ -133,7 +133,7 @@ async def test_refresh_token_updates_devices_controllers_and_timer(
             return_value=response,
         ) as request,
         patch(
-            "custom_components.sunseeker.sunseeker.Timer", return_value=timer
+            "custom_components.sunseeker.sunseeker.DaemonTimer", return_value=timer
         ) as timer_class,
     ):
         getattr(client, refresh_method)()
@@ -173,7 +173,7 @@ async def test_refresh_token_does_not_schedule_after_unload() -> None:
             "custom_components.sunseeker.sunseeker.requests.post",
             return_value=response,
         ),
-        patch("custom_components.sunseeker.sunseeker.Timer") as timer_class,
+        patch("custom_components.sunseeker.sunseeker.DaemonTimer") as timer_class,
     ):
         client.refresh_token()
 
@@ -252,7 +252,7 @@ async def test_refresh_token_callback_delays_selected_protocol(
     client.refresh_token_timeout = previous_timeout
     timer = MagicMock()
     with patch(
-        "custom_components.sunseeker.sunseeker.Timer", return_value=timer
+        "custom_components.sunseeker.sunseeker.DaemonTimer", return_value=timer
     ) as timer_class:
         client.refresh_token_callback()
 
@@ -298,7 +298,7 @@ async def test_old_app_startup_creates_legacy_mqtt_controller() -> None:
             return_value=mqtt_controller,
         ) as mqtt_class,
         patch(
-            "custom_components.sunseeker.sunseeker.Timer", return_value=timer
+            "custom_components.sunseeker.sunseeker.DaemonTimer", return_value=timer
         ) as timer_class,
     ):
         client.on_after_login()
@@ -359,7 +359,7 @@ async def test_mixed_wireless_startup_creates_v1_and_sxv_controllers() -> None:
             side_effect=mqtt_controllers,
         ) as mqtt_class,
         patch(
-            "custom_components.sunseeker.sunseeker.Timer", return_value=timer
+            "custom_components.sunseeker.sunseeker.DaemonTimer", return_value=timer
         ) as timer_class,
     ):
         client.on_after_login()
@@ -396,7 +396,7 @@ async def test_empty_device_list_still_schedules_token_refresh() -> None:
             "custom_components.sunseeker.sunseeker.SunseekermqttController"
         ) as mqtt_class,
         patch(
-            "custom_components.sunseeker.sunseeker.Timer", return_value=timer
+            "custom_components.sunseeker.sunseeker.DaemonTimer", return_value=timer
         ) as timer_class,
     ):
         client.on_after_login()

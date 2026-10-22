@@ -159,7 +159,7 @@ async def test_check_ota_selects_firmware_targets(
         def start(self) -> None:
             self.started = True
 
-    with patch("custom_components.sunseeker.sunseeker_device.Timer", FakeTimer):
+    with patch("custom_components.sunseeker.sunseeker_device.DaemonTimer", FakeTimer):
         device.check_ota()
 
     assert device.check_ota_version.call_args_list == [

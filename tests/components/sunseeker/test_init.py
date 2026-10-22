@@ -6,9 +6,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import HomeAssistant
 
-from tests.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 pytestmark = pytest.mark.usefixtures("enable_custom_integrations")
 
@@ -97,5 +98,29 @@ async def test_login_failure_retries_setup(
 
     assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
     mower.on_load.assert_called_once_with()
+    mower.unload.assert_called_once_with()
     coordinator.async_config_entry_first_refresh.assert_not_awaited()
     setup_services.assert_not_awaited()
+
+
+async def test_stop_event_unloads_handler(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_sunseeker: tuple[MagicMock, MagicMock, AsyncMock],
+) -> None:
+    """Test the timers and MQTT threads are stopped on Home Assistant shutdown."""
+    mower, _, _ = mock_sunseeker
+    mock_config_entry.add_to_hass(hass)
+
+    with patch.object(
+        hass.config_entries, "async_forward_entry_setups", new_callable=AsyncMock
+    ):
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    mower.unload.assert_not_called()
+
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_STOP)
+    await hass.async_block_till_done()
+
+    mower.unload.assert_called_once_with()

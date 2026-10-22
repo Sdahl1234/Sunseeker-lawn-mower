@@ -228,7 +228,7 @@ async def test_rejected_credentials_schedule_password_retry() -> None:
     controller = _controller(APPTYPE_NEW, MODEL_X)
     client = MagicMock()
     with patch(
-        "custom_components.sunseeker.sunseeker_mqtt.Timer", autospec=True
+        "custom_components.sunseeker.sunseeker_mqtt.DaemonTimer", autospec=True
     ) as timer_class:
         controller.on_mqtt_connect_new(client, None, None, 5)
 
@@ -271,7 +271,7 @@ async def test_fallback_rejection_uses_long_cooldown() -> None:
     controller._password_retries = 3
     client = MagicMock()
     with patch(
-        "custom_components.sunseeker.sunseeker_mqtt.Timer", autospec=True
+        "custom_components.sunseeker.sunseeker_mqtt.DaemonTimer", autospec=True
     ) as timer_class:
         controller.on_mqtt_connect_new(client, None, None, 5)
 
