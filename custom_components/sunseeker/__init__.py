@@ -11,9 +11,10 @@ from homeassistant.const import (
     CONF_MODEL_ID,
     CONF_PASSWORD,
     CONF_REGION,
+    EVENT_HOMEASSISTANT_STOP,
     Platform,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.device_registry import DeviceEntry
 
@@ -119,6 +120,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
         store_mqtt_password,
     )
     await hass.async_add_executor_job(data_handler.on_load)
+
+    async def _async_stop_handler(_: Event | None = None) -> None:
+        """Stop timers and MQTT threads."""
+        await hass.async_add_executor_job(data_handler.unload)
+
+    # Config entries are not unloaded on shutdown, so stop on the stop event too
+    entry.async_on_unload(_async_stop_handler)
+    entry.async_on_unload(
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_stop_handler)
+    )
+
     if not data_handler.login_ok:
         _LOGGER.error("Login error")
         raise ConfigEntryNotReady("Login failed")
@@ -163,10 +175,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
 
 async def async_unload_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) -> bool:
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        entry.runtime_data.data_handler.unload()
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
 async def async_remove_config_entry_device(

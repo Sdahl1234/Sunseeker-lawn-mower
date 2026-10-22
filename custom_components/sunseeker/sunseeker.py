@@ -5,7 +5,6 @@ from collections.abc import Callable
 import json
 import logging
 from pathlib import Path
-from threading import Timer
 from urllib import parse, request as re
 
 from Crypto.Cipher import AES
@@ -61,6 +60,7 @@ from .const import (
     S,
     X,
 )
+from .daemon_timer import DaemonTimer
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_mqtt import SunseekermqttController
 
@@ -307,7 +307,7 @@ class SunseekerRoboticmower:
             if self.apptype == APPTYPE_OLD
             else self.refresh_token_new
         )
-        self.refresh_token_interval = Timer(
+        self.refresh_token_interval = DaemonTimer(
             (self.session.get("expires_in") or 3600), refresh_fn
         )
         self.refresh_token_interval.start()
@@ -516,7 +516,7 @@ class SunseekerRoboticmower:
             if self.apptype == APPTYPE_OLD
             else self.refresh_token_new
         )
-        self.refresh_token_timeout = Timer(60, refresh_fn)
+        self.refresh_token_timeout = DaemonTimer(60, refresh_fn)
         self.refresh_token_timeout.start()
 
     def refresh_token(self):
@@ -573,7 +573,7 @@ class SunseekerRoboticmower:
             if not self._unloaded:
                 if self.refresh_token_interval:
                     self.refresh_token_interval.cancel()
-                self.refresh_token_interval = Timer(
+                self.refresh_token_interval = DaemonTimer(
                     (self.session.get("expires_in") or 3600), self.refresh_token
                 )
                 self.refresh_token_interval.start()
@@ -622,7 +622,7 @@ class SunseekerRoboticmower:
             if not self._unloaded:
                 if self.refresh_token_interval:
                     self.refresh_token_interval.cancel()
-                self.refresh_token_interval = Timer(
+                self.refresh_token_interval = DaemonTimer(
                     (self.session.get("expires_in") or 3600), self.refresh_token_new
                 )
                 self.refresh_token_interval.start()

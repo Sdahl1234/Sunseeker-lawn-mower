@@ -28,6 +28,7 @@ from .const import (
     REGION_EU,
     REGION_US,
 )
+from .daemon_timer import DaemonTimer
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_schedule import Sunseeker_new_schedule_day
 
@@ -294,7 +295,7 @@ class SunseekermqttController:
                     )
                     self._using_fallback = False
                     self._password_retries = 0
-                    self._password_retry_timer = Timer(
+                    self._password_retry_timer = DaemonTimer(
                         PASSWORD_RETRY_COOLDOWN, self._reconnect_with_new_password
                     )
                     self._password_retry_timer.start()
@@ -315,7 +316,7 @@ class SunseekermqttController:
                     self._password_retries,
                     MAX_PASSWORD_RETRIES,
                 )
-                self._password_retry_timer = Timer(
+                self._password_retry_timer = DaemonTimer(
                     PASSWORD_RETRY_DELAY, self._reconnect_with_new_password
                 )
                 self._password_retry_timer.start()
@@ -347,7 +348,7 @@ class SunseekermqttController:
 
         for device_ in self.Sunseeker.robotList:
             device: SunseekerDevice = device_
-            thread0 = Thread(target=device.after_mqtt_connect)
+            thread0 = Thread(target=device.after_mqtt_connect, daemon=True)
             thread0.start()
 
     def connect_mqtt(self):

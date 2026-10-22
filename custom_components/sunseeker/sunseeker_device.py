@@ -4,10 +4,10 @@ import contextlib
 import gzip
 import json
 import logging
-from pathlib import Path
 import re
-from threading import Timer
 import time
+from pathlib import Path
+from threading import Timer
 
 import requests
 
@@ -23,6 +23,7 @@ from .const import (
     MODEL_X,
     SUB_MODEL_GEN1,
 )
+from .daemon_timer import DaemonTimer
 from .sunseeker_ble import MapBorder, SunseekerBleSession
 from .sunseeker_consumable_items import SunseekerConsumableItems
 from .sunseeker_map import SunseekerMap
@@ -584,14 +585,14 @@ class SunseekerDevice:
             self.check_ota_version(self.base_sn, self.base_firmware, 2)
         if self.ota_timer:
             self.ota_timer.cancel()
-        self.ota_timer = Timer(21600, self.check_ota)
+        self.ota_timer = DaemonTimer(21600, self.check_ota)
         try:
             self.ota_timer.start()
         except RuntimeError:
             _LOGGER.warning(
                 "Check_ota could not start timer thread. Will retry in 60 seconds"
             )
-            self.ota_timer = Timer(60, self.check_ota)
+            self.ota_timer = DaemonTimer(60, self.check_ota)
             self.ota_timer.start()
 
     def get_zone(self, id) -> SunseekerZone:
