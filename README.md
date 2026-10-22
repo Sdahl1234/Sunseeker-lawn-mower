@@ -4,7 +4,7 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.29
+#### V1.2.31
 
 ## Tested models
   - Adano RM5, RM6, RM9
