@@ -2,6 +2,7 @@
 
 import pathlib
 import time
+from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import AREA, PERCENTAGE, UnitOfTime
@@ -50,6 +51,26 @@ from .const import (
     SUNSEEKER_WORKING,
 )
 from .entity import SunseekerEntity
+
+_CONSUMABLE_SENSORS = {
+    "blade_time_left": ("blade", "time_left"),
+    "blade_health": ("blade", "health"),
+    "cutterplade_time_left": ("cutter", "time_left"),
+    "cutterplade_health": ("cutter", "health"),
+    "small_blade_time_left": ("small_blade", "time_left"),
+    "small_blade_health": ("small_blade", "health"),
+    "small_cutterplade_time_left": ("small_cutter", "time_left"),
+    "small_cutterplade_health": ("small_cutter", "health"),
+}
+
+
+def _to_float(value: Any) -> float | None:
+    """Convert a value that the cloud may deliver as a string to a float."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
 
 
 def _load_event_codes(lang: str, prefix: str = "EventCodes") -> dict[int, str]:
@@ -960,86 +981,23 @@ class SunseekerSensor(SunseekerEntity, SensorEntity):
         elif self._valuepair == "taskCoverArea":
             val = self.device.taskCoverArea
         elif self._valuepair == "taskProgress":
-            a = self.device.taskCoverArea
-            b = self.device.taskTotalArea
-            if not a or not b or self.device.taskTotalArea == 0:
+            a = _to_float(self.device.taskCoverArea)
+            b = _to_float(self.device.taskTotalArea)
+            if not a or not b:
                 val = 0
             else:
                 # Calculate the progress as a percentage
                 # V1 does not provide this
-                val = round(
-                    (self.device.taskCoverArea * 100) / self.device.taskTotalArea
-                )
-        elif self._valuepair == "blade_time_left":
-            a = self.device.consumable.blade.at
-            b = self.device.consumable.blade.mp
+                val = round((a * 100) / b)
+        elif self._valuepair in _CONSUMABLE_SENSORS:
+            attr, kind = _CONSUMABLE_SENSORS[self._valuepair]
+            item = getattr(self.device.consumable, attr)
+            a = _to_float(item.at)
+            b = _to_float(item.mp)
             if a is None or b is None or (b - a) == 0:
                 val = 0
-            else:
+            elif kind == "time_left":
                 val = round((b - a) / 60 / 60)
-
-        elif self._valuepair == "blade_health":
-            a = self.device.consumable.blade.at
-            b = self.device.consumable.blade.mp
-            if a is None or b is None or (b - a) == 0:
-                val = 0
-            elif b == 0:
-                val = 100
-            elif b < 0:
-                val = 0
-            else:
-                val = round(100 - ((a / b) * 100))
-        elif self._valuepair == "cutterplade_time_left":
-            a = self.device.consumable.cutter.at
-            b = self.device.consumable.cutter.mp
-            if a is None or b is None or (b - a) == 0:
-                val = 0
-            else:
-                val = round((b - a) / 60 / 60)
-
-        elif self._valuepair == "cutterplade_health":
-            a = self.device.consumable.cutter.at
-            b = self.device.consumable.cutter.mp
-            if a is None or b is None or (b - a) == 0:
-                val = 0
-            elif b == 0:
-                val = 100
-            elif b < 0:
-                val = 0
-            else:
-                val = round(100 - ((a / b) * 100))
-        elif self._valuepair == "small_blade_time_left":
-            a = self.device.consumable.small_blade.at
-            b = self.device.consumable.small_blade.mp
-            if a is None or b is None or (b - a) == 0:
-                val = 0
-            else:
-                val = round((b - a) / 60 / 60)
-
-        elif self._valuepair == "small_blade_health":
-            a = self.device.consumable.small_blade.at
-            b = self.device.consumable.small_blade.mp
-            if a is None or b is None or (b - a) == 0:
-                val = 0
-            elif b == 0:
-                val = 100
-            elif b < 0:
-                val = 0
-            else:
-                val = round(100 - ((a / b) * 100))
-        elif self._valuepair == "small_cutterplade_time_left":
-            a = self.device.consumable.small_cutter.at
-            b = self.device.consumable.small_cutter.mp
-            if a is None or b is None or (b - a) == 0:
-                val = 0
-            else:
-                val = round((b - a) / 60 / 60)
-
-        elif self._valuepair == "small_cutterplade_health":
-            a = self.device.consumable.small_cutter.at
-            b = self.device.consumable.small_cutter.mp
-            if a is None or b is None or (b - a) == 0:
-                val = 0
             elif b == 0:
                 val = 100
             elif b < 0:
