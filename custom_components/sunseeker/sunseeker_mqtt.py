@@ -163,8 +163,9 @@ class SunseekermqttController:
             payload = {
                 "appIdCode": self.appId,
                 "appType": 3,
-                "appVersion": "1.7.0",
+                "appVersion": "1.9.0",
                 "mqttsPassword": password,
+                "mqttsType": 2,
                 "operatingSystemCode": "android",
             }
             headers = {
@@ -172,7 +173,7 @@ class SunseekermqttController:
                 "Content-Type": "application/json; charset=UTF-8",
                 "Accept-Language": self.Sunseeker.language,
                 "User-Agent": "okhttp/4.8.1",
-                "version": "1.7.0",
+                "version": "1.9.0",
                 "app": "brand",
             }
             req = re.Request(
@@ -228,7 +229,7 @@ class SunseekermqttController:
             self.mqtt_client_new.loop_stop()
 
         self.mqtt_client_new = mqtt.Client(
-            client_id=self.client_id + "new", protocol=mqtt.MQTTv311
+            client_id=f"APP_{self.user_id}_{self.appId}", protocol=mqtt.MQTTv311
         )
         self.mqtt_client_new.on_connect = self.on_mqtt_connect_new
         self.mqtt_client_new.on_message = self.on_mqtt_message
@@ -246,16 +247,16 @@ class SunseekermqttController:
             if self.model == MODEL_V1:
                 host = "app.mqttv1-eu.sk-robot.com"
             else:
-                host = "wfsmqtt-specific.sk-robot.com"
+                host = "wfsmqtts-specific.sk-robot.com"
         elif self.region == REGION_US:
             if self.model == MODEL_V1:
                 host = "app.mqttv1-us.sk-robot.com"
             else:
-                host = "wfsmqtt-specific-us.sk-robot.com"
+                host = "wfsmqtts-specific-us.sk-robot.com"
         if self.model in (MODEL_V1):
             port = 32884
         else:
-            port = 1884
+            port = 31884
         _LOGGER.debug("MQTT host: " + host)  # noqa: G003
         _LOGGER.debug("MQTT username: " + self.username + self.appId)  # noqa: G003
         _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
@@ -336,7 +337,11 @@ class SunseekermqttController:
         else:
             ep = "wirelessdevice"
 
-        sub = f"/{ep}/" + str(self.user_id) + "/get"
+        if self.model in (MODEL_V1):
+            sub = f"/{ep}/" + str(self.user_id) + "/get"
+        else:
+            # Since app 1.9.0 the cloud sends wirefree data to a per-client topic.
+            sub = f"/app/APP_{self.user_id}_{self.appId}/get"
         _LOGGER.debug(
             f"MQTT new subscribe to: {sub}"  # noqa: G004
         )

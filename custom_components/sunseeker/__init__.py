@@ -18,7 +18,15 @@ from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from .const import APPTYPE_OLD, CONF_APP_ID, CONF_MQTT_PASSWORD, DOMAIN, REGION_EU
+from .const import (
+    APPTYPE_OLD,
+    CONF_APP_ID,
+    CONF_MQTT_PASSWORD,
+    CONF_MQTT_REGISTRATION,
+    DOMAIN,
+    MQTT_REGISTRATION_VERSION,
+    REGION_EU,
+)
 from .coordinator import (
     SunSeekerConfigEntry,
     SunseekerDataCoordinator,
@@ -85,7 +93,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
 
         def _store() -> None:
             nonlocal suppress_reload
-            if entry.data.get(CONF_MQTT_PASSWORD) == password:
+            if (
+                entry.data.get(CONF_MQTT_PASSWORD) == password
+                and entry.data.get(CONF_MQTT_REGISTRATION) == MQTT_REGISTRATION_VERSION
+            ):
                 return
             suppress_reload = True
             hass.config_entries.async_update_entry(
@@ -93,6 +104,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
                 data={
                     **entry.data,
                     CONF_MQTT_PASSWORD: password,
+                    CONF_MQTT_REGISTRATION: MQTT_REGISTRATION_VERSION,
                 },
             )
 
@@ -116,7 +128,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunSeekerConfigEntry) ->
         password,
         locale,
         app_id,
-        entry.data.get(CONF_MQTT_PASSWORD),
+        # A password registered the old way (before app 1.9.0) gets no data: register again.
+        entry.data.get(CONF_MQTT_PASSWORD)
+        if entry.data.get(CONF_MQTT_REGISTRATION) == MQTT_REGISTRATION_VERSION
+        else None,
         store_mqtt_password,
     )
     await hass.async_add_executor_job(data_handler.on_load)

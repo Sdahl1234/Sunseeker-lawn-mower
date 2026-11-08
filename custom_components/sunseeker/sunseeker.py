@@ -152,7 +152,7 @@ class SunseekerRoboticmower:
                 "Content-Type": "application/json; charset=UTF-8",
                 "Accept-Language": self.language,
                 "User-Agent": "okhttp/4.8.1",
-                "version": "1.7.0",
+                "version": "1.9.0",
                 "app": "brand",
             }
 
