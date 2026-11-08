@@ -10,6 +10,9 @@ DATAHANDLER = "DATAHANDLER"
 DH = "dh"
 CONF_APP_ID = "app_id"
 CONF_MQTT_PASSWORD = "mqtt_password"
+# Bumped when the MQTT registration changes, so stored passwords are registered again.
+CONF_MQTT_REGISTRATION = "mqtt_registration"
+MQTT_REGISTRATION_VERSION = 2
 
 SUNSEEKER_STANDBY = "standby"
 SUNSEEKER_MOWING = "mowing"
