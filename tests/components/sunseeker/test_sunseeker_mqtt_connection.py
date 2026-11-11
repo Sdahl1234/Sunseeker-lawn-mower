@@ -20,13 +20,14 @@ def _controller(
     model: str,
     region: str = "EU",
     store_password: MagicMock | None = None,
+    appinfo: dict | None = None,
 ) -> object:
     """Construct a controller without connecting to a broker."""
     from custom_components.sunseeker.sunseeker_mqtt import (  # noqa: PLC0415
         SunseekermqttController,
     )
 
-    mower = SimpleNamespace(language="en", debug=False, robotList=[])
+    mower = SimpleNamespace(language="en", debug=False, robotList=[], appinfo=appinfo)
     return SunseekermqttController(
         mower,
         "mower-user",
@@ -118,6 +119,62 @@ async def test_new_broker_region_and_model_routing(
         port=expected_port,
     )
     client.loop_start.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    ("model", "appinfo_data", "expected_host", "expected_port"),
+    [
+        pytest.param(
+            "X models",
+            {"mqttsWirefreeDomainName": "broker.example:12345"},
+            "broker.example",
+            12345,
+            id="wirefree-host-and-port",
+        ),
+        pytest.param(
+            "V1 models",
+            {"mqttV1AppDomainName": "v1.example:23456"},
+            "v1.example",
+            23456,
+            id="v1-host-and-port",
+        ),
+        pytest.param(
+            "X models",
+            {"mqttsWirefreeDomainName": "broker.example"},
+            "broker.example",
+            31884,
+            id="wirefree-default-port",
+        ),
+        pytest.param(
+            "X models",
+            {"mqttsWirefreeDomainName": None},
+            "wfsmqtts-specific.sk-robot.com",
+            31884,
+            id="missing-domain-falls-back",
+        ),
+    ],
+)
+async def test_new_broker_from_appinfo(
+    model: str, appinfo_data: dict, expected_host: str, expected_port: int
+) -> None:
+    """Test the broker is taken from the appinfo like the app does."""
+    from custom_components.sunseeker.const import APPTYPE_NEW  # noqa: PLC0415
+
+    controller = _controller(
+        APPTYPE_NEW, model, "EU", appinfo={"code": 0, "data": appinfo_data}
+    )
+    client = MagicMock()
+    with patch(
+        "custom_components.sunseeker.sunseeker_mqtt.mqtt.Client",
+        return_value=client,
+    ):
+        controller.connect_mqtt_new()
+
+    client.connect.assert_called_once_with(
+        host=expected_host,
+        keepalive=60,
+        port=expected_port,
+    )
 
 
 async def test_rsa_mqtt_password_encryption_round_trip() -> None:
