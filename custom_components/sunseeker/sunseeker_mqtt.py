@@ -19,15 +19,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 import paho.mqtt.client as mqtt
 
-from .const import (
-    APPTYPE_NEW,
-    APPTYPE_OLD,
-    MODEL_OLD,
-    MODEL_V,
-    MODEL_V1,
-    REGION_EU,
-    REGION_US,
-)
+from .const import APPTYPE_NEW, APPTYPE_OLD, MODEL_OLD, MODEL_V, MODEL_V1, REGION_US
 from .daemon_timer import DaemonTimer
 from .sunseeker_device import SunseekerDevice
 from .sunseeker_schedule import Sunseeker_new_schedule_day
@@ -222,6 +214,38 @@ class SunseekermqttController:
             return
         self.connect_mqtt_new()
 
+    def _get_broker(self) -> tuple[str, int]:
+        """Return broker host and port, as the app does from the appinfo."""
+        is_v1 = self.model == MODEL_V1
+        default_port = 32884 if is_v1 else 31884
+        appinfo = self.Sunseeker.appinfo
+        data = appinfo.get("data") if isinstance(appinfo, dict) else None
+        authority = None
+        if isinstance(data, dict):
+            authority = (
+                data.get("mqttV1AppDomainName")
+                if is_v1
+                else data.get("mqttsWirefreeDomainName")
+            )
+        if authority:
+            host, _, port = authority.partition(":")
+            if host:
+                return host, int(port) if port.isdigit() else default_port
+
+        if self.region == REGION_US:
+            host = (
+                "app.mqttv1-us.sk-robot.com"
+                if is_v1
+                else "wfsmqtts-specific-us.sk-robot.com"
+            )
+        else:
+            host = (
+                "app.mqttv1-eu.sk-robot.com"
+                if is_v1
+                else "wfsmqtts-specific.sk-robot.com"
+            )
+        return host, default_port
+
     def connect_mqtt_new(self):
         """Connect mqtt new."""
         if self.mqtt_client_new:
@@ -243,21 +267,8 @@ class SunseekermqttController:
                 self.username + self.appId, self.mqtt_passwd
             )
         self.mqtt_client_new.tls_set(cert_reqs=ssl.CERT_REQUIRED)
-        if self.region == REGION_EU:
-            if self.model == MODEL_V1:
-                host = "app.mqttv1-eu.sk-robot.com"
-            else:
-                host = "wfsmqtts-specific.sk-robot.com"
-        elif self.region == REGION_US:
-            if self.model == MODEL_V1:
-                host = "app.mqttv1-us.sk-robot.com"
-            else:
-                host = "wfsmqtts-specific-us.sk-robot.com"
-        if self.model in (MODEL_V1):
-            port = 32884
-        else:
-            port = 31884
-        _LOGGER.debug("MQTT host: " + host)  # noqa: G003
+        host, port = self._get_broker()
+        _LOGGER.debug(f"MQTT host: {host}:{port}")  # noqa: G004
         _LOGGER.debug("MQTT username: " + self.username + self.appId)  # noqa: G003
         _LOGGER.debug("MQTT password: " + self.mqtt_passwd)  # noqa: G003
 
