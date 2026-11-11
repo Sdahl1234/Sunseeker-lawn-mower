@@ -17,7 +17,7 @@ def hass_config_dir(tmp_path: Path) -> str:
     """Copy the custom integration into the test configuration directory."""
     source = Path(__file__).parents[3] / "config" / "custom_components" / DOMAIN
     destination = tmp_path / "custom_components" / DOMAIN
-    shutil.copytree(source, destination, ignore=shutil.ignore_patterns("tests"))
+    shutil.copytree(source, destination, ignore=shutil.ignore_patterns("tests", "tools"))
     return str(tmp_path)
 
 

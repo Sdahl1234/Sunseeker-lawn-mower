@@ -406,3 +406,29 @@ async def test_empty_device_list_still_schedules_token_refresh() -> None:
     assert client.mqtt_controllers == []
     timer_class.assert_called_once_with(3600, client.refresh_token_new)
     timer.start.assert_called_once_with()
+
+
+async def test_login_fetches_appinfo_then_registers_app() -> None:
+    """Test the app registration PUT is sent after the appinfo request on every login."""
+    from custom_components.sunseeker.const import APPTYPE_NEW  # noqa: PLC0415
+
+    client = _client(APPTYPE_NEW)
+    client.session = {"access_token": "access-4", "expires_in": 0}
+    client.get_device_list = MagicMock(return_value={"data": []})
+    calls = MagicMock()
+    client.get_app_info = calls.get_app_info
+
+    with (
+        patch("custom_components.sunseeker.sunseeker.requests.put", calls.put),
+        patch("custom_components.sunseeker.sunseeker.DaemonTimer"),
+    ):
+        client.on_after_login()
+
+    assert [call[0] for call in calls.method_calls] == ["get_app_info", "put"]
+    assert calls.put.call_args.kwargs["json"] == {
+        "appIdCode": "app-id",
+        "appType": 3,
+        "appVersion": "1.9.0",
+        "mqttsType": 2,
+        "operatingSystemCode": "android",
+    }

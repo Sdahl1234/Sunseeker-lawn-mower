@@ -253,6 +253,7 @@ class SunseekerRoboticmower:
                     self.mqtt_controllers.append(mqtt_controller)
         else:
             self.get_app_info(self.apptype, MODEL_SXV)
+            self.register_app()
             devicelist = self.get_device_list(
                 self.apptype, MODEL_SXV
             )  # any model just not old
@@ -499,13 +500,42 @@ class SunseekerRoboticmower:
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error("Get device list: failed %s", error)  # pylint: disable=broad-except
 
+    def register_app(self):
+        """Tell the server this app instance is 1.9.0 with mqttsType 2, as the app does after login."""
+        payload = {
+            "appIdCode": self.appId,
+            "appType": 3,
+            "appVersion": "1.9.0",
+            "mqttsType": 2,
+            "operatingSystemCode": "android",
+        }
+        headers = {
+            "Authorization": "bearer " + self.session["access_token"],
+            "Accept-Language": self.language,
+            "User-Agent": "okhttp/4.8.1",
+            "version": "1.9.0",
+            "app": "brand",
+        }
+        try:
+            response = requests.put(
+                url=f"{self.url}/admin/user/edit",
+                headers=headers,
+                json=payload,
+                timeout=10,
+            )
+            _LOGGER.debug(
+                f"Register app HTTP status: {response.status_code} body: {response.text}"  # noqa: G004
+            )
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.debug(f"Register app failed {error}")  # noqa: G004
+
     def get_app_info(self, apptype: str, model: str):
         """Get mqtt broker path."""
         url = self.getURL(apptype)
         host = self.getHOST(apptype)
         if model == MODEL_OLD:
             return
-        endpoint = f"/admin/user/app/info?{self.appId}"
+        endpoint = f"/admin/user/app/info?appIdCode={self.appId}"
         try:
             url_ = url + endpoint
             headers_ = {
