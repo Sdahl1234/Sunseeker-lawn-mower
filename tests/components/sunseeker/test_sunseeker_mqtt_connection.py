@@ -77,10 +77,10 @@ async def test_start_mqtt_selects_old_and_new_transports() -> None:
     ("region", "model", "expected_host", "expected_port"),
     [
         pytest.param(
-            "EU", "X models", "wfsmqtt-specific.sk-robot.com", 1884, id="x-eu"
+            "EU", "X models", "wfsmqtts-specific.sk-robot.com", 31884, id="x-eu"
         ),
         pytest.param(
-            "US", "S models", "wfsmqtt-specific-us.sk-robot.com", 1884, id="s-us"
+            "US", "S models", "wfsmqtts-specific-us.sk-robot.com", 31884, id="s-us"
         ),
         pytest.param(
             "EU", "V1 models", "app.mqttv1-eu.sk-robot.com", 32884, id="v1-eu"
@@ -105,7 +105,8 @@ async def test_new_broker_region_and_model_routing(
         controller.connect_mqtt_new()
 
     client_factory.assert_called_once_with(
-        client_id=controller.client_id + "new", protocol=mqtt.MQTTv311
+        client_id="APP_" + controller.user_id + "_" + controller.appId,
+        protocol=mqtt.MQTTv311,
     )
     client.username_pw_set.assert_called_once_with(
         "mower-userapp-id", "stored-password"
@@ -161,8 +162,9 @@ async def test_edit_mqtt_password_request() -> None:
     assert json.loads(request.data) == {
         "appIdCode": "app-id",
         "appType": 3,
-        "appVersion": "1.7.0",
+        "appVersion": "1.9.0",
         "mqttsPassword": "encrypted-password",
+        "mqttsType": 2,
         "operatingSystemCode": "android",
     }
     assert request.get_header("Authorization") == "bearer access-token"
@@ -200,7 +202,7 @@ async def test_new_mqtt_connection_subscribes_and_stores_accepted_password() -> 
     assert controller._password_retries == 0
     store_password.assert_called_once_with("stored-password")
     controller.mqtt_client_new.subscribe.assert_called_once_with(
-        "/wirelessdevice/user-123/get", qos=0
+        "/app/APP_user-123_app-id/get", qos=0
     )
 
 

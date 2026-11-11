@@ -4,10 +4,10 @@ import contextlib
 import gzip
 import json
 import logging
-import re
-import time
 from pathlib import Path
+import re
 from threading import Timer
+import time
 
 import requests
 

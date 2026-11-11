@@ -37,6 +37,7 @@ def diagnostic_coordinator() -> MagicMock:
         cmdurl="/command",
         deviceOnlineFlag=1,
         error_text="",
+        appinfo=[],
         map=SimpleNamespace(
             mapid=1,
             image_data=b"image",
@@ -72,6 +73,7 @@ async def test_config_entry_diagnostics_redacts_sensitive_data(
         host="example.test",
         deviceArray=["serial"],
         session={"authorization": "secret-authorization"},
+        appinfo=[],
         devicelist_OLD_models=[],
         devicelist_NEW_models=[],
     )

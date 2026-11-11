@@ -114,6 +114,8 @@ class SunseekerRoboticmower:
         self.mqtt_password = mqtt_password
         self.store_mqtt_password = store_mqtt_password
 
+        self.appinfo = None
+
         self.login_ok: bool = False
         self.login_url = ""
         self.url = self.getURL(self.apptype)
@@ -250,6 +252,7 @@ class SunseekerRoboticmower:
                     )
                     self.mqtt_controllers.append(mqtt_controller)
         else:
+            self.get_app_info(self.apptype, MODEL_SXV)
             devicelist = self.get_device_list(
                 self.apptype, MODEL_SXV
             )  # any model just not old
@@ -495,6 +498,39 @@ class SunseekerRoboticmower:
 
         except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.error("Get device list: failed %s", error)  # pylint: disable=broad-except
+
+    def get_app_info(self, apptype: str, model: str):
+        """Get mqtt broker path."""
+        url = self.getURL(apptype)
+        host = self.getHOST(apptype)
+        if model == MODEL_OLD:
+            return
+        endpoint = f"/admin/user/app/info?{self.appId}"
+        try:
+            url_ = url + endpoint
+            headers_ = {
+                "Accept-Language": self.language,
+                "Authorization": "bearer " + self.session["access_token"],
+                "Host": host,
+                "Connection": "Keep-Alive",
+                "User-Agent": "okhttp/4.8.1",
+            }
+            _LOGGER.debug(f"Get appinfo header: {headers_} url: {url_}")  # noqa: G004
+            response = requests.get(
+                url=url_,
+                headers=headers_,
+                timeout=10,
+            )
+            response_data = response.json()
+            _LOGGER.debug(f"Appinfo: {json.dumps(response_data)}")  # noqa: G004
+            if response_data["code"] != 0:
+                _LOGGER.debug("Error getting appinfo")
+                _LOGGER.debug(json.dumps(response_data))
+                return
+            self.appinfo = response_data
+            return  # noqa: TRY300
+        except Exception as error:  # pylint: disable=broad-except  # noqa: BLE001
+            _LOGGER.error(f"Get appinfo: failed {error}")  # noqa: G004
 
     def get_device(self, devicesn) -> SunseekerDevice | None:
         """Get the device object."""
