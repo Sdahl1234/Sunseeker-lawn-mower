@@ -131,6 +131,11 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> N
                     SunseekerSchedulePauseSwitch(
                         coordinator, "Pause schedule", "sunseeker_pause_schedule"
                     ),
+                    SunseekerPowerOffSleepSwitch(
+                        coordinator,
+                        "Power-off sleep",
+                        "sunseeker_power_off_sleep",
+                    ),
                 ]
             )
             if coordinator.modelname in (
@@ -1176,6 +1181,54 @@ class SunseekerNightWorkSwitch(SunseekerEntity, SwitchEntity):
     def is_on(self):
         """IsOn."""
         return self.device.nightwork
+
+
+class SunseekerPowerOffSleepSwitch(SunseekerEntity, SwitchEntity):
+    """Switch entity for sleeping when the station loses power."""
+
+    def __init__(
+        self,
+        coordinator: SunseekerDataCoordinator,
+        name: str,
+        translationkey: str,
+    ) -> None:
+        """Init."""
+        super().__init__(coordinator)
+        self.data_coordinator = coordinator
+        self._data_handler = self.data_coordinator.data_handler
+        self._name = name
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translationkey
+        self._attr_unique_id = f"{self._name}_{self.data_coordinator.dsn}"
+        self._sn = self.coordinator.devicesn
+        self.icon = "mdi:power-sleep"
+        self.device = self._data_handler.get_device(self._sn)
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        await self.hass.async_add_executor_job(
+            self.device.set_power_off_sleep_mode,
+            True,
+        )
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        await self.hass.async_add_executor_job(
+            self.device.set_power_off_sleep_mode,
+            False,
+        )
+
+    async def async_toggle(self, **kwargs):
+        """Toggle the entity."""
+        await self.hass.async_add_executor_job(
+            self.device.set_power_off_sleep_mode,
+            not self.is_on,
+        )
+
+    @property
+    def is_on(self):
+        """IsOn."""
+        return self.device.power_off_sleep_mode
 
 
 class SunseekerEnergySavingSwitch(SunseekerEntity, SwitchEntity):

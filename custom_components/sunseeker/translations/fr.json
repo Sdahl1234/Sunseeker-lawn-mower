@@ -511,6 +511,7 @@
             "sunseeker_zigzag_active_custom_3": { "name": "{post_name} Zigzag actif 3" },
             "sunseeker_zigzag_active_custom_4": { "name": "{post_name} Zigzag actif 4" },
             "sunseeker_night_work": { "name": "Travail de nuit" },
+            "sunseeker_power_off_sleep": { "name": "Veille en cas de panne de courant" },
             "sunseeker_energy_saving": { "name": "Mode économie d'énergie" },
             "sunseeker_auto_ride_edge": { "name": "Bord automatique" },
             "sunseeker_cliff_detect": { "name": "Détection de falaise" },

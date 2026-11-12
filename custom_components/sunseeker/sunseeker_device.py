@@ -182,6 +182,7 @@ class SunseekerDevice:
         self.work_records: list = []
         self.work_record_detail: dict | None = None
         self.nightwork = False
+        self.power_off_sleep_mode = False
         # X model gen2
         self.auto_ride_edge = 0
         self.enery_mode = False
@@ -368,6 +369,9 @@ class SunseekerDevice:
             self.auto_ride_edge = self.settings["data"].get("autoRideEdgeMapM") or 0
             self.enery_mode = self.settings["data"].get("energySavingMode") or False
             self.nightwork = self.settings["data"].get("nightWork") or False
+            self.power_off_sleep_mode = (
+                self.settings["data"].get("powerOffSleepMode") or False
+            )
             raw = self.settings["data"].get("multiZigzagAngles") or []
             self.multi_zigzag_angles = json.loads(raw) if isinstance(raw, str) else raw
             zigzag_slots = [self.zigzag_1, self.zigzag_2, self.zigzag_3, self.zigzag_4]
@@ -3166,6 +3170,18 @@ class SunseekerDevice:
             "deviceSn": self.devicesn,
             "id": "setNightWork",
             "key": "night_work",
+            "method": "set_property",
+            "value": value,
+        }
+        self.set_property(data)
+
+    def set_power_off_sleep_mode(self, value: bool):
+        """Set sleep on power outage while docked."""
+        data = {
+            "appId": self.userid,
+            "deviceSn": self.devicesn,
+            "id": "setPowerOffSleepMode",
+            "key": "power_off_sleep_mode",
             "method": "set_property",
             "value": value,
         }

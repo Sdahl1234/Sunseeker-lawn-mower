@@ -1106,6 +1106,9 @@ class SunseekermqttController:
         device.enery_mode = self.setvalue(
             nu, datanode, [], "energy_saving_mode", device.enery_mode
         )
+        device.power_off_sleep_mode = self.setvalue(
+            nu, datanode, [], "power_off_sleep_mode", device.power_off_sleep_mode
+        )
         # online
         if device.model == MODEL_OLD:
             if (online_flag := datanode.get("online")) is not None:

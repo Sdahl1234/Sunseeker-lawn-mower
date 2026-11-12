@@ -4,7 +4,7 @@
 
 Home assistant integration from lawnmower using the robotic-mower connect APP (Old models) or Sunseeker Robot App (new wireless models).
 
-#### V1.2.31
+#### V1.3.1
 
 ## Tested models
   - Adano RM5, RM6, RM9
@@ -169,6 +169,7 @@ In addition to the shared entities above, X and S models include:
 - **Cut edge first** - Mow the edge before the main area *(all X and S)*
 - **Repeat time work** - Continue mowing after the end of a cycle *(all X and S)*
 - **Pause schedule** - Pause/resume the mowing schedule *(all X and S)*
+- **Power-off sleep** - Put the robot to sleep if the charging station loses power while the robot is docked *(all X and S)*. See [Power-off sleep](#power-off-sleep-x-and-s-models) below.
 - **Night work** - Enable/disable night work *(X4, X5, X7, X9, X5 Gen2, X5 Gen3, X7 Gen2, X7 Gen3, S4, S5, S5 Gen2)*
 - **Energy saving** - Turn on/off light *(X4, X5, X7, X9, X5 Gen2, X5 Gen3, X7 Gen2, X7 Gen3, S5)*
 - **{zone} Zigzag active 1–4** - Enable/disable each zigzag angle slot per zone *(X3 Gen2/3, X4, X5 Gen2/3, X7 Gen2/3, X9 only)*
@@ -244,6 +245,13 @@ In addition to the shared entities above, X and S models include:
 - **Mower position** - Calculated GPS position derived from map coordinates *(all X and S)*
 
 ---
+
+## Power-off sleep *(X and S models)*
+The **Power-off sleep** switch is the app's "Power-off Sleep" setting (Danish: "Dvale i tilfælde af strømsvigt"), introduced in app 1.9.0.
+
+When it is on and the robot is in the charging station, a power cut puts the robot to sleep. The robot wakes up by itself when the station has power again, or when you press any button on the robot's panel. If the robot's battery runs out while it is asleep, it shuts down.
+
+> **Warning:** While the robot is asleep it cannot be controlled, neither from Home Assistant nor from the Sunseeker app, so it will be unavailable after a power cut until power returns or you wake it manually at the robot. Only turn this on if that is acceptable.
 
 ## Rain sensor and controls
 - **Switches**

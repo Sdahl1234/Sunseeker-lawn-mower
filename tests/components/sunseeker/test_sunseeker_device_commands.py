@@ -204,6 +204,17 @@ def _device(model: str = "X models"):
             id="night-work",
         ),
         pytest.param(
+            "set_power_off_sleep_mode",
+            (True,),
+            "property",
+            {
+                "id": "setPowerOffSleepMode",
+                "key": "power_off_sleep_mode",
+                "value": True,
+            },
+            id="power-off-sleep-mode",
+        ),
+        pytest.param(
             "set_cliff_detect",
             (True,),
             "property",
