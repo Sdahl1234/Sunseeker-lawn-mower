@@ -143,6 +143,26 @@ async def test_camera_image(hass: HomeAssistant) -> None:
     device.mark_livemap_active.assert_called_once_with()
 
 
+@pytest.mark.parametrize(
+    ("has_live_data", "expected_state"),
+    [
+        pytest.param(True, "streaming", id="receiving-data"),
+        pytest.param(False, "idle", id="no-data"),
+    ],
+)
+async def test_camera_state_follows_live_data(
+    hass: HomeAssistant, has_live_data: bool, expected_state: str
+) -> None:
+    """Test the live-map camera streams while position or path data arrives."""
+    from custom_components.sunseeker.camera import MowerCamera  # noqa: PLC0415
+
+    device = MagicMock()
+    device.has_recent_live_data.return_value = has_live_data
+    entity = MowerCamera(hass, _coordinator(device), "Map", "map", "mdi:map")
+
+    assert entity.state == expected_state
+
+
 async def test_map_image_and_robot_image_cache(hass: HomeAssistant) -> None:
     """Test map attributes and robot image request caching."""
     from custom_components.sunseeker.image import (  # noqa: PLC0415

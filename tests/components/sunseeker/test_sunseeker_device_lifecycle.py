@@ -56,6 +56,19 @@ async def test_live_map_activity_expires(monkeypatch: pytest.MonkeyPatch) -> Non
         assert device.is_livemap_active() is False
 
 
+async def test_live_data_is_recent_until_timeout() -> None:
+    """Test position or path data counts as recent only within the timeout."""
+    device = _device()
+    assert device.has_recent_live_data(30) is False
+    with patch("custom_components.sunseeker.sunseeker_device.time.monotonic") as clock:
+        clock.return_value = 100.0
+        device.mark_live_data()
+        clock.return_value = 129.0
+        assert device.has_recent_live_data(30) is True
+        clock.return_value = 130.0
+        assert device.has_recent_live_data(30) is False
+
+
 async def test_ble_status_pose_and_cancel_callbacks() -> None:
     """Test BLE status, pose and cancellation notify the coordinator."""
     device = _device()

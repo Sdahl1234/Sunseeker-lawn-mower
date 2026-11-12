@@ -4,13 +4,16 @@ import io
 import logging
 
 from homeassistant.components.camera import Camera, CameraEntityFeature
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.helpers.event import async_call_later
 
 from . import SunseekerDataCoordinator, robot_coordinators
 from .const import MODEL_S, MODEL_X
 from .entity import SunseekerEntity
 
 _LOGGER = logging.getLogger(__name__)
+
+LIVE_DATA_TIMEOUT = 30
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities) -> None:
@@ -57,6 +60,40 @@ class MowerCamera(SunseekerEntity, Camera):
         self.data_coordinator.livemap_entity = self
         self.device = self._data_handler.get_device(self._sn)
         self._attr_supported_features = CameraEntityFeature(0)
+        self._idle_timer: CALLBACK_TYPE | None = None
+
+    @property
+    def is_streaming(self) -> bool:
+        """Return true while position or path data is being received."""
+        return self.device.has_recent_live_data(LIVE_DATA_TIMEOUT)
+
+    @callback
+    def _cancel_idle_timer(self) -> None:
+        """Cancel the pending return to idle."""
+        if self._idle_timer is not None:
+            self._idle_timer()
+            self._idle_timer = None
+
+    @callback
+    def _async_set_idle(self, _now) -> None:
+        """Update the state once live data has stopped arriving."""
+        self._idle_timer = None
+        self.async_write_ha_state()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Schedule the return to idle after new live data."""
+        self._cancel_idle_timer()
+        if self.is_streaming:
+            self._idle_timer = async_call_later(
+                self.hass, LIVE_DATA_TIMEOUT + 1, self._async_set_idle
+            )
+        super()._handle_coordinator_update()
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Cancel the idle timer."""
+        self._cancel_idle_timer()
+        await super().async_will_remove_from_hass()
 
     async def async_camera_image(self, **kwargs) -> bytes | None:
         """Return bytes of camera image."""

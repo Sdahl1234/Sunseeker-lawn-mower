@@ -205,6 +205,7 @@ class SunseekerDevice:
         self._path_data_initial_delay_applied = False
         self._unloaded = False
         self._livemap_active_until = 0.0  # Track when livemap was last requested
+        self._last_live_data = 0.0
         self.charger_gps_configured = None
         self.ble_status: str = ""
         self.ble_pose: dict | None = None
@@ -504,6 +505,17 @@ class SunseekerDevice:
     def is_livemap_active(self) -> bool:
         """Check if the livemap has been requested recently."""
         return time.monotonic() < self._livemap_active_until
+
+    def mark_live_data(self) -> None:
+        """Record that position or path data just arrived."""
+        self._last_live_data = time.monotonic()
+
+    def has_recent_live_data(self, timeout: float) -> bool:
+        """Check if position or path data arrived within timeout seconds."""
+        return (
+            self._last_live_data > 0
+            and time.monotonic() - self._last_live_data < timeout
+        )
 
     def _schedule_path_data_update(self, delay_seconds: float = 2) -> None:
         """Poll path eligibility every 2s, then request path data while valid."""

@@ -856,6 +856,7 @@ class SunseekermqttController:
                     device.map.mower_pos_x = x
                     device.map.mower_pos_y = y
                     device.map.last_pos_timestamp = msg_timestamp
+                    device.mark_live_data()
                     upd.live_move_update = True
 
         # id = report_path_change or report_path
@@ -897,6 +898,7 @@ class SunseekermqttController:
                 new_points = json.loads(path)
                 device.map.cached_pathpoints.extend(new_points)
                 device.map.livepathpoints.extend(new_points)
+                device.mark_live_data()
                 if len(device.map.livepathpoints) > 100 or upd.start_new_path:
                     upd.live_move_update = True
 
@@ -918,6 +920,7 @@ class SunseekermqttController:
                 new_points = json.loads(path)
                 device.map.cached_pathpoints.extend(new_points)
                 device.map.livepathpoints.extend(new_points)
+                device.mark_live_data()
                 if len(device.map.livepathpoints) > 90 or upd.start_new_path:
                     upd.live_move_update = True
 
